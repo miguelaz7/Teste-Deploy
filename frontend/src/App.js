@@ -32,9 +32,9 @@ function App() {
   return (
     <div className="app-shell">
       <div className="app-card">
-        <p className="eyebrow">Bem-vindo ao TickeTUB</p>
+        <p className="eyebrow">Bem-vindo à TUBInsight</p>
         <h1>Gestão de Bilhética</h1>
-        <p className="subtitle">Informação sempre à tua disposição.</p>
+        <p className="subtitle">Informação sempre à sua disposição.</p>
         <form onSubmit={handleSubmit}>
           <input
             type="email"
