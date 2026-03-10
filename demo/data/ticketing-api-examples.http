@@ -1,0 +1,19 @@
+### Import from CSV by local path
+POST http://localhost:8080/api/ticketing/import
+Content-Type: application/json
+
+{
+  "filePath": "C:/Users/migue/OneDrive/Desktop/TestesDAI/demo/data/bilhetica_exemplo.csv"
+}
+
+### Revenue by route
+GET http://localhost:8080/api/ticketing/analytics/revenue-by-route
+
+### Trips by day
+GET http://localhost:8080/api/ticketing/analytics/trips-by-day
+
+### Ticket type distribution
+GET http://localhost:8080/api/ticketing/analytics/ticket-types
+
+### Simple anomalies
+GET http://localhost:8080/api/ticketing/analytics/anomalies

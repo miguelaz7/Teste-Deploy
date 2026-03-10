@@ -1,0 +1,13 @@
+viagem_id,rota,data_hora,numero_passageiros,tipo_bilhete,valor_pago,autocarro_id
+V001,Lisboa-Porto,2026-03-01T07:30:00,42,normal,18.50,BUS-101
+V002,Coimbra-Aveiro,2026-03-01T08:15:00,18,passe,0.00,BUS-204
+V003,Braga-Guimaraes,2026-03-01T09:00:00,25,normal,6.20,BUS-305
+V004,Faro-Lisboa,2026-03-01T10:45:00,33,normal,22.00,BUS-112
+V005,Porto-Viana do Castelo,2026-03-02T06:50:00,0,gratuito,0.00,BUS-401
+V006,Lisboa-Setubal,2026-03-02T07:20:00,27,passe,0.00,BUS-118
+V007,Aveiro-Porto,2026-03-02T08:05:00,31,normal,5.80,BUS-210
+V008,Leiria-Coimbra,2026-03-02T09:40:00,22,normal,7.50,BUS-322
+V009,Lisboa-Porto,2026-03-03T07:35:00,39,normal,18.50,BUS-102
+V010,Coimbra-Aveiro,2026-03-03T08:20:00,20,passe,0.00,BUS-205
+V011,Braga-Guimaraes,2026-03-03T09:05:00,26,normal,6.20,BUS-306
+V012,Faro-Lisboa,2026-03-03T10:55:00,29,normal,-3.00,BUS-113
