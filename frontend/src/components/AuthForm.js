@@ -113,7 +113,7 @@ function AuthForm({
               <span className="input-icon"><LockIcon /></span>
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder={mode === "login" ? "**********" : "Insere a tua password"}
+                placeholder={mode === "login" ? "••••••••••" : "Insere a tua password"}
                 value={password}
                 onChange={(event) => {
                   onSetPassword(event.target.value);

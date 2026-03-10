@@ -15,10 +15,20 @@ export default function useAuthFlow() {
   const [fieldErrors, setFieldErrors] = useState(EMPTY_ERRORS);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [loggedInEmail, setLoggedInEmail] = useState("");
-  const [loggedInFirstName, setLoggedInFirstName] = useState("");
-  const [loggedInLastName, setLoggedInLastName] = useState("");
+
+  // Persistence: initializing from localStorage
+  const [authenticated, setAuthenticated] = useState(() => {
+    return localStorage.getItem("authenticated") === "true";
+  });
+  const [loggedInEmail, setLoggedInEmail] = useState(() => {
+    return localStorage.getItem("loggedInEmail") || "";
+  });
+  const [loggedInFirstName, setLoggedInFirstName] = useState(() => {
+    return localStorage.getItem("loggedInFirstName") || "";
+  });
+  const [loggedInLastName, setLoggedInLastName] = useState(() => {
+    return localStorage.getItem("loggedInLastName") || "";
+  });
 
   const clearFieldError = (fieldName) => {
     setFieldErrors((prev) => ({ ...prev, [fieldName]: false }));
@@ -69,10 +79,20 @@ export default function useAuthFlow() {
 
       if (ok) {
         if (mode === "login") {
+          const fName = (data.firstName || "").trim();
+          const lName = (data.lastName || "").trim();
+
           setAuthenticated(true);
           setLoggedInEmail(email);
-          setLoggedInFirstName((data.firstName || "").trim());
-          setLoggedInLastName((data.lastName || "").trim());
+          setLoggedInFirstName(fName);
+          setLoggedInLastName(lName);
+
+          // Save to localStorage
+          localStorage.setItem("authenticated", "true");
+          localStorage.setItem("loggedInEmail", email);
+          localStorage.setItem("loggedInFirstName", fName);
+          localStorage.setItem("loggedInLastName", lName);
+
           setMensagem("");
           resetSensitiveFields();
           return;
@@ -109,6 +129,13 @@ export default function useAuthFlow() {
     setLoggedInFirstName("");
     setLoggedInLastName("");
     setMensagem("");
+
+    // Clear from localStorage
+    localStorage.removeItem("authenticated");
+    localStorage.removeItem("loggedInEmail");
+    localStorage.removeItem("loggedInFirstName");
+    localStorage.removeItem("loggedInLastName");
+    localStorage.removeItem("activeTab"); // Also clear active tab on logout
   };
 
   return {
