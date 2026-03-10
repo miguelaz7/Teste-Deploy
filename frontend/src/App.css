@@ -17,9 +17,56 @@
   justify-content: center;
   padding: 24px;
   overflow: hidden;
-  background: linear-gradient(120deg, var(--bg-left) 0%, var(--bg-left) 52%, var(--bg-right) 52%, var(--bg-right) 100%);
+  /* Soft fade transition between 35% and 65% instead of a harsh cut at 52% */
+  background: linear-gradient(120deg, var(--bg-left) 0%, var(--bg-left) 35%, var(--bg-right) 65%, var(--bg-right) 100%);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 80px;
+  width: 100%;
+  max-width: 1000px;
+  z-index: 10;
+  position: relative;
+  margin-bottom: 60px;
+  /* space for road */
+}
+
+.login-branding {
+  flex: 1;
+  text-align: left;
+}
+
+.brand-logo {
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--brand-green);
+  margin: 0 0 10px 0;
+  letter-spacing: -1.5px;
+}
+
+.brand-logo span {
+  color: var(--brand-blue);
+}
+
+.brand-slogan {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.brand-sub {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-top: 20px;
+}
+
 
 .dashboard-shell {
   min-height: 100vh;
@@ -101,40 +148,54 @@
 }
 
 .app-card {
-  width: min(460px, 100%);
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: 0 10px 28px rgba(20, 28, 36, 0.2);
-  padding: 28px;
+  width: min(420px, 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  padding: 40px 32px;
   text-align: center;
 }
 
-.eyebrow {
-  margin: 0;
+.card-title {
+  font-size: 1.3rem;
   font-weight: 700;
-  color: var(--brand-blue);
-  letter-spacing: 0.4px;
-}
-
-.app-card h1 {
-  margin: 10px 0 8px;
-  font-size: 2rem;
+  margin: 0 0 25px 0;
   color: var(--text-main);
 }
 
-.subtitle {
-  margin: 0 0 18px;
-  color: var(--text-soft);
+.text-ticketub {
+  color: var(--brand-green);
 }
 
 .email-input {
   width: 100%;
   border: 2px solid var(--input-border);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 12px 14px;
   font-size: 1rem;
   margin-bottom: 12px;
   box-sizing: border-box;
+  color: var(--text-main);
+}
+
+/* Inputs with icons */
+.input-wrapper.with-icon {
+  position: relative;
+}
+
+.input-wrapper.with-icon .input-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: #a0aab2;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.input-wrapper.with-icon .email-input {
+  padding-left: 42px;
 }
 
 .input-wrapper {
@@ -245,21 +306,122 @@
 }
 
 .auth-switch-text {
-  margin: 14px 0 0;
-  color: var(--text-soft);
+  margin: 0;
+  color: #555;
+  font-size: 0.85rem;
 }
 
 .auth-switch-link {
   border: none;
   background: transparent;
-  color: var(--brand-blue);
+  color: var(--text-main);
   font-weight: 700;
   cursor: pointer;
   padding: 0;
+  text-decoration: underline;
+  font-size: 0.85rem;
 }
 
 .auth-switch-link:hover {
+  text-decoration: none;
+}
+
+.auth-footer-links {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forgot-password {
+  color: #555;
+  font-size: 0.85rem;
   text-decoration: underline;
+}
+
+.forgot-password:hover {
+  text-decoration: none;
+}
+
+/* Road and Bus - Isometric */
+.background-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.diagonal-road-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+  /* behind app-card */
+  pointer-events: none;
+}
+
+.diagonal-road {
+  position: absolute;
+  top: 50%;
+  left: -20%;
+  width: 140%;
+  height: 160px;
+  /* Width of the road */
+  background-color: #cfd8dc;
+  border-top: 3px solid #b0b9c0;
+  border-bottom: 3px solid #b0b9c0;
+  transform: translateY(-50%) rotate(-26.565deg);
+}
+
+.diagonal-road-lines {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  transform: translateY(-50%);
+  background-image: linear-gradient(to right, #fff 50%, transparent 50%);
+  background-size: 100px 100%;
+}
+
+.bus-3d-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240px;
+  height: 160px;
+  /* Centering the SVG and raising it perfectly to sit on the road line */
+  margin-top: -125px;
+  margin-left: -120px;
+  animation: driveIsometric 10s linear infinite;
+  z-index: 2;
+}
+
+@keyframes driveIsometric {
+
+  /* Emulates slope parameter perfectly corresponding to exactly 1 full screen width of travel plus bus width */
+  0% {
+    transform: translate(calc(-50vw - 120px), calc(25vw + 60px));
+  }
+
+  100% {
+    transform: translate(calc(50vw + 120px), calc(-25vw - 60px));
+  }
+}
+
+@keyframes moveRoadDiagonal {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: -100px 0;
+  }
 }
 
 .message {
@@ -268,13 +430,29 @@
   font-weight: 600;
 }
 
+@media (max-width: 900px) {
+  .login-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+
+  .login-branding {
+    text-align: center;
+  }
+}
+
 @media (max-width: 520px) {
   .app-card {
     padding: 22px;
   }
 
-  .app-card h1 {
-    font-size: 1.7rem;
+  .brand-logo {
+    font-size: 3.5rem;
+  }
+
+  .brand-slogan {
+    font-size: 1.5rem;
   }
 
   .dashboard-shell {
