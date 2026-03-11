@@ -1,31 +1,4 @@
-import { getPasswordStrength } from "../utils/passwordStrength";
-
-function AuthForm({
-  mode,
-  loading,
-  mensagem,
-  fieldErrors,
-  firstName,
-  lastName,
-  email,
-  password,
-  confirmPassword,
-  showPassword,
-  showConfirmPassword,
-  onSubmit,
-  onSetFirstName,
-  onSetLastName,
-  onSetEmail,
-  onSetPassword,
-  onSetConfirmPassword,
-  onTogglePassword,
-  onToggleConfirmPassword,
-  onToggleMode,
-  clearFieldError,
-  markFieldError,
-}) {
-  const passwordStrength = getPasswordStrength(password);
-
+function AuthForm({ onLogin }) {
   return (
     <div className="app-shell">
       <BackgroundGrid />
@@ -38,263 +11,67 @@ function AuthForm({
           <p className="brand-sub">Informação à sua disposição!</p>
         </div>
 
-        {/* Right Side Form */}
-        <div className="app-card">
+        {/* Right Side Card with Entry Button */}
+        <div className="app-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
           <h2 className="card-title">
-            {mode === "login" ? (
-              <>Bem-Vindo de volta ao <span className="text-ticketub">TickeTUB</span>!</>
-            ) : (
-              <>Cria a tua conta no <span className="text-ticketub">TickeTUB</span>!</>
-            )}
+            Bem-Vindo ao <span className="text-ticketub">TickeTUB</span>!
           </h2>
 
-          <form onSubmit={onSubmit}>
-            {mode === "register" && (
-              <>
-                <div className="input-wrapper with-icon">
-                  <span className="input-icon"><UserIcon /></span>
-                  <input
-                    type="text"
-                    placeholder="Primeiro nome"
-                    value={firstName}
-                    onChange={(event) => {
-                      onSetFirstName(event.target.value);
-                      clearFieldError("firstName");
-                    }}
-                    className={`email-input ${fieldErrors.firstName ? "has-error" : ""}`}
-                    required
-                  />
-                  {fieldErrors.firstName && <span className="input-error-icon">!</span>}
-                </div>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+            Clique no botão abaixo para entrar na plataforma.
+          </p>
 
-                <div className="input-wrapper with-icon">
-                  <span className="input-icon"><UserIcon /></span>
-                  <input
-                    type="text"
-                    placeholder="Apelido"
-                    value={lastName}
-                    onChange={(event) => {
-                      onSetLastName(event.target.value);
-                      clearFieldError("lastName");
-                    }}
-                    className={`email-input ${fieldErrors.lastName ? "has-error" : ""}`}
-                    required
-                  />
-                  {fieldErrors.lastName && <span className="input-error-icon">!</span>}
-                </div>
-              </>
-            )}
+          <button
+            type="button"
+            className="submit-button"
+            onClick={onLogin}
+            style={{ width: '100%', maxWidth: '300px', fontSize: '1.2rem', padding: '1rem' }}
+          >
+            Entrar
+          </button>
 
-            <div className="input-wrapper with-icon">
-              <span className="input-icon"><UserIcon /></span>
-              <input
-                type="email"
-                placeholder={mode === "login" ? "you@example.pt" : "Insere o teu email"}
-                value={email}
-                onChange={(event) => {
-                  onSetEmail(event.target.value);
-                  clearFieldError("email");
-                }}
-                onInvalid={(event) => {
-                  event.target.setCustomValidity("Insira um email valido");
-                  markFieldError("email");
-                }}
-                onInput={(event) => {
-                  event.target.setCustomValidity("");
-                  clearFieldError("email");
-                }}
-                className={`email-input ${fieldErrors.email ? "has-error" : ""}`}
-                required
-              />
-              {fieldErrors.email && <span className="input-error-icon">!</span>}
-            </div>
+          <footer style={{ marginTop: '2rem', fontSize: '0.85rem', color: 'var(--text-muted)', opacity: 0.7 }}>
 
-            <div className="password-field input-wrapper with-icon">
-              <span className="input-icon"><LockIcon /></span>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder={mode === "login" ? "••••••••••" : "Insere a tua password"}
-                value={password}
-                onChange={(event) => {
-                  onSetPassword(event.target.value);
-                  clearFieldError("password");
-                }}
-                onInvalid={(event) => {
-                  event.target.setCustomValidity(
-                    mode === "register"
-                      ? "A password deve ter pelo menos 6 caracteres"
-                      : "Insere a tua password"
-                  );
-                  markFieldError("password");
-                }}
-                onInput={(event) => {
-                  event.target.setCustomValidity("");
-                  clearFieldError("password");
-                }}
-                className={`email-input password-input ${fieldErrors.password ? "has-error" : ""}`}
-                minLength={mode === "register" ? 6 : undefined}
-                required
-              />
-              {fieldErrors.password && <span className="input-error-icon password-error-icon">!</span>}
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={onTogglePassword}
-                aria-label={showPassword ? "Ocultar password" : "Mostrar password"}
-                title={showPassword ? "Ocultar password" : "Mostrar password"}
-              >
-                <EyeIcon open={showPassword} />
-              </button>
-            </div>
-
-            {mode === "register" && password.length > 0 && (
-              <div className="password-strength" aria-live="polite">
-                <div
-                  className="strength-track"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={passwordStrength.progress}
-                >
-                  <div
-                    className="strength-fill"
-                    style={{
-                      width: `${passwordStrength.progress}%`,
-                      backgroundColor: passwordStrength.color,
-                    }}
-                  />
-                </div>
-                <p className="strength-text" style={{ color: passwordStrength.color }}>
-                  Segurança da password: {passwordStrength.label}
-                </p>
-              </div>
-            )}
-
-            {mode === "register" && (
-              <div className="password-field input-wrapper with-icon">
-                <span className="input-icon"><LockIcon /></span>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirma a tua password"
-                  value={confirmPassword}
-                  onChange={(event) => {
-                    onSetConfirmPassword(event.target.value);
-                    clearFieldError("confirmPassword");
-                  }}
-                  onInvalid={(event) => {
-                    event.target.setCustomValidity("Confirma a tua password");
-                    markFieldError("confirmPassword");
-                  }}
-                  onInput={(event) => {
-                    event.target.setCustomValidity("");
-                    clearFieldError("confirmPassword");
-                  }}
-                  className={`email-input password-input ${fieldErrors.confirmPassword ? "has-error" : ""}`}
-                  minLength={6}
-                  required
-                />
-                {fieldErrors.confirmPassword && (
-                  <span className="input-error-icon password-error-icon">!</span>
-                )}
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={onToggleConfirmPassword}
-                  aria-label={showConfirmPassword ? "Ocultar password" : "Mostrar password"}
-                  title={showConfirmPassword ? "Ocultar password" : "Mostrar password"}
-                >
-                  <EyeIcon open={showConfirmPassword} />
-                </button>
-              </div>
-            )}
-
-            <button type="submit" className="submit-button" disabled={loading}>
-              {loading ? "A processar..." : mode === "register" ? "Registar" : "Login"}
-            </button>
-          </form>
-
-          {mode === "login" && (
-            <div className="auth-footer-links">
-              <a href="#" className="forgot-password">Esqueceu-se da palavra-passe</a>
-              <p className="auth-switch-text">
-                Não tem conta? <button type="button" className="auth-switch-link" onClick={onToggleMode}>Registe-se</button>
-              </p>
-            </div>
-          )}
-          {mode === "register" && (
-            <div className="auth-footer-links">
-              <p className="auth-switch-text">
-                Já tens conta? <button type="button" className="auth-switch-link" onClick={onToggleMode}>Faz login</button>
-              </p>
-            </div>
-          )}
-
-          {mensagem && <p className="message">{mensagem}</p>}
+          </footer>
         </div>
       </div>
     </div>
   );
 }
 
-function EyeIcon({ open }) {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" style={{ fill: "none", stroke: "currentColor" }}>
-      <path
-        d="M12 5C6.5 5 2 8.6 1 12c1 3.4 5.5 7 11 7s10-3.6 11-7c-1-3.4-5.5-7-11-7zm0 11.2a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4z"
-        fill="currentColor" stroke="none"
-      />
-      <circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none" />
-      {!open && <path d="M4 20L20 4" strokeWidth="2" strokeLinecap="round" />}
-    </svg>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-    </svg>
-  );
-}
-
 function BackgroundGrid() {
   return (
     <div className="background-grid">
-      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <svg width="100%" height="100%" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="grid-pattern" x="0" y="0" width="160" height="160" patternUnits="userSpaceOnUse">
-            {/* Ticket at top left */}
-            <g transform="translate(20, 25) scale(1.6)" fill="#d5dde4">
-              <path d="M 2 4 C 4 4 5 5.5 5 7.5 C 5 9.5 4 11 2 11 L 2 13 C 2 14.1 2.9 15 4 15 L 20 15 C 21.1 15 22 14.1 22 13 L 22 11 C 20 11 19 9.5 19 7.5 C 19 5.5 20 4 22 4 L 22 2 C 22 0.9 21.1 0 20 0 L 4 0 C 2.9 0 2 0.9 2 2 Z" />
-            </g>
-
-            {/* Bus at top right */}
-            <g transform="translate(100, 20) scale(1.6)" fill="#d5dde4">
-              <path d="M 4 15 C 4 16.65 5.35 18 7 18 C 8.65 18 10 16.65 10 15 L 14 15 C 14 16.65 15.35 18 17 18 C 18.65 18 20 16.65 20 15 L 21 15 C 22.1 15 23 14.1 23 13 L 23 8 C 23 4 20 2 16 2 L 7 2 C 3 2 1 4 1 8 L 1 13 C 1 14.1 1.9 15 3 15 Z" />
-            </g>
-
-            {/* Bus at bottom left */}
-            <g transform="translate(20, 100) scale(1.6)" fill="#d5dde4">
-              <path d="M 4 15 C 4 16.65 5.35 18 7 18 C 8.65 18 10 16.65 10 15 L 14 15 C 14 16.65 15.35 18 17 18 C 18.65 18 20 16.65 20 15 L 21 15 C 22.1 15 23 14.1 23 13 L 23 8 C 23 4 20 2 16 2 L 7 2 C 3 2 1 4 1 8 L 1 13 C 1 14.1 1.9 15 3 15 Z" />
-            </g>
-
-            {/* Ticket at bottom right */}
-            <g transform="translate(100, 105) scale(1.6)" fill="#d5dde4">
-              <path d="M 2 4 C 4 4 5 5.5 5 7.5 C 5 9.5 4 11 2 11 L 2 13 C 2 14.1 2.9 15 4 15 L 20 15 C 21.1 15 22 14.1 22 13 L 22 11 C 20 11 19 9.5 19 7.5 C 19 5.5 20 4 22 4 L 22 2 C 22 0.9 21.1 0 20 0 L 4 0 C 2.9 0 2 0.9 2 2 Z" />
-            </g>
+          <linearGradient id="grid-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--brand-blue)" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="var(--brand-green)" stopOpacity="0.05" />
+          </linearGradient>
+          <pattern id="tech-grid" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
+            <circle cx="0" cy="0" r="1.5" fill="currentColor" opacity="0.3" />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+        {/* Animated Grid Shell */}
+        <rect width="100%" height="100%" fill="url(#grid-grad)" />
+        <g className="animated-grid">
+          <rect width="100%" height="100%" fill="url(#tech-grid)" color="#8da4b3" />
+        </g>
+
+        {/* Floating Particles/Data Bits */}
+        <g className="data-particles">
+          <circle cx="100" cy="150" r="1.5" fill="var(--brand-green)" opacity="0.4">
+            <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="650" cy="100" r="2" fill="var(--brand-blue)" opacity="0.3">
+            <animate attributeName="opacity" values="0.1;0.5;0.1" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="400" cy="500" r="1.2" fill="var(--brand-green)" opacity="0.2">
+            <animate attributeName="opacity" values="0.2;0.8;0.2" dur="2.5s" repeatCount="indefinite" />
+          </circle>
+        </g>
       </svg>
     </div>
   );
@@ -304,9 +81,24 @@ function DiagonalRoad() {
   return (
     <div className="diagonal-road-wrapper">
       <div className="diagonal-road">
+        <div className="road-surface"></div>
+        {/* Neon Side Lines */}
+        <div className="road-border-top"></div>
+        <div className="road-border-bottom"></div>
         <div className="diagonal-road-lines"></div>
+        {/* Tech Decor / Lights on road */}
+        <div className="road-tech-decor">
+          <div className="tech-light tech-light-1"></div>
+          <div className="tech-light tech-light-2"></div>
+          <div className="tech-light tech-light-3"></div>
+        </div>
       </div>
-      <div className="bus-3d-animation">
+      {/* Forward Bus (Right lane) */}
+      <div className="bus-lane-right">
+        <IsometricBus />
+      </div>
+      {/* Reverse Bus (Left lane) */}
+      <div className="bus-lane-left">
         <IsometricBus />
       </div>
     </div>
@@ -316,69 +108,86 @@ function DiagonalRoad() {
 function IsometricBus() {
   return (
     <svg viewBox="0 0 240 160" width="240" height="160" xmlns="http://www.w3.org/2000/svg">
-      {/* Bus Shadow */}
-      <ellipse cx="120" cy="85" rx="55" ry="25" fill="rgba(0,0,0,0.15)" transform="rotate(-26.565, 120, 85)" />
+      <defs>
+        {/* Gradients for more volume */}
+        <linearGradient id="side-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#25769e" />
+          <stop offset="100%" stopColor="#154d68" />
+        </linearGradient>
+        <linearGradient id="roof-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3d97c6" />
+          <stop offset="100%" stopColor="#2a82af" />
+        </linearGradient>
+        <linearGradient id="glass-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#eef2f3" />
+          <stop offset="100%" stopColor="#8da4b3" opacity="0.8" />
+        </linearGradient>
+        <linearGradient id="stripe-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#82cc63" />
+          <stop offset="100%" stopColor="#4f8a37" />
+        </linearGradient>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
 
-      <g transform="translate(0, 0)">
-        {/* Left Wheels (Background / Underneath) */}
-        {/* Rear Left */}
-        <ellipse cx="72" cy="91" rx="14" ry="18" fill="#111" />
-        {/* Front Left */}
-        <ellipse cx="132" cy="61" rx="14" ry="18" fill="#111" />
+      {/* Shadow remains similar but adjusted */}
+      <ellipse cx="120" cy="88" rx="65" ry="28" fill="rgba(0,0,0,0.12)" transform="rotate(-26.565, 120, 88)" />
 
-        {/* Right Face (Side Panel) */}
-        <polygon points="90,120  190,70  190,30  90,80" fill="#1d6588" />
+      <g>
+        {/* Rear Wheels (Depth) */}
+        <ellipse cx="72" cy="91" rx="14" ry="18" fill="#0c0c0c" />
+        <ellipse cx="132" cy="61" rx="14" ry="18" fill="#0c0c0c" />
 
-        {/* Rear Face (Back Panel) */}
-        <polygon points="50,100  90,120  90,80  50,60" fill="#154d68" />
+        {/* --- MAIN BODY --- */}
+        {/* Interior/Back Wall (Visible through windows) */}
+        <polygon points="95,85  185,40  185,45  95,90" fill="#0b2c3d" />
 
-        {/* Top Face (Roof) */}
-        <polygon points="90,80  190,30  150,10  50,60" fill="#2a82af" />
+        {/* Right Side Panel */}
+        <polygon points="90,120  195,67.5  195,27.5  90,80" fill="url(#side-grad)" />
 
-        {/* Green TicketTUB Stripe (Right Side) */}
-        <polygon points="90,110  190,60  190,55  90,105" fill="#6bb14f" />
+        {/* Rear Panel */}
+        <polygon points="45,97.5  90,120  90,80  45,57.5" fill="#133e54" />
 
-        {/* Green TicketTUB Stripe (Rear Side) */}
-        <polygon points="50,90  90,110  90,105  50,85" fill="#4f8a37" />
+        {/* Roof Panel */}
+        <polygon points="90,80  195,27.5  150,5  45,57.5" fill="url(#roof-grad)" />
 
-        {/* Windows Right Side */}
-        <polygon points="100,95  115,87.5  115,72.5  100,80" fill="#e8ebee" />
-        <polygon points="120,85  135,77.5  135,62.5  120,70" fill="#e8ebee" />
-        <polygon points="140,75  155,67.5  155,52.5  140,60" fill="#e8ebee" />
-        <polygon points="160,65  180,55  180,40  160,50" fill="#e8ebee" />
+        {/* Brand Stripe TicketTUB (Green) */}
+        <polygon points="90,108  195,55.5  195,50  90,102.5" fill="url(#stripe-grad)" />
+        <polygon points="45,86  90,108  90,102.5  45,80.5" fill="#3d6c29" />
+
+
+        {/* --- WINDOWS --- */}
+        {/* Right Side Windows with Reflexes */}
+        <polygon points="100,95  118,86  118,71  100,80" fill="url(#glass-grad)" />
+        <polygon points="123,83.5  141,74.5  141,59.5  123,68.5" fill="url(#glass-grad)" />
+        <polygon points="146,72  164,63  164,48  146,57" fill="url(#glass-grad)" />
+        <polygon points="169,60.5  190,50  190,35  169,45.5" fill="url(#glass-grad)" />
 
         {/* Rear Window */}
-        <polygon points="55,82.5  85,97.5  85,82.5  55,67.5" fill="#c8d4db" />
+        <polygon points="52,80  84,96  84,81  52,65" fill="#c8d4db" />
 
-        {/* Rear Tail Lights */}
-        <polygon points="54,92  58,94  58,89  54,87" fill="#e63946" />
-        <polygon points="82,106  86,108  86,103  82,101" fill="#e63946" />
+        {/* --- LIGHTS & DETAILS --- */}
+        {/* Tail Lights */}
+        <polygon points="48,90  53,92.5  53,86  48,83.5" fill="#ff4d4d" filter="url(#glow)" />
+        <polygon points="82,107  87,109.5  87,103  82,100.5" fill="#ff4d4d" filter="url(#glow)" />
 
-        {/* ======================================= */}
-        {/* RIGHT WHEELS (Foreground)               */}
-        {/* ======================================= */}
+        {/* FRONT WHEELS (Detailed Jantes) */}
         {/* Rear Right Wheel */}
-        <g>
-          {/* Wheel depth (Backwards offset by dx=-4, dy=-2) */}
-          <ellipse cx="108" cy="109" rx="11" ry="18" fill="#111" />
-          {/* Connecting tread */}
-          <polygon points="108,91 112,93 112,129 108,127" fill="#1a1a1a" />
-          {/* Front face */}
-          <ellipse cx="112" cy="111" rx="11" ry="18" fill="#222" />
-          <ellipse cx="112" cy="111" rx="5" ry="10" fill="#777" />
-          <ellipse cx="112" cy="111" rx="2.5" ry="5" fill="#111" />
+        <g transform="translate(108, 109)">
+          <ellipse cx="0" cy="0" rx="12" ry="19" fill="#0a0a0a" />
+          <ellipse cx="4" cy="2" rx="12" ry="19" fill="#1a1a1a" />
+          <ellipse cx="4" cy="2" rx="6" ry="10" fill="#444" />
+          <circle cx="4" cy="2" r="2" fill="#0c0c0c" />
         </g>
 
         {/* Front Right Wheel */}
-        <g>
-          {/* Wheel depth (Backwards offset by dx=-4, dy=-2) */}
-          <ellipse cx="168" cy="79" rx="11" ry="18" fill="#111" />
-          {/* Connecting tread */}
-          <polygon points="168,61 172,63 172,99 168,97" fill="#1a1a1a" />
-          {/* Front face */}
-          <ellipse cx="172" cy="81" rx="11" ry="18" fill="#222" />
-          <ellipse cx="172" cy="81" rx="5" ry="10" fill="#777" />
-          <ellipse cx="172" cy="81" rx="2.5" ry="5" fill="#111" />
+        <g transform="translate(170, 78)">
+          <ellipse cx="0" cy="0" rx="12" ry="19" fill="#0a0a0a" />
+          <ellipse cx="4" cy="2" rx="12" ry="19" fill="#1a1a1a" />
+          <ellipse cx="4" cy="2" rx="6" ry="10" fill="#444" />
+          <circle cx="4" cy="2" r="2" fill="#0c0c0c" />
         </g>
       </g>
     </svg>

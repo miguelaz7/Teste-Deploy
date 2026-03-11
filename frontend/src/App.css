@@ -1,12 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 :root {
   --bg-left: #e8ebee;
   --bg-right: #c7d6e2;
-  --card: #f6f8fa;
+  --card: rgba(255, 255, 255, 0.75);
   --text-main: #0f1720;
   --text-soft: #41505d;
   --brand-green: #6bb14f;
   --brand-blue: #1d6588;
   --input-border: #8ebfd0;
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  font-family: 'Outfit', sans-serif !important;
 }
 
 .app-shell {
@@ -18,9 +26,7 @@
   justify-content: center;
   padding: 24px;
   overflow: hidden;
-  /* Soft fade transition between 35% and 65% instead of a harsh cut at 52% */
   background: linear-gradient(120deg, var(--bg-left) 0%, var(--bg-left) 35%, var(--bg-right) 65%, var(--bg-right) 100%);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .login-container {
@@ -36,6 +42,7 @@
   /* space for road */
 }
 
+
 .login-branding {
   flex: 1;
   text-align: left;
@@ -45,11 +52,12 @@
   font-size: 5rem;
   font-weight: 900;
   margin: 0 0 10px 0;
-  letter-spacing: -1.5px;
+  letter-spacing: -2px;
   background: linear-gradient(90deg, var(--brand-green), var(--brand-blue));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
 }
 
 .brand-slogan {
@@ -76,7 +84,6 @@
     radial-gradient(circle at 20% 20%, rgba(107, 177, 79, 0.15), transparent 45%),
     radial-gradient(circle at 80% 5%, rgba(29, 101, 136, 0.15), transparent 45%),
     linear-gradient(145deg, #f0f4f8 0%, #e1e9f0 100%);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
 }
 
@@ -129,10 +136,11 @@
   font-size: 1rem;
   /* Smaller to fit the width of the sidebar */
   width: 100%;
+  color: var(--brand-green);
 }
 
 .sidebar-brand span {
-  color: var(--brand-green);
+  color: var(--brand-blue);
   font-size: 0.9rem;
 }
 
@@ -441,11 +449,19 @@
 
 .app-card {
   width: min(420px, 100%);
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   padding: 40px 32px;
   text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.app-card:hover {
+  transform: translateY(-5px);
 }
 
 .card-title {
@@ -465,11 +481,21 @@
 .email-input {
   width: 100%;
   border: 2px solid var(--input-border);
-  border-radius: 6px;
-  padding: 12px 14px;
-  font-size: 1rem;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 0.95rem;
   box-sizing: border-box;
   color: var(--text-main);
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.email-input:focus {
+  outline: none;
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 4px rgba(29, 101, 136, 0.1);
+  background: #ffffff;
 }
 
 /* Inputs with icons */
@@ -577,13 +603,25 @@
 .submit-button {
   width: 100%;
   border: none;
-  border-radius: 24px;
-  padding: 12px 16px;
+  border-radius: 14px;
+  padding: 14px 16px;
   font-size: 1.05rem;
   font-weight: 700;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(90deg, var(--brand-green), var(--brand-blue));
+  background: linear-gradient(135deg, var(--brand-green), var(--brand-blue));
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(29, 101, 136, 0.2);
+}
+
+.submit-button:hover {
+  transform: scale(1.02) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(29, 101, 136, 0.3);
+  filter: brightness(1.1);
+}
+
+.submit-button:active {
+  transform: scale(0.98);
 }
 
 .submit-button:hover {
@@ -633,7 +671,7 @@
   text-decoration: none;
 }
 
-/* Road and Bus - Isometric */
+/* Road and Environmental Effects - Isometric Futurism */
 .background-grid {
   position: absolute;
   top: 0;
@@ -641,6 +679,26 @@
   width: 100%;
   height: 100%;
   z-index: 0;
+  overflow: hidden;
+}
+
+.animated-grid {
+  transform: skewY(-26.565deg) scale(1.2) translateY(-10%);
+  animation: pulseGrid 8s ease-in-out infinite;
+}
+
+@keyframes pulseGrid {
+
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: skewY(-26.565deg) scale(1) translateY(-10%);
+  }
+
+  50% {
+    opacity: 1;
+    transform: skewY(-26.565deg) scale(1.05) translateY(-8%);
+  }
 }
 
 .diagonal-road-wrapper {
@@ -651,8 +709,15 @@
   height: 100%;
   overflow: hidden;
   z-index: 1;
-  /* behind app-card */
   pointer-events: none;
+}
+
+/* Atmospheric Vignette */
+.diagonal-road-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 30%, rgba(200, 215, 230, 0.4) 100%);
 }
 
 .diagonal-road {
@@ -660,47 +725,169 @@
   top: 50%;
   left: -20%;
   width: 140%;
-  height: 160px;
-  /* Width of the road */
-  background-color: #cfd8dc;
-  border-top: 3px solid #b0b9c0;
-  border-bottom: 3px solid #b0b9c0;
+  height: 180px;
+  background: linear-gradient(180deg, #b0bec5 0%, #cfd8dc 50%, #90a4ae 100%);
   transform: translateY(-50%) rotate(-26.565deg);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.15);
+}
+
+/* Neon Borders */
+.road-border-top,
+.road-border-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--brand-blue), var(--brand-green), transparent);
+  box-shadow: 0 0 15px var(--brand-blue);
+  opacity: 0.6;
+}
+
+.road-border-top {
+  top: 0;
+}
+
+.road-border-bottom {
+  bottom: 0;
 }
 
 .diagonal-road-lines {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 100%;
-  height: 6px;
+  width: 200%;
+  height: 4px;
   transform: translateY(-50%);
-  background-image: linear-gradient(to right, #fff 50%, transparent 50%);
-  background-size: 100px 100%;
+  background-image: linear-gradient(to right, #ffffff 40%, transparent 40%);
+  background-size: 120px 100%;
+  animation: driveLines 1.5s linear infinite;
+  opacity: 0.8;
 }
 
-.bus-3d-animation {
+@keyframes driveLines {
+  from {
+    transform: translateY(-50%) translateX(0);
+  }
+
+  to {
+    transform: translateY(-50%) translateX(-120px);
+  }
+}
+
+/* Tech Elements on Road */
+.road-tech-decor {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.tech-light {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: var(--brand-green);
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.1;
+  animation: techFlash 4s infinite;
+}
+
+.tech-light-1 {
+  top: 20%;
+  left: 10%;
+}
+
+.tech-light-2 {
+  top: 60%;
+  left: 50%;
+  animation-delay: 1.5s;
+}
+
+.tech-light-3 {
+  top: 30%;
+  left: 85%;
+  animation-delay: 3s;
+}
+
+@keyframes techFlash {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.05;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+}
+
+.bus-lane-right,
+.bus-lane-left {
   position: absolute;
   top: 50%;
   left: 50%;
   width: 240px;
   height: 160px;
-  /* Centering the SVG and raising it perfectly to sit on the road line */
-  margin-top: -125px;
   margin-left: -120px;
-  animation: driveIsometric 10s linear infinite;
-  z-index: 2;
+  pointer-events: none;
 }
 
-@keyframes driveIsometric {
+.bus-lane-right {
+  z-index: 3;
+  /* Closer to viewer */
+  margin-top: -55px;
+  animation: driveForward 12s linear infinite;
+  /* Start transform to prevent jump on refresh */
+  transform: translate(calc(-50vw - 120px), calc(25vw + 60px));
+}
 
-  /* Emulates slope parameter perfectly corresponding to exactly 1 full screen width of travel plus bus width */
+.bus-lane-left {
+  z-index: 2;
+  /* Further from viewer */
+  margin-top: -135px;
+  animation: driveReverse 12s linear infinite;
+  animation-delay: -6s;
+  /* Initial state at center due to -6s delay offset */
+  transform: translate(0, 0);
+}
+
+.bus-lane-right svg,
+.bus-lane-left svg {
+  animation: floatBus 2s ease-in-out infinite;
+}
+
+@keyframes floatBus {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(0, -3px);
+  }
+}
+
+@keyframes driveForward {
   0% {
     transform: translate(calc(-50vw - 120px), calc(25vw + 60px));
   }
 
   100% {
     transform: translate(calc(50vw + 120px), calc(-25vw - 60px));
+  }
+}
+
+@keyframes driveReverse {
+
+  0% {
+    transform: translate(calc(50vw + 120px), calc(-25vw - 60px));
+  }
+
+  100% {
+    transform: translate(calc(-50vw - 120px), calc(25vw + 60px));
   }
 }
 
