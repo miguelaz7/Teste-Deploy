@@ -2,18 +2,7 @@ import { useState, useEffect } from "react";
 import { getGreeting } from "../utils/greeting";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
-const imgMateus = "/equipa/mateus.png";
-const imgDiogo = "/equipa/diogo.png";
-const imgJoao = "/equipa/joao.png";
-const imgMiguel = "/equipa/miguel.png";
-const imgAndreia = "/equipa/andreia.png";
-const imgPedro = "/equipa/pedro.png";
-const imgInes = "/equipa/ines.png";
-const imgJDiogo = "/equipa/jdiogo.png";
-const imgMariana = "/equipa/Mariana.png";
-const imgRola = "/equipa/rola.png";
-const imgMargarida = "/equipa/margarida.png";
-const imgJoaoC = "/equipa/joaoc.png";
+
 
 function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogout }) {
   const [activeTab, setActiveTab] = useState(() => {
@@ -30,20 +19,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
   // Avatar initial
   const initial = loggedInFirstName ? loggedInFirstName.charAt(0).toUpperCase() : "U";
 
-  const teamData = [
-    { name: "João Carmo", role: "Developer", img: imgJoao },
-    { name: "Miguel Ângelo", role: "Developer", img: imgMiguel },
-    { name: "Diogo Vieira", role: "Developer", img: imgDiogo },
-    { name: "Mateus Pereira", role: "Developer", img: imgMateus },
-    { name: "Andreia Lameira", role: "Analyst", img: imgAndreia },
-    { name: "Pedro Cardoso", role: "Analyst", img: imgPedro },
-    { name: "Inês Martins", role: "Analyst", img: imgInes },
-    { name: "Margarida Rodrigues", role: "Analyst", img: imgMargarida },
-    { name: "Mariana Esteves", role: "Project Manager", img: imgMariana },
-    { name: "João Pinto", role: "Architect", img: imgRola },
-    { name: "João Santos", role: "Tester", img: imgJDiogo },
-    { name: "João Carvalho", role: "Tester", img: imgJoaoC },
-  ];
+
 
   return (
     <div className="dashboard-layout">
@@ -81,13 +57,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             <span className="nav-icon"><BellIcon /></span>
             <span className="nav-text">Notificações</span>
           </button>
-          <button
-            className={`nav-link ${activeTab === 'equipa' ? 'active' : ''}`}
-            onClick={() => setActiveTab('equipa')}
-          >
-            <span className="nav-icon"><GroupIcon /></span>
-            <span className="nav-text" style={{ lineHeight: '1.2' }}>Equipa de<br />Desenvolvimento</span>
-          </button>
+
         </nav>
 
         <div className="sidebar-footer">
@@ -124,24 +94,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             </div>
           )}
 
-          {activeTab === 'equipa' && (
-            <div className="team-section">
-              <h2>A Nossa Equipa de Desenvolvimento</h2>
-              <p className="team-subtitle">Conheça os criadores do TickeTUB.</p>
 
-              <div className="team-grid">
-                {teamData.map((member, idx) => (
-                  <div className="team-card" key={idx}>
-                    <div className="team-photo-wrapper">
-                      <img src={member.img} alt={`Foto de ${member.name}`} className="team-photo" onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150"; }} />
-                    </div>
-                    <h3>{member.name}</h3>
-                    <p>{member.role}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeTab === 'bilhetes' && (
             <div className="welcome-card">
@@ -190,16 +143,7 @@ function BellIcon() {
   );
 }
 
-function GroupIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="9" cy="7" r="4"></circle>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-    </svg>
-  );
-}
+
 
 function LogoutIcon() {
   return (
