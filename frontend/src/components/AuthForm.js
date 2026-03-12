@@ -1,6 +1,9 @@
 import { getPasswordStrength } from "../utils/passwordStrength";
 
 function AuthForm({
+  auth0Enabled,
+  onLogin,
+  onSignup,
   mode,
   loading,
   mensagem,
@@ -24,6 +27,43 @@ function AuthForm({
   clearFieldError,
   markFieldError,
 }) {
+  if (auth0Enabled) {
+    return (
+      <div className="app-shell">
+        <BackgroundGrid />
+        <DiagonalRoad />
+        <div className="login-container">
+          <div className="login-branding">
+            <h1 className="brand-logo">Ticke<span>TUB</span></h1>
+            <h2 className="brand-slogan">O seu software de <br /> Gestão de Bilhética</h2>
+            <p className="brand-sub">Informação à sua disposição!</p>
+          </div>
+
+          <div className="app-card">
+            <h2 className="card-title">
+              Bem-vindo ao <span className="text-ticketub">TickeTUB</span>
+            </h2>
+            <p className="message" style={{ marginBottom: "1rem" }}>
+              Inicie sessão ou crie conta com o Auth0 para aceder ao painel.
+            </p>
+            <button type="button" className="submit-button" onClick={onLogin}>
+              Entrar
+            </button>
+            <button
+              type="button"
+              className="submit-button"
+              onClick={onSignup}
+              style={{ marginTop: "0.75rem", background: "#1f2937" }}
+            >
+              Criar conta
+            </button>
+            {mensagem && <p className="message">{mensagem}</p>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const passwordStrength = getPasswordStrength(password);
 
   return (

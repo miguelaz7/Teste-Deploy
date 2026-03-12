@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getGreeting } from "../utils/greeting";
+import BilhetesPanel from "./BilhetesPanel";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 const imgMateus = "/equipa/mateus.png";
@@ -20,7 +21,30 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
     return localStorage.getItem("activeTab") || "geral";
   });
 
-  const fullName = `${loggedInFirstName} ${loggedInLastName}`.trim();
+  const [profileFirstName, setProfileFirstName] = useState(() => {
+    return localStorage.getItem("profileFirstName") || loggedInFirstName || "";
+  });
+  const [profileLastName, setProfileLastName] = useState(() => {
+    return localStorage.getItem("profileLastName") || loggedInLastName || "";
+  });
+  const [profileEmail, setProfileEmail] = useState(() => {
+    return localStorage.getItem("profileEmail") || loggedInEmail || "";
+  });
+  const [profileMessage, setProfileMessage] = useState("");
+
+  useEffect(() => {
+    if (!localStorage.getItem("profileFirstName") && loggedInFirstName) {
+      setProfileFirstName(loggedInFirstName);
+    }
+    if (!localStorage.getItem("profileLastName") && loggedInLastName) {
+      setProfileLastName(loggedInLastName);
+    }
+    if (!localStorage.getItem("profileEmail") && loggedInEmail) {
+      setProfileEmail(loggedInEmail);
+    }
+  }, [loggedInEmail, loggedInFirstName, loggedInLastName]);
+
+  const fullName = `${profileFirstName} ${profileLastName}`.trim();
 
   // Save activeTab to localStorage on change
   useEffect(() => {
@@ -28,7 +52,28 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
   }, [activeTab]);
 
   // Avatar initial
-  const initial = loggedInFirstName ? loggedInFirstName.charAt(0).toUpperCase() : "U";
+  const initial = profileFirstName ? profileFirstName.charAt(0).toUpperCase() : "U";
+
+  const handleSaveProfile = (event) => {
+    event.preventDefault();
+
+    const trimmedFirst = profileFirstName.trim();
+    const trimmedLast = profileLastName.trim();
+    const trimmedEmail = profileEmail.trim();
+
+    if (!trimmedFirst || !trimmedLast || !trimmedEmail) {
+      setProfileMessage("Preenche nome, apelido e email para guardar.");
+      return;
+    }
+
+    localStorage.setItem("profileFirstName", trimmedFirst);
+    localStorage.setItem("profileLastName", trimmedLast);
+    localStorage.setItem("profileEmail", trimmedEmail);
+    setProfileFirstName(trimmedFirst);
+    setProfileLastName(trimmedLast);
+    setProfileEmail(trimmedEmail);
+    setProfileMessage("Informacoes pessoais atualizadas com sucesso.");
+  };
 
   const teamData = [
     { name: "João Carmo", role: "Developer", img: imgJoao },
@@ -91,12 +136,21 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-profile">
+          <button
+            type="button"
+            className={`user-profile user-profile-button ${activeTab === 'perfil' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('perfil');
+              setProfileMessage("");
+            }}
+            title="Ver e editar perfil"
+          >
             <div className="avatar">{initial}</div>
             <div className="user-info">
               <span className="user-name">{fullName}</span>
+              <span className="user-role">Editar perfil</span>
             </div>
-          </div>
+          </button>
           <button type="button" className="logout-button sidebar-logout" onClick={onLogout} title="Terminar sessão">
             <span className="nav-icon"><LogoutIcon /></span>
             <span className="nav-text">Sair</span>
@@ -144,10 +198,50 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
           )}
 
           {activeTab === 'bilhetes' && (
-            <div className="welcome-card">
-              <h2>Módulo de Bilhetes</h2>
-              <p>Funcionalidade em desenvolvimento.</p>
-            </div>
+            <BilhetesPanel />
+          )}
+
+          {activeTab === 'perfil' && (
+            <section className="profile-panel">
+              <h2>Informacoes Pessoais</h2>
+              <p>Atualiza os teus dados de utilizador.</p>
+
+              <form className="profile-form" onSubmit={handleSaveProfile}>
+                <label>
+                  Nome
+                  <input
+                    type="text"
+                    value={profileFirstName}
+                    onChange={(event) => setProfileFirstName(event.target.value)}
+                    placeholder="O teu nome"
+                  />
+                </label>
+
+                <label>
+                  Apelido
+                  <input
+                    type="text"
+                    value={profileLastName}
+                    onChange={(event) => setProfileLastName(event.target.value)}
+                    placeholder="O teu apelido"
+                  />
+                </label>
+
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={profileEmail}
+                    onChange={(event) => setProfileEmail(event.target.value)}
+                    placeholder="teu@email.com"
+                  />
+                </label>
+
+                <button type="submit" className="profile-save-button">Guardar alteracoes</button>
+              </form>
+
+              {profileMessage && <p className="profile-message">{profileMessage}</p>}
+            </section>
           )}
 
           {activeTab === 'notificacoes' && (

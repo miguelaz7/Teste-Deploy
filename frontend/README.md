@@ -1,8 +1,22 @@
-# Getting Started with Create React App
+# TickeTUB Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Configurar Auth0
 
-## Available Scripts
+1. Cria um ficheiro `.env` na pasta `frontend`.
+2. Adiciona as credenciais da tua aplicação Auth0:
+
+```env
+REACT_APP_AUTH0_DOMAIN=teu-tenant.eu.auth0.com
+REACT_APP_AUTH0_CLIENT_ID=teu_client_id
+REACT_APP_AUTH0_AUDIENCE=teu_api_identifier_opcional
+```
+
+3. No painel Auth0, confirma estes URLs na Application:
+- Allowed Callback URLs: `http://localhost:3000`
+- Allowed Logout URLs: `http://localhost:3000`
+- Allowed Web Origins: `http://localhost:3000`
+
+## Scripts
 
 In the project directory, you can run:
 
