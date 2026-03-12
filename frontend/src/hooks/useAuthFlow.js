@@ -1,51 +1,28 @@
-import { useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 export default function useAuthFlow() {
-  const [authenticated, setAuthenticated] = useState(() => {
-    return localStorage.getItem("authenticated") === "true";
-  });
-  const [loggedInEmail, setLoggedInEmail] = useState(() => {
-    return localStorage.getItem("loggedInEmail") || "visitante@ticketub.pt";
-  });
-  const [loggedInFirstName, setLoggedInFirstName] = useState(() => {
-    return localStorage.getItem("loggedInFirstName") || "Visitante";
-  });
-  const [loggedInLastName, setLoggedInLastName] = useState(() => {
-    return localStorage.getItem("loggedInLastName") || "";
-  });
+  const { isLoading, isAuthenticated, user, loginWithRedirect, logout } = useAuth0();
 
-  const handleLogin = () => {
-    const defaultEmail = "visitante@ticketub.pt";
-    const defaultFirstName = "Visitante";
-    const defaultLastName = "";
-
-    setAuthenticated(true);
-    setLoggedInEmail(defaultEmail);
-    setLoggedInFirstName(defaultFirstName);
-    setLoggedInLastName(defaultLastName);
-
-    localStorage.setItem("authenticated", "true");
-    localStorage.setItem("loggedInEmail", defaultEmail);
-    localStorage.setItem("loggedInFirstName", defaultFirstName);
-    localStorage.setItem("loggedInLastName", defaultLastName);
-  };
+  const handleLogin = () => loginWithRedirect();
 
   const handleLogout = () => {
-    setAuthenticated(false);
-    setLoggedInEmail("");
-    setLoggedInFirstName("");
-    setLoggedInLastName("");
-
-    localStorage.removeItem("authenticated");
-    localStorage.removeItem("loggedInEmail");
-    localStorage.removeItem("loggedInFirstName");
-    localStorage.removeItem("loggedInLastName");
     localStorage.removeItem("activeTab");
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
   };
 
+  const fullName = user?.name || "";
+  const nameParts = fullName.trim().split(" ").filter(Boolean);
+  const loggedInFirstName = user?.given_name || nameParts[0] || "Utilizador";
+  const loggedInLastName = user?.family_name || nameParts.slice(1).join(" ") || "";
+
   return {
-    authenticated,
-    loggedInEmail,
+    authenticated: isAuthenticated,
+    authLoading: isLoading,
+    loggedInEmail: user?.email || "sem-email@ticketub.local",
     loggedInFirstName,
     loggedInLastName,
     handleLogout,

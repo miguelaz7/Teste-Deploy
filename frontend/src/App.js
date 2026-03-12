@@ -4,7 +4,11 @@ import Dashboard from "./components/Dashboard";
 import useAuthFlow from "./hooks/useAuthFlow";
 
 function App() {
-  const { authenticated, loggedInEmail, loggedInFirstName, loggedInLastName, handleLogout, authFormProps } = useAuthFlow();
+  const { authenticated, authLoading, loggedInEmail, loggedInFirstName, loggedInLastName, handleLogout, authFormProps } = useAuthFlow();
+
+  if (authLoading) {
+    return <div className="app-shell" style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>A carregar autenticacao...</div>;
+  }
 
   if (authenticated) {
     return (
