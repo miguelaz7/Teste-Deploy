@@ -17,21 +17,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable());
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable());
 
         if (AUTH_ENABLED) {
             http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> {})
-            );
+                    .requestMatchers("/public/**").permitAll()
+                    .anyRequest().authenticated())
+                    .oauth2ResourceServer(oauth2 -> oauth2
+                            .jwt(jwt -> {
+                            }));
         } else {
             http.authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
+                    .anyRequest().permitAll());
         }
 
         return http.build();
