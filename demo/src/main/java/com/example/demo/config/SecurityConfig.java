@@ -12,7 +12,7 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private static final boolean AUTH_ENABLED = false; // true = Auth0 ativo, false = tudo aberto
+    private static final boolean AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

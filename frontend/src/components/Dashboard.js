@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getGreeting } from "../utils/greeting";
+import Mapa from "./Mapa";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 
@@ -55,7 +56,14 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             onClick={() => setActiveTab('notificacoes')}
           >
             <span className="nav-icon"><BellIcon /></span>
-            <span className="nav-text">Notificações</span>
+            <span className="nav-text">Tickets</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'mapa' ? 'active' : ''}`}
+            onClick={() => setActiveTab('mapa')}
+          >
+            <span className="nav-icon"><MapIcon /></span>
+            <span className="nav-text">Mapa</span>
           </button>
 
         </nav>
@@ -109,6 +117,10 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
               <p>Não há novas notificações.</p>
             </div>
           )}
+
+          {activeTab === 'mapa' && (
+            <Mapa />
+          )}
         </div>
       </main>
     </div>
@@ -139,6 +151,16 @@ function BellIcon() {
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
       <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+  );
+}
+
+function MapIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+      <line x1="8" y1="2" x2="8" y2="18"></line>
+      <line x1="16" y1="6" x2="16" y2="22"></line>
     </svg>
   );
 }

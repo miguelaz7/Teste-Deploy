@@ -1,0 +1,85 @@
+.map-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.map-header {
+  margin-bottom: 20px;
+}
+
+.map-header h2 {
+  color: var(--text-main);
+  font-size: 1.8rem;
+  margin: 0 0 5px 0;
+  letter-spacing: -0.5px;
+}
+
+.map-header p {
+  color: var(--text-soft);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.map-container-inner {
+  flex: 1;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #d2dbe2;
+  box-shadow: 0 8px 24px rgba(12, 23, 33, 0.08);
+  position: relative;
+  z-index: 1; /* Ensure map stays below sidebar if needed, but above background */
+  min-height: 400px;
+}
+
+/* Custom Leaflet Styling to match TickeTUB */
+.leaflet-container {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-bar a {
+  background-color: white !important;
+  color: var(--brand-blue) !important;
+  border-bottom: 1px solid #f0f4f8 !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f8fafc !important;
+  color: var(--brand-green) !important;
+}
+
+.leaflet-control-zoom-in {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+}
+
+.leaflet-control-zoom-out {
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+  border-bottom: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 5px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
