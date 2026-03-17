@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-const AUTH_ENABLED = false; // true = Auth0 ativo, false = tudo aberto
+const AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
 
 function useMockAuth() {
   const [authenticated, setAuthenticated] = useState(true);
