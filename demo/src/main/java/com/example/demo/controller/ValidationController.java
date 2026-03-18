@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.repository.ValidationRepository;
+import com.example.demo.service.CsvImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,13 +16,30 @@ public class ValidationController {
     @Autowired
     ValidationRepository repository;
 
+    @Autowired
+    CsvImportService csvImportService;
+
+    private void ensureDataLoaded() {
+        if (repository.count() > 0) {
+            return;
+        }
+
+        try {
+            csvImportService.syncCsvToDatabase();
+        } catch (Exception e) {
+            throw new IllegalStateException("Falha ao sincronizar dados do CSV.", e);
+        }
+    }
+
     @GetMapping("/count-by-type")
     public List<Object[]> countByType() {
+        ensureDataLoaded();
         return repository.countByTicketType();
     }
 
     @GetMapping("/insights")
     public Map<String, Object> getInsights() {
+        ensureDataLoaded();
         List<Object[]> peakRows = repository.findPeakAfluencia();
         Object[] peak = (peakRows == null || peakRows.isEmpty()) ? null : peakRows.get(0);
 
