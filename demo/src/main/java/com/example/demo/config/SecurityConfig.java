@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +23,7 @@ public class SecurityConfig {
         if (AUTH_ENABLED) {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/public/**").permitAll()
+                    .requestMatchers("/api/validations/**").permitAll()
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2
                             .jwt(jwt -> {

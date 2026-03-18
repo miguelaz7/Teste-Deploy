@@ -55,7 +55,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             className={`nav-link ${activeTab === 'notificacoes' ? 'active' : ''}`}
             onClick={() => setActiveTab('notificacoes')}
           >
-            <span className="nav-icon"><BellIcon /></span>
+            <span className="nav-icon"><MailIcon /></span>
             <span className="nav-text">Tickets</span>
           </button>
           <button
@@ -113,8 +113,8 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
 
           {activeTab === 'notificacoes' && (
             <div className="welcome-card">
-              <h2>Notificações</h2>
-              <p>Não há novas notificações.</p>
+              <h2>Tickets</h2>
+              <p>Não há novos Tickets.</p>
             </div>
           )}
 
@@ -161,6 +161,15 @@ function MapIcon() {
       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
       <line x1="8" y1="2" x2="8" y2="18"></line>
       <line x1="16" y1="6" x2="16" y2="22"></line>
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+      <polyline points="22,6 12,13 2,6"></polyline>
     </svg>
   );
 }
