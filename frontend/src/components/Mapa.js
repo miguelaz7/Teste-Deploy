@@ -124,26 +124,43 @@ function InsightsPopup() {
   const [error, setError] = useState(null);
 
   const fetchData = () => {
-    if (insights || loading) return;
+    if (loading) return;
     setLoading(true);
+    setError(null);
 
-    Promise.all([
-      fetch('http://localhost:8080/api/validations/insights').then(r => {
-        if (!r.ok) throw new Error('Erro ao carregar dados');
-        return r.json();
-      }),
-      fetch('http://localhost:8080/api/validations/count-by-type').then(r => {
-        if (!r.ok) throw new Error('Erro ao carregar dados');
-        return r.json();
-      }),
+    const parseJsonResponse = async (response, label) => {
+      if (!response.ok) {
+        throw new Error(`${label} (${response.status})`);
+      }
+      return response.json();
+    };
+
+    const cacheBuster = Date.now();
+
+    Promise.allSettled([
+      fetch(`http://localhost:8080/api/validations/insights?t=${cacheBuster}`, { cache: 'no-store' })
+        .then(r => parseJsonResponse(r, 'Insights indisponivel')),
+      fetch(`http://localhost:8080/api/validations/count-by-type?t=${cacheBuster}`, { cache: 'no-store' })
+        .then(r => parseJsonResponse(r, 'Tipos indisponivel')),
     ])
-      .then(([insightsData, typeData]) => {
-        setInsights(insightsData);
-        setByType(typeData.map(row => ({ type: row[0], count: Number(row[1]) })));
-        setLoading(false);
+      .then(([insightsResult, typeResult]) => {
+        if (insightsResult.status === 'fulfilled') {
+          setInsights(insightsResult.value);
+        }
+
+        if (typeResult.status === 'fulfilled') {
+          setByType(typeResult.value.map(row => ({ type: row[0], count: Number(row[1]) })));
+        }
+
+        if (insightsResult.status === 'rejected' && typeResult.status === 'rejected') {
+          setError('Backend indisponivel em http://localhost:8080');
+        } else if (insightsResult.status === 'rejected') {
+          setError('Insights indisponivel no momento.');
+        } else if (typeResult.status === 'rejected') {
+          setError('Grafico por tipo indisponivel no momento.');
+        }
       })
-      .catch(err => {
-        setError(err.message);
+      .finally(() => {
         setLoading(false);
       });
   };
@@ -165,7 +182,20 @@ function InsightsPopup() {
   };
 
   return (
-    <Popup eventHandlers={{ add: fetchData }} autoPan={true} autoPanPadding={[10, 10]} minWidth={220} maxWidth={220}>
+    <Popup
+      eventHandlers={{
+        add: fetchData,
+        remove: () => {
+          setInsights(null);
+          setByType(null);
+          setError(null);
+        },
+      }}
+      autoPan={true}
+      autoPanPadding={[10, 10]}
+      minWidth={220}
+      maxWidth={220}
+    >
       <div className="popup-premium">
         <header className="popup-brand-header">
           <h3 className="stop-title">Paragem U. Minho</h3>
@@ -184,22 +214,20 @@ function InsightsPopup() {
                 <span className="card-tag">MAIOR AFLUÊNCIA</span>
               </div>
               <div className="card-body">
-                <div className="primary-val">{insights.stopName}</div>
-                <div className="secondary-val">{formatPeakInterval(insights.timeGap)}</div>
+                <div className="peak-time-label">Horário de pico</div>
+                <div className="peak-time-val">{formatPeakInterval(insights.timeGap)}</div>
+                <div className="afluencia-inline">
+                  <span className="afluencia-inline-label">
+                    <IconChart />
+                    Afluência
+                  </span>
+                  <span className="afluencia-inline-value">{insights.peakAfluenciaPercentage}%</span>
+                </div>
               </div>
             </div>
 
             {/* Stats Grid */}
             <div className="premium-stats-grid">
-              <div className="premium-card mini">
-                <div className="card-header highlight">
-                  <IconChart />
-                  <span className="card-tag">AFLUÊNCIA</span>
-                </div>
-                <div className="card-body">
-                  <div className="accent-val">{insights.peakAfluenciaPercentage}%</div>
-                </div>
-              </div>
               <div className="premium-card mini">
                 <div className="card-header warn">
                   <IconAlert />

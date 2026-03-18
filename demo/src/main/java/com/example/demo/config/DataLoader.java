@@ -16,6 +16,6 @@ public class DataLoader implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        csvImportService.importCsv();
+        csvImportService.syncCsvToDatabase();
     }
 }
