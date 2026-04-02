@@ -24,7 +24,8 @@ public class SecurityConfig {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/api/validations/**").permitAll()
-                .requestMatchers("/api/routes/**").permitAll()
+                    .requestMatchers("/api/routes/**").permitAll()
+                    .requestMatchers("/api/stops/**").permitAll()
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2
                             .jwt(jwt -> {
