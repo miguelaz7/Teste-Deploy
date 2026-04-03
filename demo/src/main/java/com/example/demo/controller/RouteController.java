@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Route;
-import com.example.demo.repository.RouteRepository;
+import com.example.demo.service.RouteService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,14 +12,14 @@ import java.util.List;
 @RequestMapping("/api/routes")
 public class RouteController {
 
-    private final RouteRepository routeRepository;
+    private final RouteService routeService;
 
-    public RouteController(RouteRepository routeRepository) {
-        this.routeRepository = routeRepository;
+    public RouteController(RouteService routeService) {
+        this.routeService = routeService;
     }
 
     @GetMapping
     public List<Route> listRoutes() {
-        return routeRepository.findAll();
+        return routeService.obterTodasRoitas();
     }
 }
