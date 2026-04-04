@@ -12,7 +12,7 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private static final boolean AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
+    private static final boolean AUTH_ENABLED = false; // true = Auth0 ativo, false = tudo aberto
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -23,9 +23,9 @@ public class SecurityConfig {
         if (AUTH_ENABLED) {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/public/**").permitAll()
-                    .requestMatchers("/api/validations/**").permitAll()
                     .requestMatchers("/api/routes/**").permitAll()
                     .requestMatchers("/api/stops/**").permitAll()
+                    .requestMatchers("/api/importacao/**").permitAll()
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2
                             .jwt(jwt -> {
