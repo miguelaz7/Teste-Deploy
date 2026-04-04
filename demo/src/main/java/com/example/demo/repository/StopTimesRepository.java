@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StopTimesRepository extends JpaRepository<StopTimes, Long> {
+	boolean existsByTripIdAndStopId(String tripId, String stopId);
 }

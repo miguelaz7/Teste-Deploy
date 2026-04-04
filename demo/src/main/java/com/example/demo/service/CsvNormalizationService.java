@@ -18,7 +18,9 @@ import com.example.demo.repository.IngestionRetryQueueRepository;
 import com.example.demo.repository.NgsiLdDataLakeRecordRepository;
 import com.example.demo.repository.RouteRepository;
 import com.example.demo.repository.StopRepository;
+import com.example.demo.repository.StopTimesRepository;
 import com.example.demo.repository.TicketTypeRepository;
+import com.example.demo.repository.TripRepository;
 import com.example.demo.repository.ValidationEventRepository;
 import com.example.demo.repository.ValidationQuarantineRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,6 +82,8 @@ public class CsvNormalizationService {
 
     private final StopRepository stopRepository;
     private final RouteRepository routeRepository;
+    private final TripRepository tripRepository;
+    private final StopTimesRepository stopTimesRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final ValidationEventRepository validationEventRepository;
     private final FareCollectionSystemRepository fareCollectionSystemRepository;
@@ -101,6 +105,8 @@ public class CsvNormalizationService {
     public CsvNormalizationService(
         StopRepository stopRepository,
         RouteRepository routeRepository,
+        TripRepository tripRepository,
+        StopTimesRepository stopTimesRepository,
         TicketTypeRepository ticketTypeRepository,
         ValidationEventRepository validationEventRepository,
         FareCollectionSystemRepository fareCollectionSystemRepository,
@@ -112,6 +118,8 @@ public class CsvNormalizationService {
     ) {
         this.stopRepository = stopRepository;
         this.routeRepository = routeRepository;
+        this.tripRepository = tripRepository;
+        this.stopTimesRepository = stopTimesRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.validationEventRepository = validationEventRepository;
         this.fareCollectionSystemRepository = fareCollectionSystemRepository;
@@ -283,8 +291,7 @@ public class CsvNormalizationService {
 
             Stop stop = null;
             if (originStopId != null) {
-                stop = stopRepository.findById(originStopId)
-                    .orElseGet(() -> stopRepository.save(new Stop(originStopId, null, null, null, null)));
+                stop = stopRepository.findById(originStopId).orElse(null);
             }
 
             FareCollectionSystem fareCollectionSystem = resolveFareCollectionSystem(equipmentId, transactionVehicleNum);
@@ -338,7 +345,9 @@ public class CsvNormalizationService {
 
     private ValidationResult validarLinha(String[] parts) {
         String transactionDateTime = valorOuNull(parts[5]);
+        String originStopId = valorOuNull(parts[6]);
         String routeId = valorOuNull(parts[7]);
+        String tripId = valorOuNull(parts[8]);
         String ticketType = valorOuNull(parts[3]);
 
         if (transactionDateTime == null) {
@@ -349,6 +358,9 @@ public class CsvNormalizationService {
         }
         if (ticketType == null) {
             return ValidationResult.invalid("ticketTypeCode em falta", "ticketTypeCode", null, "Campo obrigatorio");
+        }
+        if (tripId == null) {
+            return ValidationResult.invalid("trip_id em falta", "trip_id", null, "Campo obrigatorio");
         }
 
         OffsetDateTime ts;
@@ -374,6 +386,44 @@ public class CsvNormalizationService {
                 routeId,
                 "Integridade referencial"
             );
+        }
+
+        Optional<com.example.demo.model.Trip> trip = tripRepository.findById(tripId);
+        if (trip.isEmpty()) {
+            return ValidationResult.invalid(
+                "trip_id nao encontrado no catalogo",
+                "trip_id",
+                tripId,
+                "Integridade referencial"
+            );
+        }
+
+        if (!routeId.equals(trip.get().getRouteId())) {
+            return ValidationResult.invalid(
+                "trip_id nao pertence ao route_id indicado",
+                "trip_id",
+                tripId,
+                "Coerencia relacional route-trip"
+            );
+        }
+
+        if (originStopId != null) {
+            if (!stopRepository.existsById(originStopId)) {
+                return ValidationResult.invalid(
+                    "originStopId nao encontrado no catalogo",
+                    "originStopId",
+                    originStopId,
+                    "Integridade referencial"
+                );
+            }
+            if (!stopTimesRepository.existsByTripIdAndStopId(tripId, originStopId)) {
+                return ValidationResult.invalid(
+                    "originStopId nao pertence ao trip_id indicado",
+                    "originStopId",
+                    originStopId,
+                    "Coerencia relacional trip-stop"
+                );
+            }
         }
 
         OffsetDateTime agora = OffsetDateTime.now();
@@ -492,9 +542,9 @@ public class CsvNormalizationService {
         props.put("transactionDateTime", ngsiProperty(evento.getTransactionDateTime().toString()));
         props.put("transactionType", ngsiProperty(evento.getTransactionType()));
         props.put("ticketTypeCode", ngsiProperty(evento.getTicketType().getCode()));
-        props.put("originStopId", ngsiProperty(evento.getOriginStop() == null ? null : evento.getOriginStop().getStopId()));
-        props.put("route_id", ngsiProperty(evento.getRouteId()));
-        props.put("trip_id", ngsiProperty(evento.getTripId()));
+        props.put("originStop", ngsiRelationship(buildStopUrn(evento.getOriginStop())));
+        props.put("route", ngsiRelationship(buildRouteUrn(evento.getRouteId())));
+        props.put("trip", ngsiRelationship(buildTripUrn(evento.getTripId())));
         props.put("equipmentId", ngsiProperty(evento.getEquipmentId()));
         props.put("transactionVehicleNum", ngsiProperty(evento.getTransactionVehicleNum()));
         props.put("fareForAdult", ngsiProperty(evento.getFareForAdult()));
@@ -510,6 +560,34 @@ public class CsvNormalizationService {
         prop.put("type", "Property");
         prop.put("value", value);
         return prop;
+    }
+
+    private Map<String, Object> ngsiRelationship(String objectUrn) {
+        Map<String, Object> rel = new HashMap<>();
+        rel.put("type", "Relationship");
+        rel.put("object", objectUrn);
+        return rel;
+    }
+
+    private String buildStopUrn(Stop stop) {
+        if (stop == null || stop.getStopId() == null) {
+            return null;
+        }
+        return "urn:ngsi-ld:Stop:" + stop.getStopId();
+    }
+
+    private String buildRouteUrn(String routeId) {
+        if (routeId == null || routeId.isBlank()) {
+            return null;
+        }
+        return "urn:ngsi-ld:Route:" + routeId;
+    }
+
+    private String buildTripUrn(String tripId) {
+        if (tripId == null || tripId.isBlank()) {
+            return null;
+        }
+        return "urn:ngsi-ld:Trip:" + tripId;
     }
 
     private PersistResult persistirUc023(List<NgsiLdEntityDto> entidadesNgsiLd) {
