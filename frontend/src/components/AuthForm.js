@@ -1,3 +1,5 @@
+import React from 'react';
+
 function AuthForm({ onLogin }) {
   return (
     <div className="app-shell">

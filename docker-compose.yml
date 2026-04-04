@@ -1,17 +1,81 @@
 version: '3.8'
 
 services:
+  # Base de dados MySQL
   db:
     image: mysql:8
+    container_name: tub-database
     environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=tub_pgu
-      - MYSQL_USER=admin
-      - MYSQL_PASSWORD=password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: tub_pgu
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tub-network
+
+  # Backend (Java/Spring Boot)
+  backend:
+    build:
+      context: ./demo
+      dockerfile: Dockerfile
+    container_name: tub-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tub_pgu
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tub-network
+    restart: unless-stopped
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tub-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:8080
+      REACT_APP_AUTH0_DOMAIN: ${REACT_APP_AUTH0_DOMAIN:-}
+      REACT_APP_AUTH0_CLIENT_ID: ${REACT_APP_AUTH0_CLIENT_ID:-}
+      REACT_APP_AUTH0_AUDIENCE: ${REACT_APP_AUTH0_AUDIENCE:-}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tub-network
+    restart: unless-stopped
 
 volumes:
   mysql_data:
+    driver: local
+
+networks:
+  tub-network:
+    driver: bridge
