@@ -13,6 +13,10 @@ public class StopTimes {
     @Column(name = "trip_id")
     private String tripId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trip_id", referencedColumnName = "trip_id", insertable = false, updatable = false)
+    private Trip trip;
+
     @Column(name = "arrival_time")
     private String arrivalTime;
 
@@ -21,6 +25,10 @@ public class StopTimes {
 
     @Column(name = "stop_id")
     private String stopId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false)
+    private Stop stop;
 
     @Column(name = "stop_sequence")
     private Integer stopSequence;
@@ -52,6 +60,10 @@ public class StopTimes {
         this.tripId = tripId;
     }
 
+    public Trip getTrip() {
+        return trip;
+    }
+
     public String getArrivalTime() {
         return arrivalTime;
     }
@@ -74,6 +86,10 @@ public class StopTimes {
 
     public void setStopId(String stopId) {
         this.stopId = stopId;
+    }
+
+    public Stop getStop() {
+        return stop;
     }
 
     public Integer getStopSequence() {
