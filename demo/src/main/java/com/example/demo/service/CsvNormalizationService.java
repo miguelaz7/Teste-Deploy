@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.dto.CsvImportResultDto;
 import com.example.demo.dto.NgsiLdEntityDto;
 import com.example.demo.model.FareCollectionSystem;
@@ -92,6 +94,7 @@ public class CsvNormalizationService {
     private final NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository;
     private final IngestionBatchControlRepository ingestionBatchControlRepository;
     private final IngestionRetryQueueRepository ingestionRetryQueueRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.csv.file-name:validacoesBus.csv}")
     private String csvFileName;
@@ -639,51 +642,11 @@ public class CsvNormalizationService {
     }
 
     private String toJson(NgsiLdEntityDto entity) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"id\":\"").append(escapeJson(entity.getId())).append("\",");
-        sb.append("\"type\":\"").append(escapeJson(entity.getType())).append("\",");
-        sb.append("\"etlMappingVersion\":\"").append(escapeJson(entity.getEtlMappingVersion())).append("\",");
-        sb.append("\"properties\":").append(mapToJson(entity.getProperties()));
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private String mapToJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (!first) {
-                sb.append(",");
-            }
-            first = false;
-            sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
-            Object value = entry.getValue();
-            if (value instanceof Map<?, ?> innerMap) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> converted = (Map<String, Object>) innerMap;
-                sb.append(mapToJson(converted));
-            } else if (value == null) {
-                sb.append("null");
-            } else {
-                sb.append("\"").append(escapeJson(String.valueOf(value))).append("\"");
-            }
+        try {
+            return objectMapper.writeValueAsString(entity);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Falha a serializar entidade NGSI-LD", e);
         }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private String escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t");
     }
 
     @SuppressWarnings("unchecked")
