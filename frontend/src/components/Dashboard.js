@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getGreeting } from "../utils/greeting";
 import Mapa from "./Mapa";
+import PainelGeral from "./PainelGeral";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 
@@ -88,7 +89,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
           <div className="dashboard-header">
             <div>
               <h1>{getGreeting()}, {fullName || "bem-vindo"}.</h1>
-              <p className="subtitle">Sessão ativa para {loggedInEmail}</p>
+              <p className="welcome-subtitle">Aqui está o resumo da tua ingestão de dados.</p>
             </div>
           </div>
         )}
@@ -96,10 +97,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
         {/* The content area where the tiles or tables will render based on the active tab */}
         <div className="content-area">
           {activeTab === 'geral' && (
-            <div className="welcome-card">
-              <h2>Bem-vindo ao Novo Painel</h2>
-              <p>Selecione uma opção no menu lateral para começar a gerir a sua bilhética.</p>
-            </div>
+            <PainelGeral />
           )}
 
 
