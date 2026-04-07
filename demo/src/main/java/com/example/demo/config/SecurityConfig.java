@@ -26,6 +26,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/routes/**").permitAll()
                     .requestMatchers("/api/stops/**").permitAll()
                     .requestMatchers("/api/importacao/**").permitAll()
+                    .requestMatchers("/api/validations/**").permitAll()
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2
                             .jwt(jwt -> {
