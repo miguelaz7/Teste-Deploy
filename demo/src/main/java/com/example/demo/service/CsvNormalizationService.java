@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.dto.CsvImportResultDto;
 import com.example.demo.dto.NgsiLdEntityDto;
@@ -42,6 +43,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -105,6 +107,9 @@ public class CsvNormalizationService {
     @Value("${app.etl.mapping-version:v1.0.0}")
     private String etlMappingVersion;
 
+    @Value("${app.ingestion.retry.interval-ms:30000}")
+    private long retryIntervalMs;
+
     public CsvNormalizationService(
         StopRepository stopRepository,
         RouteRepository routeRepository,
@@ -135,6 +140,13 @@ public class CsvNormalizationService {
 
     @Transactional
     public CsvImportResultDto importarCsvNormalizado() throws IOException {
+        try (BufferedReader reader = getClasspathCsvReader()) {
+            return importarCsvNormalizado(reader);
+        }
+    }
+
+    @Transactional
+    public CsvImportResultDto importarCsvNormalizado(BufferedReader reader) throws IOException {
         long inicioTotal = System.currentTimeMillis();
         long inicioValidacao = inicioTotal;
 
@@ -147,73 +159,74 @@ public class CsvNormalizationService {
         Set<String> hashesPacote = new HashSet<>();
         List<HeaderInfo> headerInfos;
 
-        try (BufferedReader reader = getClasspathCsvReader()) {
-            String line;
-            line = reader.readLine();
-            if (line == null) {
-                return new CsvImportResultDto(0, 0, 0, 0, 0, 0, 0, etlMappingVersion, null, true, "EMPTY", List.of());
+        String line;
+        line = reader.readLine();
+        if (line == null) {
+            return new CsvImportResultDto(0, 0, 0, 0, 0, 0, 0, etlMappingVersion, null, true, "EMPTY", List.of());
+        }
+        headerInfos = parseHeaders(line);
+        auditarCamposNaoMapeados(headerInfos);
+
+        while ((line = reader.readLine()) != null) {
+            totalLinhas++;
+            String[] parts = line.split(",", -1);
+            if (parts.length < 14) {
+                quarentena.add(new ValidationQuarantine(
+                    line,
+                    "Colunas insuficientes",
+                    "payload",
+                    "n/a",
+                    "Campos obrigatorios ausentes no schema",
+                    OffsetDateTime.now()
+                ));
+                continue;
             }
-            headerInfos = parseHeaders(line);
-            auditarCamposNaoMapeados(headerInfos);
 
-            while ((line = reader.readLine()) != null) {
-                totalLinhas++;
-                String[] parts = line.split(",", -1);
-                if (parts.length < 14) {
-                    quarentena.add(new ValidationQuarantine(
-                        line,
-                        "Colunas insuficientes",
-                        "payload",
-                        "n/a",
-                        "Campos obrigatorios ausentes no schema",
-                        OffsetDateTime.now()
-                    ));
-                    continue;
-                }
+            ValidationResult validacao = validarLinha(parts);
+            if (!validacao.isValid()) {
+                quarentena.add(new ValidationQuarantine(
+                    line,
+                    validacao.getReason(),
+                    validacao.getField(),
+                    validacao.getReceivedValue(),
+                    validacao.getRule(),
+                    OffsetDateTime.now()
+                ));
+                continue;
+            }
 
-                ValidationResult validacao = validarLinha(parts);
-                if (!validacao.isValid()) {
-                    quarentena.add(new ValidationQuarantine(
-                        line,
-                        validacao.getReason(),
-                        validacao.getField(),
-                        validacao.getReceivedValue(),
-                        validacao.getRule(),
-                        OffsetDateTime.now()
-                    ));
-                    continue;
-                }
+            String ingestionHash = buildIngestionHash(parts);
+            if (hashesPacote.contains(ingestionHash)) {
+                duplicadosDescartados++;
+                auditar("DUPLICATE_INTRA_PACKAGE", "ingestionHash", ingestionHash, "Duplicado no mesmo pacote CSV");
+                continue;
+            }
+            hashesPacote.add(ingestionHash);
 
-                String ingestionHash = buildIngestionHash(parts);
-                if (hashesPacote.contains(ingestionHash)) {
-                    duplicadosDescartados++;
-                    auditar("DUPLICATE_INTRA_PACKAGE", "ingestionHash", ingestionHash, "Duplicado no mesmo pacote CSV");
-                    continue;
-                }
-                hashesPacote.add(ingestionHash);
+            OffsetDateTime agora = OffsetDateTime.now();
+            OffsetDateTime janela = agora.minus(JANELA_DUPLICADOS);
+            if (validationEventRepository.existsByIngestionHashAndIngestedAtAfter(ingestionHash, janela)) {
+                duplicadosDescartados++;
+                auditar("DUPLICATE_INTER_PACKAGE", "ingestionHash", ingestionHash, "Duplicado nas ultimas 24h");
+                continue;
+            }
 
-                OffsetDateTime agora = OffsetDateTime.now();
-                OffsetDateTime janela = agora.minus(JANELA_DUPLICADOS);
-                if (validationEventRepository.existsByIngestionHashAndIngestedAtAfter(ingestionHash, janela)) {
-                    duplicadosDescartados++;
-                    auditar("DUPLICATE_INTER_PACKAGE", "ingestionHash", ingestionHash, "Duplicado nas ultimas 24h");
-                    continue;
-                }
-
-                Optional<ValidationEvent> evento = parseLinha(parts, ingestionHash, headerInfos);
-                if (evento.isPresent()) {
-                    eventos.add(evento.get());
-                    entidadesNgsiLd.add(toNgsiLdEntity(evento.get()));
-                } else {
-                    quarentena.add(new ValidationQuarantine(
-                        line,
-                        "Erro na normalizacao",
-                        "payload",
-                        "n/a",
-                        "Falha no mapeamento SCB -> SmartDataModels",
-                        OffsetDateTime.now()
-                    ));
-                }
+            ParseLinhaResult parseResult = parseLinha(line, parts, ingestionHash, headerInfos);
+            if (parseResult.evento().isPresent()) {
+                ValidationEvent evento = parseResult.evento().get();
+                eventos.add(evento);
+                entidadesNgsiLd.add(toNgsiLdEntity(evento));
+            } else if (parseResult.quarentena() != null) {
+                quarentena.add(parseResult.quarentena());
+            } else {
+                quarentena.add(new ValidationQuarantine(
+                    line,
+                    "Erro na normalizacao",
+                    "payload",
+                    "n/a",
+                    "Falha no mapeamento SCB -> SmartDataModels",
+                    OffsetDateTime.now()
+                ));
             }
         }
 
@@ -243,6 +256,7 @@ public class CsvNormalizationService {
         }
 
         auditar("BACKUP_POLICY_INFO", "persistencia", "mysql-managed", "Dados persistidos sujeitos a politica de backup da base de dados");
+        auditar("INGESTION_SUCCESS", "batchId", persistResult.batchId(), "Ingestao concluida com sucesso");
 
         return new CsvImportResultDto(
             totalLinhas,
@@ -268,7 +282,7 @@ public class CsvNormalizationService {
         return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
     }
 
-    private Optional<ValidationEvent> parseLinha(String[] parts, String ingestionHash, List<HeaderInfo> headers) {
+    private ParseLinhaResult parseLinha(String rawLine, String[] parts, String ingestionHash, List<HeaderInfo> headers) {
         try {
             String cardId = valorOuNull(parts[0]);
             String ticketId = valorOuNull(parts[1]);
@@ -286,7 +300,7 @@ public class CsvNormalizationService {
             String rejectReason = valorOuNull(parts[13]);
 
             if (mediaType == null || ticketTypeCode == null || transactionType == null || transactionDateTime == null || result == null) {
-                return Optional.empty();
+                return new ParseLinhaResult(Optional.empty(), null);
             }
 
             TicketType ticketType = ticketTypeRepository.findByCode(ticketTypeCode)
@@ -312,7 +326,21 @@ public class CsvNormalizationService {
             evento.setRouteId(routeId);
             evento.setTripId(tripId);
             evento.setFareCollectionSystem(fareCollectionSystem);
-            evento.setFareForAdult(fareForAdult == null ? null : new BigDecimal(fareForAdult));
+            try {
+                evento.setFareForAdult(fareForAdult == null ? null : new BigDecimal(fareForAdult));
+            } catch (NumberFormatException e) {
+                return new ParseLinhaResult(
+                    Optional.empty(),
+                    new ValidationQuarantine(
+                        rawLine,
+                        "fareForAdult invalido",
+                        "fareForAdult",
+                        fareForAdult,
+                        "Tipo de dado invalido (decimal)",
+                        OffsetDateTime.now()
+                    )
+                );
+            }
             evento.setEquipmentId(equipmentId);
             evento.setTransactionVehicleNum(transactionVehicleNum);
             evento.setResult(result);
@@ -320,9 +348,9 @@ public class CsvNormalizationService {
 
             auditarCamposNaoMapeadosComValor(headers, parts);
 
-            return Optional.of(evento);
+            return new ParseLinhaResult(Optional.of(evento), null);
         } catch (Exception e) {
-            return Optional.empty();
+            return new ParseLinhaResult(Optional.empty(), null);
         }
     }
 
@@ -553,6 +581,9 @@ public class CsvNormalizationService {
         props.put("fareForAdult", ngsiProperty(evento.getFareForAdult()));
         props.put("result", ngsiProperty(evento.getResult()));
         props.put("cardId", ngsiProperty(evento.getCardId()));
+        if (evento.getOriginStop() != null && evento.getOriginStop().getStopLat() != null && evento.getOriginStop().getStopLon() != null) {
+            props.put("location", ngsiGeoProperty(evento.getOriginStop().getStopLat(), evento.getOriginStop().getStopLon()));
+        }
 
         String ngsiId = "urn:ngsi-ld:FareCollectionSystem:" + evento.getIngestionHash();
         return new NgsiLdEntityDto(ngsiId, "FareCollectionSystem", etlMappingVersion, props);
@@ -570,6 +601,16 @@ public class CsvNormalizationService {
         rel.put("type", "Relationship");
         rel.put("object", objectUrn);
         return rel;
+    }
+
+    private Map<String, Object> ngsiGeoProperty(Double lat, Double lon) {
+        Map<String, Object> geo = new HashMap<>();
+        geo.put("type", "GeoProperty");
+        Map<String, Object> value = new HashMap<>();
+        value.put("type", "Point");
+        value.put("coordinates", List.of(lon, lat));
+        geo.put("value", value);
+        return geo;
     }
 
     private String buildStopUrn(Stop stop) {
@@ -595,6 +636,10 @@ public class CsvNormalizationService {
 
     private PersistResult persistirUc023(List<NgsiLdEntityDto> entidadesNgsiLd) {
         String batchId = UUID.randomUUID().toString();
+        return persistirUc023(entidadesNgsiLd, batchId, false);
+    }
+
+    private PersistResult persistirUc023(List<NgsiLdEntityDto> entidadesNgsiLd, String batchId, boolean fromRetry) {
         LocalDate particao = LocalDate.now();
         OffsetDateTime agora = OffsetDateTime.now();
         long inicio = System.currentTimeMillis();
@@ -613,10 +658,34 @@ public class CsvNormalizationService {
             ))
             .collect(Collectors.toList());
 
-        ngsiLdDataLakeRecordRepository.saveAll(records);
-        long persisted = ngsiLdDataLakeRecordRepository.countByBatchId(batchId);
+        long persisted;
         long expected = records.size();
-        long tempoPersistencia = System.currentTimeMillis() - inicio;
+        long tempoPersistencia;
+
+        try {
+            ngsiLdDataLakeRecordRepository.saveAll(records);
+            persisted = ngsiLdDataLakeRecordRepository.countByBatchId(batchId);
+            tempoPersistencia = System.currentTimeMillis() - inicio;
+        } catch (Exception e) {
+            tempoPersistencia = System.currentTimeMillis() - inicio;
+            if (!fromRetry) {
+                enqueueRetry(batchId, "Erro na escrita inicial do Data Lake: " + e.getMessage(), entidadesNgsiLd);
+            }
+
+            ingestionBatchControlRepository.save(new IngestionBatchControl(
+                batchId,
+                agora,
+                (int) expected,
+                0,
+                etlMappingVersion,
+                particao,
+                "RETRY_PENDING",
+                tempoPersistencia
+            ));
+
+            notificarGestorOperacoes("Falha na persistencia do lote " + batchId + ". Agendado retry.");
+            return new PersistResult(batchId, false, "RETRY_PENDING");
+        }
 
         boolean ok = persisted == expected;
         String estado = ok ? "SUCCESS" : "RETRY_PENDING";
@@ -634,7 +703,9 @@ public class CsvNormalizationService {
 
         if (!ok) {
             String reason = "Integridade pos-escrita falhou. Esperado=" + expected + ", Persistido=" + persisted;
-            ingestionRetryQueueRepository.save(new IngestionRetryQueue(batchId, reason, "PENDING", OffsetDateTime.now()));
+            if (!fromRetry) {
+                enqueueRetry(batchId, reason, entidadesNgsiLd);
+            }
             notificarGestorOperacoes("Lote " + batchId + " movido para retry queue. " + reason);
         }
 
@@ -646,6 +717,24 @@ public class CsvNormalizationService {
             return objectMapper.writeValueAsString(entity);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Falha a serializar entidade NGSI-LD", e);
+        }
+    }
+
+    public boolean reprocessarLoteRetry(IngestionRetryQueue retryQueue) {
+        try {
+            List<NgsiLdEntityDto> entidades = objectMapper.readValue(
+                retryQueue.getPayloadJson(),
+                new TypeReference<List<NgsiLdEntityDto>>() {
+                }
+            );
+            PersistResult result = persistirUc023(entidades, retryQueue.getBatchId(), true);
+            if (result.persistenciaConfirmada()) {
+                auditar("RETRY_SUCCESS", "batchId", retryQueue.getBatchId(), "Lote persistido com sucesso apos retry");
+            }
+            return result.persistenciaConfirmada();
+        } catch (Exception e) {
+            auditar("RETRY_ERROR", "batchId", retryQueue.getBatchId(), "Falha no retry: " + e.getMessage());
+            return false;
         }
     }
 
@@ -667,11 +756,58 @@ public class CsvNormalizationService {
     }
 
     private Double extractLat(NgsiLdEntityDto entity) {
-        return null;
+        return extractCoordinates(entity, 1);
     }
 
     private Double extractLon(NgsiLdEntityDto entity) {
-        return null;
+        return extractCoordinates(entity, 0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Double extractCoordinates(NgsiLdEntityDto entity, int index) {
+        try {
+            Object raw = entity.getProperties().get("location");
+            if (!(raw instanceof Map<?, ?> locationMap)) {
+                return null;
+            }
+            Object valueRaw = locationMap.get("value");
+            if (!(valueRaw instanceof Map<?, ?> valueMap)) {
+                return null;
+            }
+            Object coordinatesRaw = valueMap.get("coordinates");
+            if (!(coordinatesRaw instanceof List<?> coordinates) || coordinates.size() < 2) {
+                return null;
+            }
+            Object coordinate = coordinates.get(index);
+            if (coordinate == null) {
+                return null;
+            }
+            return Double.parseDouble(coordinate.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void enqueueRetry(String batchId, String reason, List<NgsiLdEntityDto> entidadesNgsiLd) {
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(entidadesNgsiLd);
+        } catch (JsonProcessingException e) {
+            payload = "[]";
+        }
+
+        OffsetDateTime agora = OffsetDateTime.now();
+        ingestionRetryQueueRepository.save(new IngestionRetryQueue(
+            batchId,
+            reason,
+            "PENDING",
+            0,
+            3,
+            agora.plus(Duration.ofMillis(retryIntervalMs)),
+            null,
+            payload,
+            agora
+        ));
     }
 
     private static class ValidationResult {
@@ -719,6 +855,9 @@ public class CsvNormalizationService {
     }
 
     private record HeaderInfo(int index, String nome, boolean mapeado) {
+    }
+
+    private record ParseLinhaResult(Optional<ValidationEvent> evento, ValidationQuarantine quarentena) {
     }
 
     private record PersistResult(String batchId, boolean persistenciaConfirmada, String estadoLote) {

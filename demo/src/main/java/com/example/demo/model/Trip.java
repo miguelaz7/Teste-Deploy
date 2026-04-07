@@ -13,10 +13,6 @@ public class Trip {
     @Column(name = "route_id")
     private String routeId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "route_id", referencedColumnName = "route_short_name", insertable = false, updatable = false)
-    private Route route;
-
     @Column(name = "service_id")
     private String serviceId;
 
@@ -57,10 +53,6 @@ public class Trip {
 
     public void setRouteId(String routeId) {
         this.routeId = routeId;
-    }
-
-    public Route getRoute() {
-        return route;
     }
 
     public String getServiceId() {

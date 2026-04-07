@@ -53,10 +53,6 @@ public class ValidationEvent {
     @Column(name = "route_id")
     private String routeId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "route_id", referencedColumnName = "route_short_name", insertable = false, updatable = false)
-    private Route route;
-
     @Column(name = "trip_id")
     private String tripId;
 
@@ -168,10 +164,6 @@ public class ValidationEvent {
 
     public void setRouteId(String routeId) {
         this.routeId = routeId;
-    }
-
-    public Route getRoute() {
-        return route;
     }
 
     public Trip getTrip() {
