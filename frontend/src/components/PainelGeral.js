@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getDashboardMetrics } from '../services/metricsService';
 import './PainelGeral.css';
 
@@ -73,22 +73,55 @@ function PainelGeral() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const metricsRef = useRef(null);
 
-  const carregarMetricas = async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    metricsRef.current = metrics;
+  }, [metrics]);
+
+  const carregarMetricas = async (silencioso = false) => {
+    if (!silencioso) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const data = await getDashboardMetrics();
       setMetrics(data);
     } catch (err) {
-      setError(err.message || 'Ocorreu um erro ao comunicar com a API.');
+      if (!metricsRef.current) {
+        setError(err.message || 'Ocorreu um erro ao comunicar com a API.');
+      } else {
+        console.error('Falha ao atualizar dashboard metrics:', err);
+      }
     } finally {
-      setLoading(false);
+      if (!silencioso) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    carregarMetricas();
+    let ativo = true;
+
+    const carregarInicial = async () => {
+      if (!ativo) {
+        return;
+      }
+      await carregarMetricas(false);
+    };
+
+    carregarInicial();
+
+    const intervalId = setInterval(() => {
+      if (ativo) {
+        carregarMetricas(true);
+      }
+    }, 3000);
+
+    return () => {
+      ativo = false;
+      clearInterval(intervalId);
+    };
   }, []);
 
   if (loading) {
