@@ -10,4 +10,9 @@ public interface ValidationEventRepository extends JpaRepository<ValidationEvent
 	boolean existsByIngestionHashAndIngestedAtAfter(String ingestionHash, java.time.OffsetDateTime reference);
 	List<ValidationEvent> findByOriginStop_StopId(String stopId);
 	long countByIngestedAtAfter(OffsetDateTime reference);
+
+	long countByPerfilClassificado(String perfilClassificado);
+	List<ValidationEvent> findByPerfilClassificado(String perfilClassificado);
+	List<ValidationEvent> findByPerfilClassificadoAndTransactionDateTimeBetween(String perfilClassificado, OffsetDateTime start, OffsetDateTime end);
+	List<ValidationEvent> findByPerfilClassificadoAndPiiDetectedFalse(String perfilClassificado);
 }

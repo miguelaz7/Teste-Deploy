@@ -96,6 +96,7 @@ public class CsvNormalizationService {
     private final NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository;
     private final IngestionBatchControlRepository ingestionBatchControlRepository;
     private final IngestionRetryQueueRepository ingestionRetryQueueRepository;
+    private final CategorizationService categorizationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.csv.file-name:validacoesBus.csv}")
@@ -122,7 +123,8 @@ public class CsvNormalizationService {
         IngestionAuditLogRepository ingestionAuditLogRepository,
         NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository,
         IngestionBatchControlRepository ingestionBatchControlRepository,
-        IngestionRetryQueueRepository ingestionRetryQueueRepository
+        IngestionRetryQueueRepository ingestionRetryQueueRepository,
+        CategorizationService categorizationService
     ) {
         this.stopRepository = stopRepository;
         this.routeRepository = routeRepository;
@@ -136,6 +138,7 @@ public class CsvNormalizationService {
         this.ngsiLdDataLakeRecordRepository = ngsiLdDataLakeRecordRepository;
         this.ingestionBatchControlRepository = ingestionBatchControlRepository;
         this.ingestionRetryQueueRepository = ingestionRetryQueueRepository;
+        this.categorizationService = categorizationService;
     }
 
     @Transactional
@@ -158,6 +161,7 @@ public class CsvNormalizationService {
 
         Set<String> hashesPacote = new HashSet<>();
         List<HeaderInfo> headerInfos;
+        Map<String, String> mappingCache = categorizationService.getMappingCache();
 
         String line;
         line = reader.readLine();
@@ -211,7 +215,7 @@ public class CsvNormalizationService {
                 continue;
             }
 
-            ParseLinhaResult parseResult = parseLinha(line, parts, ingestionHash, headerInfos);
+            ParseLinhaResult parseResult = parseLinha(line, parts, ingestionHash, headerInfos, mappingCache);
             if (parseResult.evento().isPresent()) {
                 ValidationEvent evento = parseResult.evento().get();
                 eventos.add(evento);
@@ -282,7 +286,7 @@ public class CsvNormalizationService {
         return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
     }
 
-    private ParseLinhaResult parseLinha(String rawLine, String[] parts, String ingestionHash, List<HeaderInfo> headers) {
+    private ParseLinhaResult parseLinha(String rawLine, String[] parts, String ingestionHash, List<HeaderInfo> headers, Map<String, String> mappingCache) {
         try {
             String cardId = valorOuNull(parts[0]);
             String ticketId = valorOuNull(parts[1]);
@@ -345,6 +349,8 @@ public class CsvNormalizationService {
             evento.setTransactionVehicleNum(transactionVehicleNum);
             evento.setResult(result);
             evento.setRejectReason(rejectReason);
+
+            categorizationService.classifyEventOnIngestion(evento, mappingCache);
 
             auditarCamposNaoMapeadosComValor(headers, parts);
 

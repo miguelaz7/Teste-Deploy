@@ -79,6 +79,12 @@ public class ValidationEvent {
     @Column(name = "reject_reason")
     private String rejectReason;
 
+    @Column(name = "perfil_classificado")
+    private String perfilClassificado;
+
+    @Column(name = "pii_detected")
+    private Boolean piiDetected = false;
+
     public ValidationEvent() {
     }
 
@@ -224,5 +230,21 @@ public class ValidationEvent {
 
     public void setRejectReason(String rejectReason) {
         this.rejectReason = rejectReason;
+    }
+
+    public String getPerfilClassificado() {
+        return perfilClassificado;
+    }
+
+    public void setPerfilClassificado(String perfilClassificado) {
+        this.perfilClassificado = perfilClassificado;
+    }
+
+    public Boolean getPiiDetected() {
+        return piiDetected;
+    }
+
+    public void setPiiDetected(Boolean piiDetected) {
+        this.piiDetected = piiDetected;
     }
 }
