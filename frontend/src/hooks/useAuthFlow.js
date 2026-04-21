@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-const AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
+const AUTH_ENABLED = process.env.REACT_APP_AUTH_ENABLED !== "false"; // default true
 
 function useMockAuth() {
   const [authenticated, setAuthenticated] = useState(true);
@@ -44,7 +44,9 @@ function useAuth0Flow() {
 }
 
 export default function useAuthFlow() {
-  const mockAuth = useMockAuth();
-  const auth0Flow = useAuth0Flow();
-  return AUTH_ENABLED ? auth0Flow : mockAuth;
+  if (!AUTH_ENABLED) {
+    return useMockAuth();
+  }
+
+  return useAuth0Flow();
 }
