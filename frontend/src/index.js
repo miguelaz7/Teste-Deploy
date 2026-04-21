@@ -5,7 +5,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-const AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
+const AUTH_ENABLED = process.env.REACT_APP_AUTH_ENABLED !== 'false'; // default true
 
 const auth0Domain = process.env.REACT_APP_AUTH0_DOMAIN;
 const auth0ClientId = process.env.REACT_APP_AUTH0_CLIENT_ID;

@@ -2,6 +2,7 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -12,7 +13,8 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private static final boolean AUTH_ENABLED = true; // true = Auth0 ativo, false = tudo aberto
+    @Value("${app.security.auth-enabled:false}")
+    private boolean authEnabled;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -20,12 +22,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable());
 
-        if (AUTH_ENABLED) {
+        if (authEnabled) {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/api/routes/**").permitAll()
                     .requestMatchers("/api/stops/**").permitAll()
-                    .requestMatchers("/api/importacao/**").permitAll()
                     .requestMatchers("/api/validations/**").permitAll()
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2
