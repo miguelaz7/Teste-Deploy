@@ -42,6 +42,19 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
+    # Proxy para o backend — API calls
+    location /categorization/ {
+        proxy_pass http://backend:8080/categorization/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /api/ {
+        proxy_pass http://backend:8080/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
     # Fallback para SPA
     location / {
         try_files \$uri \$uri/ /index.html;

@@ -346,6 +346,7 @@ public class CsvNormalizationService {
             evento.setResult(result);
             evento.setRejectReason(rejectReason);
 
+
             auditarCamposNaoMapeadosComValor(headers, parts);
 
             return new ParseLinhaResult(Optional.of(evento), null);
