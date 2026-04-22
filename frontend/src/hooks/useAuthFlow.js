@@ -43,10 +43,5 @@ function useAuth0Flow() {
   };
 }
 
-export default function useAuthFlow() {
-  if (!AUTH_ENABLED) {
-    return useMockAuth();
-  }
-
-  return useAuth0Flow();
-}
+const useAuthFlow = AUTH_ENABLED ? useAuth0Flow : useMockAuth;
+export default useAuthFlow;

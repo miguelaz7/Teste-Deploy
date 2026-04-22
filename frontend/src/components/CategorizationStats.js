@@ -2,14 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getCategorizationStats } from '../services/categorizationService';
 import './CategorizationStats.css';
 
-const CategorizationStats = () => {
-  const [stats, setStats] = useState({
-    totalClassificados: 0,
-    totalNaoCategorizado: 0,
-    estudante: 0,
-    senior: 0,
-    normal: 0
-  });
+const CategorizationStats = ({ refreshTrigger }) => {
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -20,18 +14,12 @@ const CategorizationStats = () => {
       try {
         if (!silencioso) setLoading(true);
         const data = await getCategorizationStats();
-        if (ativo) setStats(data);
-      } catch (err) {
-        if (!silencioso) console.warn('Failed to fetch stats:', err);
         if (ativo) {
-          setStats({
-               totalClassificados: 1250,
-               totalNaoCategorizado: 45,
-               estudante: 600,
-               senior: 450,
-               normal: 200
-          });
+          setStats(data);
+          setError(null);
         }
+      } catch (err) {
+        if (!silencioso && ativo) setError('Erro ao carregar estatísticas.');
       } finally {
         if (ativo && !silencioso) setLoading(false);
       }
@@ -39,25 +27,13 @@ const CategorizationStats = () => {
 
     fetchStats(false);
 
-    const intervalId = setInterval(() => {
-      if (ativo) {
-        fetchStats(true); // silent fetch
-      }
-    }, 3000);
+    const intervalId = setInterval(() => { if (ativo) fetchStats(true); }, 3000);
+    return () => { ativo = false; clearInterval(intervalId); };
+  }, [refreshTrigger]);
 
-    return () => {
-      ativo = false;
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  if (loading) {
-    return <div className="stats-loading">A carregar estatísticas...</div>;
-  }
-
-  if (error) {
-    return <div className="stats-error">Erro ao carregar estatísticas. {error}</div>;
-  }
+  if (loading) return <div className="stats-loading">A carregar estatísticas...</div>;
+  if (error)   return <div className="stats-error">{error}</div>;
+  if (!stats)  return null;
 
   return (
     <div className="stats-container">

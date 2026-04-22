@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.CategorizationStatsDto;
 import com.example.demo.model.CategorizationAudit;
 import com.example.demo.model.TipologiaPerfilMapping;
 import com.example.demo.model.ValidationEvent;
@@ -9,14 +10,17 @@ import com.example.demo.repository.ValidationEventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class CategorizationService {
+
+    private static final String NAO_CATEGORIZADO = "nao_categorizado";
 
     private final TipologiaPerfilMappingRepository mappingRepository;
     private final CategorizationAuditRepository auditRepository;
@@ -30,36 +34,124 @@ public class CategorizationService {
         this.validationEventRepository = validationEventRepository;
     }
 
-    public List<TipologiaPerfilMapping> getAllMappings() {
+    // -------------------------------------------------------------------
+    // classify() — core logic: varrer todos os eventos nao_categorizado
+    // ou com perfil_classificado nulo e atribuir perfil via mapeamento
+    // -------------------------------------------------------------------
+    @Transactional
+    public void classify() {
+        List<ValidationEvent> pendentes = validationEventRepository
+                .findByPerfilClassificadoIsNullOrPerfilClassificado(NAO_CATEGORIZADO);
+
+        if (pendentes.isEmpty()) return;
+
+        Map<String, String> cache = buildMappingCache();
+
+        for (ValidationEvent event : pendentes) {
+            String ticketCode = event.getTicketType() != null
+                    ? event.getTicketType().getCode()
+                    : null;
+            if (ticketCode == null) {
+                event.setPerfilClassificado(NAO_CATEGORIZADO);
+                continue;
+            }
+            String perfil = cache.getOrDefault(ticketCode, NAO_CATEGORIZADO);
+            event.setPerfilClassificado(perfil);
+        }
+
+        validationEventRepository.saveAll(pendentes);
+    }
+
+    // -------------------------------------------------------------------
+    // getStats()
+    // -------------------------------------------------------------------
+    public CategorizationStatsDto getStats() {
+        long estudante = validationEventRepository.countByPerfilClassificado("estudante");
+        long senior    = validationEventRepository.countByPerfilClassificado("senior");
+        long normal    = validationEventRepository.countByPerfilClassificado("normal");
+        long totalClassificados    = estudante + senior + normal;
+        long totalNaoCategorizado  = validationEventRepository.countByPerfilClassificado(NAO_CATEGORIZADO);
+
+        return new CategorizationStatsDto(totalClassificados, totalNaoCategorizado,
+                estudante, senior, normal);
+    }
+
+    // -------------------------------------------------------------------
+    // getMappings()
+    // -------------------------------------------------------------------
+    public List<TipologiaPerfilMapping> getMappings() {
         return mappingRepository.findAll();
     }
 
+    // -------------------------------------------------------------------
+    // createMapping() — guarda, audita e reclassifica
+    // -------------------------------------------------------------------
     @Transactional
     public TipologiaPerfilMapping createMapping(TipologiaPerfilMapping mapping) {
+        if (mappingRepository.existsByTipoTitulo(mapping.getTipoTitulo())) {
+            throw new RuntimeException("Já existe um mapeamento para este tipo de título: " + mapping.getTipoTitulo());
+        }
+        
         mapping.setCreatedAt(OffsetDateTime.now());
         mapping.setUpdatedAt(OffsetDateTime.now());
-        return mappingRepository.save(mapping);
-    }
+        if (mapping.getUpdatedBy() == null) mapping.setUpdatedBy("api-rest");
 
-    @Transactional
-    public TipologiaPerfilMapping updateMapping(Long id, TipologiaPerfilMapping updatedMapping) {
-        TipologiaPerfilMapping existing = mappingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Mapping not found"));
+        TipologiaPerfilMapping saved = mappingRepository.saveAndFlush(mapping);
+
+        registarAuditoria("CREATE", saved.getTipoTitulo(), null, saved.getPerfil(),
+                saved.getUpdatedBy() != null ? saved.getUpdatedBy() : "sistema");
+
+        // Sincronizar todos os eventos deste tipo com o novo perfil imediatamente
+        updateEventsForTicketCode(saved.getTipoTitulo(), saved.getPerfil());
         
-        existing.setTipoTitulo(updatedMapping.getTipoTitulo());
-        existing.setPerfil(updatedMapping.getPerfil());
-        existing.setUpdatedAt(OffsetDateTime.now());
-        if (updatedMapping.getUpdatedBy() != null) {
-            existing.setUpdatedBy(updatedMapping.getUpdatedBy());
-        }
-        return mappingRepository.save(existing);
+        return saved;
     }
 
+    // -------------------------------------------------------------------
+    // updateMapping() — edita, audita e reclassifica
+    // -------------------------------------------------------------------
+    @Transactional
+    public TipologiaPerfilMapping updateMapping(Long id, TipologiaPerfilMapping dados) {
+        TipologiaPerfilMapping existing = mappingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mapeamento não encontrado: " + id));
+
+        String perfilAnterior = existing.getPerfil();
+        existing.setTipoTitulo(dados.getTipoTitulo());
+        existing.setPerfil(dados.getPerfil());
+        existing.setUpdatedAt(OffsetDateTime.now());
+        if (dados.getUpdatedBy() != null) {
+            existing.setUpdatedBy(dados.getUpdatedBy());
+        }
+        TipologiaPerfilMapping saved = mappingRepository.save(existing);
+
+        registarAuditoria("UPDATE", saved.getTipoTitulo(), perfilAnterior, saved.getPerfil(),
+                saved.getUpdatedBy() != null ? saved.getUpdatedBy() : "sistema");
+
+        // Sincronizar todos os eventos históricos deste tipo com o novo perfil
+        updateEventsForTicketCode(saved.getTipoTitulo(), saved.getPerfil());
+        
+        return saved;
+    }
+
+    // -------------------------------------------------------------------
+    // deleteMapping() — apaga e audita
+    // -------------------------------------------------------------------
     @Transactional
     public void deleteMapping(Long id) {
+        TipologiaPerfilMapping existing = mappingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mapeamento não encontrado: " + id));
+
+        registarAuditoria("DELETE", existing.getTipoTitulo(), existing.getPerfil(), null, "sistema");
+        
+        // Resetar todos os eventos deste tipo para "nao_categorizado"
+        updateEventsForTicketCode(existing.getTipoTitulo(), NAO_CATEGORIZADO);
+        
         mappingRepository.deleteById(id);
     }
 
+    // -------------------------------------------------------------------
+    // logAudit() — recebe auditoria vinda do frontend
+    // -------------------------------------------------------------------
     @Transactional
     public CategorizationAudit logAudit(CategorizationAudit audit) {
         if (audit.getTimestamp() == null) {
@@ -68,102 +160,72 @@ public class CategorizationService {
         return auditRepository.save(audit);
     }
 
-    public Map<String, Object> getStats() {
-        long totalClassificados = validationEventRepository.countByPerfilClassificado("estudante") +
-                                  validationEventRepository.countByPerfilClassificado("senior") +
-                                  validationEventRepository.countByPerfilClassificado("normal");
-        
-        long totalNaoCategorizado = validationEventRepository.countByPerfilClassificado("nao_categorizado");
-        long estudante = validationEventRepository.countByPerfilClassificado("estudante");
-        long senior = validationEventRepository.countByPerfilClassificado("senior");
-        long normal = validationEventRepository.countByPerfilClassificado("normal");
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalClassificados", totalClassificados);
-        stats.put("totalNaoCategorizado", totalNaoCategorizado);
-        stats.put("estudante", estudante);
-        stats.put("senior", senior);
-        stats.put("normal", normal);
-        return stats;
+    // -------------------------------------------------------------------
+    // getUncategorized() — filtra por data (LocalDate → OffsetDateTime)
+    // -------------------------------------------------------------------
+    public List<ValidationEvent> getUncategorized(LocalDate dataInicio, LocalDate dataFim) {
+        if (dataInicio != null && dataFim != null) {
+            OffsetDateTime inicio = dataInicio.atStartOfDay().atOffset(ZoneOffset.UTC);
+            OffsetDateTime fim    = dataFim.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+            return validationEventRepository
+                    .findByPerfilClassificadoAndTransactionDateTimeBetween(NAO_CATEGORIZADO, inicio, fim);
+        }
+        return validationEventRepository.findByPerfilClassificado(NAO_CATEGORIZADO);
     }
 
-    public List<ValidationEvent> getUncategorized(OffsetDateTime startDate, OffsetDateTime endDate) {
-        if (startDate != null && endDate != null) {
-            return validationEventRepository.findByPerfilClassificadoAndTransactionDateTimeBetween("nao_categorizado", startDate, endDate);
-        }
-        return validationEventRepository.findByPerfilClassificado("nao_categorizado");
+    // -------------------------------------------------------------------
+    // reprocess() — chama classify() em todos os nao_categorizado
+    // -------------------------------------------------------------------
+    @Transactional
+    public void reset() {
+        // Apagar todos os mapeamentos
+        mappingRepository.deleteAll();
+        
+        // Apagar todas as auditorias
+        auditRepository.deleteAll();
+        
+        // Resetar TODOS os eventos de validação para nao_categorizado usando query direta (muito mais rápido)
+        validationEventRepository.resetAllClassifications(NAO_CATEGORIZADO);
     }
 
     @Transactional
     public void reprocess() {
-        List<ValidationEvent> uncategorized = validationEventRepository.findByPerfilClassificadoAndPiiDetectedFalse("nao_categorizado");
-        if (uncategorized.isEmpty()) return;
-
-        List<TipologiaPerfilMapping> mappings = mappingRepository.findAll();
-        Map<String, String> mappingMap = new HashMap<>();
-        for (TipologiaPerfilMapping m : mappings) {
-            mappingMap.put(m.getTipoTitulo(), m.getPerfil());
-        }
-
-        for (ValidationEvent event : uncategorized) {
-            String ticketCode = event.getTicketType() != null ? event.getTicketType().getCode() : null;
-            if (ticketCode == null) continue;
-
-            if (isPiiDetected(event)) {
-                event.setPiiDetected(true);
-                continue;
-            }
-
-            if (mappingMap.containsKey(ticketCode)) {
-                String novoPerfil = mappingMap.get(ticketCode);
-                event.setPerfilClassificado(novoPerfil);
-
-                CategorizationAudit audit = new CategorizationAudit();
-                audit.setAcao("UPDATE_REPROCESS");
-                audit.setTipoTitulo(ticketCode);
-                audit.setPerfilAnterior("nao_categorizado");
-                audit.setPerfilNovo(novoPerfil);
-                audit.setTimestamp(OffsetDateTime.now());
-                audit.setUtilizador("SYSTEM");
-                auditRepository.save(audit);
-            }
-        }
-        validationEventRepository.saveAll(uncategorized);
+        classify();
     }
 
-    private boolean isPiiDetected(ValidationEvent event) {
-        String card = event.getCardId();
-        if (card == null) return false;
-        // Simple logic for PII detection mock: 
-        // If it looks like an email or a very short non-hashed term
-        if (card.contains("@") && card.contains(".")) return true;
-        if (card.length() < 5) return true; // Just as an example rule
-        return false;
+    @Transactional
+    public void deleteUncategorized() {
+        validationEventRepository.deleteByPerfilClassificado(NAO_CATEGORIZADO);
     }
 
-    public Map<String, String> getMappingCache() {
-        List<TipologiaPerfilMapping> mappings = mappingRepository.findAll();
-        Map<String, String> mappingMap = new HashMap<>();
-        for (TipologiaPerfilMapping m : mappings) {
-            mappingMap.put(m.getTipoTitulo(), m.getPerfil());
-        }
-        return mappingMap;
+    // -------------------------------------------------------------------
+    // Helpers internos
+    // -------------------------------------------------------------------
+    @Transactional
+    protected void updateEventsForTicketCode(String ticketCode, String novoPerfil) {
+        // Usar Query direta no repositório para performance e fiabilidade
+        validationEventRepository.updateProfileByTicketCode(ticketCode, novoPerfil);
     }
 
-    public void classifyEventOnIngestion(ValidationEvent event, Map<String, String> mappingCache) {
-        String ticketCode = event.getTicketType() != null ? event.getTicketType().getCode() : null;
-        if (ticketCode == null) return;
-
-        if (isPiiDetected(event)) {
-            event.setPiiDetected(true);
-            event.setPerfilClassificado("nao_categorizado");
-            return;
+    private Map<String, String> buildMappingCache() {
+        List<TipologiaPerfilMapping> todos = mappingRepository.findAll();
+        Map<String, String> cache = new HashMap<>();
+        for (TipologiaPerfilMapping m : todos) {
+            cache.put(m.getTipoTitulo(), m.getPerfil());
         }
+        return cache;
+    }
 
-        if (mappingCache.containsKey(ticketCode)) {
-            event.setPerfilClassificado(mappingCache.get(ticketCode));
-        } else {
-            event.setPerfilClassificado("nao_categorizado");
-        }
+    private void registarAuditoria(String acao, String tipoTitulo,
+                                    String perfilAnterior, String perfilNovo,
+                                    String utilizador) {
+        CategorizationAudit audit = new CategorizationAudit();
+        audit.setAcao(acao);
+        audit.setTipoTitulo(tipoTitulo);
+        audit.setPerfilAnterior(perfilAnterior);
+        audit.setPerfilNovo(perfilNovo);
+        audit.setTimestamp(OffsetDateTime.now());
+        audit.setUtilizador(utilizador);
+        auditRepository.save(audit);
     }
 }

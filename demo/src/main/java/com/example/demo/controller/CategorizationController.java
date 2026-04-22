@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CategorizationStatsDto;
 import com.example.demo.model.CategorizationAudit;
 import com.example.demo.model.TipologiaPerfilMapping;
 import com.example.demo.model.ValidationEvent;
@@ -8,12 +9,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/categorization")
+@RequestMapping("/categorization")
 public class CategorizationController {
 
     private final CategorizationService service;
@@ -22,9 +23,14 @@ public class CategorizationController {
         this.service = service;
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<CategorizationStatsDto> getStats() {
+        return ResponseEntity.ok(service.getStats());
+    }
+
     @GetMapping("/mappings")
     public ResponseEntity<List<TipologiaPerfilMapping>> getMappings() {
-        return ResponseEntity.ok(service.getAllMappings());
+        return ResponseEntity.ok(service.getMappings());
     }
 
     @PostMapping("/mappings")
@@ -33,7 +39,9 @@ public class CategorizationController {
     }
 
     @PutMapping("/mappings/{id}")
-    public ResponseEntity<TipologiaPerfilMapping> updateMapping(@PathVariable Long id, @RequestBody TipologiaPerfilMapping mapping) {
+    public ResponseEntity<TipologiaPerfilMapping> updateMapping(
+            @PathVariable Long id,
+            @RequestBody TipologiaPerfilMapping mapping) {
         return ResponseEntity.ok(service.updateMapping(id, mapping));
     }
 
@@ -48,21 +56,28 @@ public class CategorizationController {
         return ResponseEntity.ok(service.logAudit(audit));
     }
 
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getStats() {
-        return ResponseEntity.ok(service.getStats());
-    }
-
     @GetMapping("/uncategorized")
     public ResponseEntity<List<ValidationEvent>> getUncategorized(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate) {
-        return ResponseEntity.ok(service.getUncategorized(startDate, endDate));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
+        return ResponseEntity.ok(service.getUncategorized(dataInicio, dataFim));
     }
 
     @PostMapping("/reprocess")
     public ResponseEntity<Map<String, String>> reprocess() {
         service.reprocess();
-        return ResponseEntity.ok(Map.of("status", "success", "message", "Reprocessing completed successfully."));
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Reprocessamento concluído."));
+    }
+
+    @PostMapping("/reset")
+    public ResponseEntity<Map<String, String>> reset() {
+        service.reset();
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Sistema limpo com sucesso."));
+    }
+
+    @DeleteMapping("/uncategorized")
+    public ResponseEntity<Void> deleteUncategorized() {
+        service.deleteUncategorized();
+        return ResponseEntity.noContent().build();
     }
 }

@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface TipologiaPerfilMappingRepository extends JpaRepository<TipologiaPerfilMapping, Long> {
 
+    boolean existsByTipoTitulo(String tipoTitulo);
     Optional<TipologiaPerfilMapping> findByTipoTitulo(String tipoTitulo);
 
 }

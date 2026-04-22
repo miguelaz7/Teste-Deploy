@@ -9,6 +9,11 @@
   margin-bottom: 24px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .gestao-header h2 {
   font-size: 1.5rem;
   font-weight: 800;

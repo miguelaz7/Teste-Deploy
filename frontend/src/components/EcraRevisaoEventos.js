@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getUncategorizedEvents, reprocessEvents } from '../services/categorizationService';
-import CategorizationStats from './CategorizationStats';
+import { getUncategorizedEvents, reprocessEvents, deleteUncategorizedEvents } from '../services/categorizationService';
 import './EcraRevisaoEventos.css';
 
-const EcraRevisaoEventos = () => {
+const EcraRevisaoEventos = ({ onMappingChange }) => {
   const [eventos, setEventos] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -43,34 +42,41 @@ const EcraRevisaoEventos = () => {
   const handleReprocessar = async (id) => {
     try {
       await reprocessEvents(id);
-      // Automatic UI state polling will pick this up
+      if (onMappingChange) onMappingChange();
     } catch (err) {
       console.error('Error reprocessing event', err);
     }
   };
 
+  const handleApagarTudo = async () => {
+    if (window.confirm('Tem a certeza que deseja apagar TODOS os eventos não categorizados da base de dados?')) {
+      try {
+        await deleteUncategorizedEvents();
+        if (onMappingChange) onMappingChange();
+      } catch (err) {
+        console.error('Error deleting events', err);
+      }
+    }
+  };
+
   return (
     <div className="revisao-eventos-container">
-      <CategorizationStats />
       
-      <div className="revisao-header">
-        <h2 className="revisao-title">Revisão de Eventos Não Categorizados</h2>
-        <div className="date-filter">
-          <label>De: </label>
-          <input 
-            type="date" 
-            value={startDate} 
-            onChange={(e) => setStartDate(e.target.value)} 
-          />
-          <label>Até: </label>
-          <input 
-            type="date" 
-            value={endDate} 
-            onChange={(e) => setEndDate(e.target.value)} 
-          />
+      <div className="gestao-header">
+        <h2>Revisão de Eventos Não Categorizados</h2>
+        <div className="header-actions">
+          <div className="date-filter-group">
+            <label>De:</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <label>Até:</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
+          <button className="btn-secondary danger" onClick={handleApagarTudo}>
+            Apagar Tudo
+          </button>
         </div>
       </div>
-
+      
       <div className="table-container">
         <table className="eventos-table">
           <thead>
@@ -83,17 +89,19 @@ const EcraRevisaoEventos = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="3" style={{ textAlign: 'center', color: '#64748b' }}>A carregar...</td>
+                <td colSpan="3" style={{ textAlign: 'center' }}>
+                  <span className="status-text">A carregar dados...</span>
+                </td>
               </tr>
             ) : eventos.length > 0 ? (
               eventos.map((evento) => (
                 <tr key={evento.id}>
-                  <td>{evento.identifier || '---'}</td>
+                  <td>{evento.cardId || '---'}</td>
                   <td>
                     {evento.pii_detected ? (
-                      <span className="badge badge-suspenso">Suspenso - PII</span>
+                      <span className="badge badge-suspenso">Suspenso (PII)</span>
                     ) : (
-                      <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>Pendente</span>
+                      <span className="status-text">Pendente</span>
                     )}
                   </td>
                   <td>
@@ -110,7 +118,9 @@ const EcraRevisaoEventos = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="3" style={{ textAlign: 'center', color: '#64748b' }}>Nenhum evento encontrado.</td>
+                <td colSpan="3" style={{ textAlign: 'center' }}>
+                  <span className="status-text">Nenhum evento pendente de categorização para este período.</span>
+                </td>
               </tr>
             )}
           </tbody>
