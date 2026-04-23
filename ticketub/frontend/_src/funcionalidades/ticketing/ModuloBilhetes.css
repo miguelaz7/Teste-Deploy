@@ -1,0 +1,41 @@
+.modulo-bilhetes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bilhetes-nav {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.sub-nav-btn {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.sub-nav-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.sub-nav-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+.bilhetes-content {
+  background: transparent;
+}
+

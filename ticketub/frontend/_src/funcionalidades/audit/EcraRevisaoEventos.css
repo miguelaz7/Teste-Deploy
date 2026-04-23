@@ -1,0 +1,178 @@
+.revisao-eventos-container {
+  padding: 24px;
+}
+
+/* Header & Actions */
+.gestao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.gestao-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Date Filter Group - Integrated and Elegant */
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.date-filter-group:hover {
+  background-color: #e2e8f0;
+}
+
+.date-filter-group label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-filter-group input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  color: #0f172a;
+  font-weight: 600;
+  outline: none;
+  background: white;
+}
+
+.date-filter-group input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Buttons */
+.btn-secondary {
+  background-color: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-secondary.danger {
+  color: #ef4444;
+  border-color: #fee2e2;
+}
+
+.btn-secondary.danger:hover {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+/* Table Container */
+.table-container {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.eventos-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.eventos-table th, .eventos-table td {
+  padding: 16px 24px;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.eventos-table th {
+  background-color: #f8fafc;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.eventos-table td {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.eventos-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Status & Badges */
+.status-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.badge-suspenso {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn-reprocess {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.btn-reprocess:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-reprocess:active {
+  transform: translateY(0);
+}
+
