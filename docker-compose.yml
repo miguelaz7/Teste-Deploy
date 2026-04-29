@@ -36,8 +36,6 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8080:8080"
-    volumes:
-      - ./ticketub/backend/resources/validacoesBus.csv:/app/data/validacoesBus.csv:ro
     depends_on:
       db:
         condition: service_healthy
