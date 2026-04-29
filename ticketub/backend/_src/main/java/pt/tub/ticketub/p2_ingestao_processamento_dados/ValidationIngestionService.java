@@ -18,6 +18,9 @@ import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TicketTypeReposi
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TripRepository;
 import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdEntityDto;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecord;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecordRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +31,16 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class ValidationIngestionService {
@@ -63,10 +69,14 @@ public class ValidationIngestionService {
     private final FareCollectionSystemRepository fareCollectionSystemRepository;
     private final ValidationQuarantineRepository validationQuarantineRepository;
     private final IngestionAuditLogRepository ingestionAuditLogRepository;
+    private final NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.ingestion.pseudonym.secret:dev-secret-change-me}")
     private String pseudonymSecret;
+
+    @Value("${app.etl.mapping-version:v1.0.0}")
+    private String etlMappingVersion;
 
     public ValidationIngestionService(
         StopRepository stopRepository,
@@ -77,7 +87,8 @@ public class ValidationIngestionService {
         ValidationEventRepository validationEventRepository,
         FareCollectionSystemRepository fareCollectionSystemRepository,
         ValidationQuarantineRepository validationQuarantineRepository,
-        IngestionAuditLogRepository ingestionAuditLogRepository
+        IngestionAuditLogRepository ingestionAuditLogRepository,
+        NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository
     ) {
         this.stopRepository = stopRepository;
         this.routeRepository = routeRepository;
@@ -88,6 +99,7 @@ public class ValidationIngestionService {
         this.fareCollectionSystemRepository = fareCollectionSystemRepository;
         this.validationQuarantineRepository = validationQuarantineRepository;
         this.ingestionAuditLogRepository = ingestionAuditLogRepository;
+        this.ngsiLdDataLakeRecordRepository = ngsiLdDataLakeRecordRepository;
     }
 
     @Transactional
@@ -151,6 +163,9 @@ public class ValidationIngestionService {
 
         validationEventRepository.saveAll(eventos);
         validationQuarantineRepository.saveAll(quarentena);
+
+        // Persistir eventos válidos como entidades NGSI-LD no Data Lake
+        persistirNgsiLdDataLake(eventos);
 
         return new ValidationIngestionResponseDto(
             validacoes.size(),
@@ -395,6 +410,121 @@ public class ValidationIngestionService {
             return objectMapper.writeValueAsString(dto);
         } catch (Exception e) {
             return "{}";
+        }
+    }
+
+    private void persistirNgsiLdDataLake(List<ValidationEvent> eventos) {
+        if (eventos == null || eventos.isEmpty()) {
+            return;
+        }
+
+        String batchId = UUID.randomUUID().toString();
+        LocalDate particao = LocalDate.now();
+        OffsetDateTime agora = OffsetDateTime.now();
+
+        List<NgsiLdDataLakeRecord> records = new ArrayList<>();
+        for (ValidationEvent evento : eventos) {
+            try {
+                NgsiLdEntityDto entidade = toNgsiLdEntity(evento);
+                NgsiLdDataLakeRecord record = new NgsiLdDataLakeRecord(
+                    batchId,
+                    entidade.getId(),
+                    entidade.getType(),
+                    toJson(entidade),
+                    particao,
+                    evento.getTransactionDateTime(),
+                    evento.getOriginStop() != null ? evento.getOriginStop().getStopLat() : null,
+                    evento.getOriginStop() != null ? evento.getOriginStop().getStopLon() : null,
+                    agora
+                );
+                records.add(record);
+            } catch (Exception e) {
+                auditar("NGSI_LD_CONVERSION_ERROR", evento.getIngestionHash(), e.getMessage(), "Falha na conversão NGSI-LD");
+            }
+        }
+
+        if (!records.isEmpty()) {
+            try {
+                ngsiLdDataLakeRecordRepository.saveAll(records);
+                auditar("NGSI_LD_PERSISTENCE_SUCCESS", "batchId", batchId, "Eventos persistidos no Data Lake");
+            } catch (Exception e) {
+                auditar("NGSI_LD_PERSISTENCE_ERROR", "batchId", batchId, "Erro na persistência NGSI-LD: " + e.getMessage());
+            }
+        }
+    }
+
+    private NgsiLdEntityDto toNgsiLdEntity(ValidationEvent evento) {
+        Map<String, Object> props = new HashMap<>();
+
+        // Propriedades de dados
+        props.put("transactionDateTime", ngsiProperty(evento.getTransactionDateTime().toString()));
+        props.put("transactionType", ngsiProperty(evento.getTransactionType()));
+        props.put("ticketTypeCode", ngsiProperty(evento.getTicketType().getCode()));
+        props.put("mediaType", ngsiProperty(evento.getMediaType()));
+        props.put("result", ngsiProperty(evento.getResult()));
+        props.put("equipmentId", ngsiProperty(evento.getEquipmentId()));
+        props.put("transactionVehicleNum", ngsiProperty(evento.getTransactionVehicleNum()));
+        props.put("cardId", ngsiProperty(evento.getCardId()));
+
+        if (evento.getFareForAdult() != null) {
+            props.put("fareForAdult", ngsiProperty(evento.getFareForAdult().doubleValue()));
+        }
+
+        if (evento.getRejectReason() != null) {
+            props.put("rejectReason", ngsiProperty(evento.getRejectReason()));
+        }
+
+        // Relações a outras entidades
+        if (evento.getOriginStop() != null) {
+            props.put("originStop", ngsiRelationship("urn:ngsi-ld:Stop:" + evento.getOriginStop().getStopId()));
+        }
+
+        if (evento.getRouteId() != null) {
+            props.put("route", ngsiRelationship("urn:ngsi-ld:Route:" + evento.getRouteId()));
+        }
+
+        if (evento.getTripId() != null) {
+            props.put("trip", ngsiRelationship("urn:ngsi-ld:Trip:" + evento.getTripId()));
+        }
+
+        // Geolocalização
+        if (evento.getOriginStop() != null && evento.getOriginStop().getStopLat() != null && evento.getOriginStop().getStopLon() != null) {
+            props.put("location", ngsiGeoProperty(evento.getOriginStop().getStopLat(), evento.getOriginStop().getStopLon()));
+        }
+
+        String ngsiId = "urn:ngsi-ld:FareTransaction:" + evento.getIngestionHash();
+        return new NgsiLdEntityDto(ngsiId, "FareTransaction", etlMappingVersion, props);
+    }
+
+    private Map<String, Object> ngsiProperty(Object value) {
+        Map<String, Object> prop = new HashMap<>();
+        prop.put("type", "Property");
+        prop.put("value", value);
+        return prop;
+    }
+
+    private Map<String, Object> ngsiRelationship(String objectUrn) {
+        Map<String, Object> rel = new HashMap<>();
+        rel.put("type", "Relationship");
+        rel.put("object", objectUrn);
+        return rel;
+    }
+
+    private Map<String, Object> ngsiGeoProperty(Double lat, Double lon) {
+        Map<String, Object> geo = new HashMap<>();
+        geo.put("type", "GeoProperty");
+        Map<String, Object> value = new HashMap<>();
+        value.put("type", "Point");
+        value.put("coordinates", List.of(lon, lat));
+        geo.put("value", value);
+        return geo;
+    }
+
+    private String toJson(NgsiLdEntityDto entidade) {
+        try {
+            return objectMapper.writeValueAsString(entidade);
+        } catch (Exception e) {
+            throw new IllegalStateException("Falha a serializar entidade NGSI-LD", e);
         }
     }
 
