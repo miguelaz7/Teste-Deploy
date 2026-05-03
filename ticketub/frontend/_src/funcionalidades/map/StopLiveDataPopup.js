@@ -115,7 +115,7 @@ function StopLiveDataPopup({ stop }) {
     setError(null);
 
     const cacheBuster = Date.now();
-    fetch(`http://localhost:8080/api/stops/${stop.stopId}/live-data?t=${cacheBuster}`, { cache: 'no-store' })
+    fetch(`http://localhost:8080/api/mapa/paragens/${stop.stopId}/live-data?t=${cacheBuster}`, { cache: 'no-store' })
       .then(res => {
         if (!res.ok) throw new Error(`Status HTTP: ${res.status}`);
         return res.json();
@@ -219,5 +219,3 @@ function StopLiveDataPopup({ stop }) {
 }
 
 export default StopLiveDataPopup;
-
-
