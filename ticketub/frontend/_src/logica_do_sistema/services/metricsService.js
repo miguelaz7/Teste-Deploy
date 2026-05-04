@@ -3,11 +3,11 @@
  * Segue a regra do AGENTS.md: separacao da logica de fetching dos componentes.
  */
 
-const API_BASE_URL = 'http://localhost:8080/api/validations';
+const API_BASE_URL = 'http://localhost:8080/api/dashboard';
 
 export const getDashboardMetrics = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/dashboard-metrics`, {
+    const response = await fetch(`${API_BASE_URL}/metricas-ingestao`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -25,5 +25,4 @@ export const getDashboardMetrics = async () => {
     throw error;
   }
 };
-
 
