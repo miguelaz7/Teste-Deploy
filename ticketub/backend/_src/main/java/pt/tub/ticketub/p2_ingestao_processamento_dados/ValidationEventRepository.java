@@ -1,6 +1,7 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
 import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEvent;
+import pt.tub.ticketub.p8_alertas_e_excecoes.ValidationEventAlertSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,9 +9,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
-public interface ValidationEventRepository extends JpaRepository<ValidationEvent, Long> {
+public interface ValidationEventRepository extends JpaRepository<ValidationEvent, Long>, ValidationEventAlertSource {
 
     boolean existsByIngestionHashAndIngestedAtAfter(String ingestionHash, OffsetDateTime reference);
+
+    List<ValidationEvent> findByTransactionDateTimeAfter(OffsetDateTime reference);
 
     List<ValidationEvent> findByOriginStop_StopId(String stopId);
 
