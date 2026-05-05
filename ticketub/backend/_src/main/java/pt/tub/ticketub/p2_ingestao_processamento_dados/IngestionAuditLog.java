@@ -1,5 +1,7 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
+// O0.2.4.d – Repositório de Estatísticas de Ingestão (entidade de auditoria)
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,19 +34,21 @@ public class IngestionAuditLog {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    public IngestionAuditLog() {
-    }
+    public IngestionAuditLog() {}
 
-    public IngestionAuditLog(String eventType, String fieldName, String originalValue, String detail, OffsetDateTime createdAt) {
-        this.eventType = eventType;
-        this.fieldName = fieldName;
+    public IngestionAuditLog(String eventType, String fieldName,
+                             String originalValue, String detail, OffsetDateTime createdAt) {
+        this.eventType     = eventType;
+        this.fieldName     = fieldName;
         this.originalValue = originalValue;
-        this.detail = detail;
-        this.createdAt = createdAt;
+        this.detail        = detail;
+        this.createdAt     = createdAt;
     }
+
+    public Long getId()              { return id; }
+    public String getEventType()     { return eventType; }
+    public String getFieldName()     { return fieldName; }
+    public String getOriginalValue() { return originalValue; }
+    public String getDetail()        { return detail; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
 }
-
-
-
-
-

@@ -1,12 +1,11 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
+// O0.2.2.d – Repositório de Dados Normalizados (entidade)
 
-
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TicketType;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Trip;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.FareCollectionSystem;
-
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TicketType;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Trip;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -92,172 +91,46 @@ public class ValidationEvent {
     @Column(name = "pii_detected")
     private Boolean piiDetected = false;
 
-    public ValidationEvent() {
-    }
+    public ValidationEvent() {}
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getCardId() {
-        return cardId;
-    }
-
-    public void setCardId(String cardId) {
-        this.cardId = cardId;
-    }
-
-    public String getTicketId() {
-        return ticketId;
-    }
-
-    public void setTicketId(String ticketId) {
-        this.ticketId = ticketId;
-    }
-
-    public String getMediaType() {
-        return mediaType;
-    }
-
-    public String getIngestionHash() {
-        return ingestionHash;
-    }
-
-    public void setIngestionHash(String ingestionHash) {
-        this.ingestionHash = ingestionHash;
-    }
-
-    public OffsetDateTime getIngestedAt() {
-        return ingestedAt;
-    }
-
-    public void setIngestedAt(OffsetDateTime ingestedAt) {
-        this.ingestedAt = ingestedAt;
-    }
-
-    public void setMediaType(String mediaType) {
-        this.mediaType = mediaType;
-    }
-
-    public TicketType getTicketType() {
-        return ticketType;
-    }
-
-    public void setTicketType(TicketType ticketType) {
-        this.ticketType = ticketType;
-    }
-
-    public String getTransactionType() {
-        return transactionType;
-    }
-
-    public void setTransactionType(String transactionType) {
-        this.transactionType = transactionType;
-    }
-
-    public OffsetDateTime getTransactionDateTime() {
-        return transactionDateTime;
-    }
-
-    public void setTransactionDateTime(OffsetDateTime transactionDateTime) {
-        this.transactionDateTime = transactionDateTime;
-    }
-
-    public Stop getOriginStop() {
-        return originStop;
-    }
-
-    public void setOriginStop(Stop originStop) {
-        this.originStop = originStop;
-    }
-
-    public String getRouteId() {
-        return routeId;
-    }
-
-    public void setRouteId(String routeId) {
-        this.routeId = routeId;
-    }
-
-    public Trip getTrip() {
-        return trip;
-    }
-
-    public String getTripId() {
-        return tripId;
-    }
-
-    public void setTripId(String tripId) {
-        this.tripId = tripId;
-    }
-
-    public FareCollectionSystem getFareCollectionSystem() {
-        return fareCollectionSystem;
-    }
-
-    public void setFareCollectionSystem(FareCollectionSystem fareCollectionSystem) {
-        this.fareCollectionSystem = fareCollectionSystem;
-    }
-
-    public BigDecimal getFareForAdult() {
-        return fareForAdult;
-    }
-
-    public void setFareForAdult(BigDecimal fareForAdult) {
-        this.fareForAdult = fareForAdult;
-    }
-
-    public String getEquipmentId() {
-        return equipmentId;
-    }
-
-    public void setEquipmentId(String equipmentId) {
-        this.equipmentId = equipmentId;
-    }
-
-    public String getTransactionVehicleNum() {
-        return transactionVehicleNum;
-    }
-
-    public void setTransactionVehicleNum(String transactionVehicleNum) {
-        this.transactionVehicleNum = transactionVehicleNum;
-    }
-
-    public String getResult() {
-        return result;
-    }
-
-    public void setResult(String result) {
-        this.result = result;
-    }
-
-    public String getRejectReason() {
-        return rejectReason;
-    }
-
-    public void setRejectReason(String rejectReason) {
-        this.rejectReason = rejectReason;
-    }
-
-    public String getPerfilClassificado() {
-        return perfilClassificado;
-    }
-
-    public void setPerfilClassificado(String perfilClassificado) {
-        this.perfilClassificado = perfilClassificado;
-    }
-
-    public Boolean getPiiDetected() {
-        return piiDetected;
-    }
-
-    public void setPiiDetected(Boolean piiDetected) {
-        this.piiDetected = piiDetected;
-    }
+    public Long getId()                                      { return id; }
+    public String getCardId()                                { return cardId; }
+    public void setCardId(String cardId)                     { this.cardId = cardId; }
+    public String getTicketId()                              { return ticketId; }
+    public void setTicketId(String ticketId)                 { this.ticketId = ticketId; }
+    public String getIngestionHash()                         { return ingestionHash; }
+    public void setIngestionHash(String ingestionHash)       { this.ingestionHash = ingestionHash; }
+    public OffsetDateTime getIngestedAt()                    { return ingestedAt; }
+    public void setIngestedAt(OffsetDateTime ingestedAt)     { this.ingestedAt = ingestedAt; }
+    public String getMediaType()                             { return mediaType; }
+    public void setMediaType(String mediaType)               { this.mediaType = mediaType; }
+    public TicketType getTicketType()                        { return ticketType; }
+    public void setTicketType(TicketType ticketType)         { this.ticketType = ticketType; }
+    public String getTransactionType()                       { return transactionType; }
+    public void setTransactionType(String t)                 { this.transactionType = t; }
+    public OffsetDateTime getTransactionDateTime()           { return transactionDateTime; }
+    public void setTransactionDateTime(OffsetDateTime t)     { this.transactionDateTime = t; }
+    public Stop getOriginStop()                              { return originStop; }
+    public void setOriginStop(Stop originStop)               { this.originStop = originStop; }
+    public String getRouteId()                               { return routeId; }
+    public void setRouteId(String routeId)                   { this.routeId = routeId; }
+    public Trip getTrip()                                    { return trip; }
+    public String getTripId()                                { return tripId; }
+    public void setTripId(String tripId)                     { this.tripId = tripId; }
+    public FareCollectionSystem getFareCollectionSystem()    { return fareCollectionSystem; }
+    public void setFareCollectionSystem(FareCollectionSystem f) { this.fareCollectionSystem = f; }
+    public BigDecimal getFareForAdult()                      { return fareForAdult; }
+    public void setFareForAdult(BigDecimal fareForAdult)     { this.fareForAdult = fareForAdult; }
+    public String getEquipmentId()                           { return equipmentId; }
+    public void setEquipmentId(String equipmentId)           { this.equipmentId = equipmentId; }
+    public String getTransactionVehicleNum()                 { return transactionVehicleNum; }
+    public void setTransactionVehicleNum(String t)           { this.transactionVehicleNum = t; }
+    public String getResult()                                { return result; }
+    public void setResult(String result)                     { this.result = result; }
+    public String getRejectReason()                          { return rejectReason; }
+    public void setRejectReason(String rejectReason)         { this.rejectReason = rejectReason; }
+    public String getPerfilClassificado()                    { return perfilClassificado; }
+    public void setPerfilClassificado(String p)              { this.perfilClassificado = p; }
+    public Boolean getPiiDetected()                          { return piiDetected; }
+    public void setPiiDetected(Boolean piiDetected)          { this.piiDetected = piiDetected; }
 }
-
-
-
-
-
-
