@@ -1,0 +1,208 @@
+.analise-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.analise-card {
+  background-color: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.analise-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  padding-bottom: 1rem;
+}
+
+.analise-card-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-main, #111827);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analise-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fee2e2;
+  color: #ef4444;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.analise-live-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  animation: pulseLive 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseLive {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.analise-tabs {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 2px solid var(--border-color, #e5e7eb);
+  margin-bottom: 1rem;
+}
+
+.analise-tab {
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.analise-tab:hover {
+  color: var(--text-main, #111827);
+}
+
+.analise-tab.active {
+  color: var(--primary-color, #3b82f6);
+}
+
+.analise-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--primary-color, #3b82f6);
+  border-radius: 2px 2px 0 0;
+}
+
+.analise-table-container {
+  overflow-x: auto;
+}
+
+.analise-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.analise-table th {
+  background-color: var(--bg-muted, #f9fafb);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.analise-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-main, #111827);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.analise-table tr:hover td {
+  background-color: var(--bg-hover, #f3f4f6);
+}
+
+.analise-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted, #6b7280);
+  background-color: var(--bg-muted, #f9fafb);
+  border-radius: 8px;
+  border: 1px dashed var(--border-color, #e5e7eb);
+}
+
+.historico-filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.historico-filters input[type="date"] {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-family: inherit;
+  color: var(--text-main, #111827);
+}
+
+.historico-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.historico-metric-box {
+  background-color: var(--bg-muted, #f9fafb);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.historico-metric-label {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+  font-weight: 500;
+}
+
+.historico-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main, #111827);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.desvio-positivo {
+  color: #10b981; /* green */
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.desvio-negativo {
+  color: #ef4444; /* red */
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.desvio-neutro {
+  color: #6b7280; /* gray */
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
