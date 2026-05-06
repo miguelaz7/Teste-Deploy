@@ -1,6 +1,6 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p5_analise_operacional_tempo_real.ValidationInsightsService;
+import pt.tub.ticketub.p5_analise_operacional_tempo_real.ControladorAgregacaoProcura;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 // O0.6.1.i – Interface do Mapa de Rede (UC06.1, UC06.2, UC06.3)
 // Mapa interactivo com marcadores das paragens. Ao clicar, abre popup
 // LIVE DATA com afluência, validações inválidas e distribuição por perfil
-// tarifário. Consome dados de: O0.5.1.c, O0.5.1.d e O0.9.1.d.
+// tarifário. Consome dados de: O0.5.1.c, O0.5.1.d e quarentena (P7).
 // =============================================================================
 
 @RestController
@@ -28,14 +28,14 @@ import java.util.stream.Collectors;
 public class InterfaceMapaRede {
 
     private final StopRepository stopRepository;
-    private final ValidationInsightsService validationInsightsService;
+    private final ControladorAgregacaoProcura controladorAgregacaoProcura;
     private final ValidationQuarantineRepository validationQuarantineRepository;
 
     public InterfaceMapaRede(StopRepository stopRepository,
-                             ValidationInsightsService validationInsightsService,
+                             ControladorAgregacaoProcura controladorAgregacaoProcura,
                              ValidationQuarantineRepository validationQuarantineRepository) {
-        this.stopRepository               = stopRepository;
-        this.validationInsightsService    = validationInsightsService;
+        this.stopRepository                 = stopRepository;
+        this.controladorAgregacaoProcura    = controladorAgregacaoProcura;
         this.validationQuarantineRepository = validationQuarantineRepository;
     }
 
@@ -52,14 +52,12 @@ public class InterfaceMapaRede {
     @GetMapping("/paragens/{stopId}/live-data")
     public ResponseEntity<Map<String, Object>> obterLiveData(@PathVariable String stopId) {
         Optional<Stop> stopOpt = stopRepository.findById(stopId);
-        if (stopOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        if (stopOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-        // UC06.1 — afluência e distribuição por tipo (eventos válidos)
-        Map<String, Object> insights = validationInsightsService
+        // UC06.1 — afluência e distribuição por tipo (O0.5.1.c)
+        Map<String, Object> insights = controladorAgregacaoProcura
             .obterInsights(Optional.of(stopId));
-        List<Object[]> porTipo = validationInsightsService
+        List<Object[]> porTipo = controladorAgregacaoProcura
             .obterContagemPorTipo(Optional.of(stopId));
 
         Map<String, Long> ticketTypeDistribution = new LinkedHashMap<>();
@@ -72,25 +70,21 @@ public class InterfaceMapaRede {
         long totalValidas = insights.containsKey("total")
             ? ((Number) insights.get("total")).longValue() : 0L;
 
-        // UC06.3 — validações inválidas por paragem
-        long totalInvalidas = validationQuarantineRepository.countByOriginStopId(stopId);
-        long totalGeral     = totalValidas + totalInvalidas;
+        // UC06.3 — inválidas por paragem (quarentena P7)
+        long totalInvalidas  = validationQuarantineRepository.countByOriginStopId(stopId);
+        long totalGeral      = totalValidas + totalInvalidas;
         double taxaInvalidas = totalGeral > 0
-            ? Math.round((double) totalInvalidas / totalGeral * 10000.0) / 100.0
-            : 0.0;
+            ? Math.round((double) totalInvalidas / totalGeral * 10000.0) / 100.0 : 0.0;
 
         // UC06.3 — top 3 motivos de rejeição
         List<Object[]> topMotivos = validationQuarantineRepository
             .findTopMotivosByOriginStopId(stopId);
-        List<Map<String, Object>> top3Motivos = topMotivos.stream()
-            .limit(3)
-            .map(row -> {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("motivo", row[0].toString());
-                m.put("total",  ((Number) row[1]).longValue());
-                return m;
-            })
-            .collect(Collectors.toList());
+        List<Map<String, Object>> top3 = topMotivos.stream().limit(3).map(row -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("motivo", row[0].toString());
+            m.put("total",  ((Number) row[1]).longValue());
+            return m;
+        }).collect(Collectors.toList());
 
         // UC06.2 — alerta qualidade degradada se taxa > 2%
         boolean qualidadeDegradada = taxaInvalidas > 2.0;
@@ -101,10 +95,13 @@ public class InterfaceMapaRede {
         double peakPercentage  = 0.0;
         if (insights.containsKey("timeGap") && insights.get("timeGap") != null) {
             String timeGap = insights.get("timeGap").toString();
-            peakWindowStart = timeGap.length() >= 16 ? timeGap.substring(11, 16) : timeGap;
-            int startHour = peakWindowStart.length() >= 2
-                ? Integer.parseInt(peakWindowStart.substring(0, 2)) : 0;
-            peakWindowEnd = String.format("%02d:00", (startHour + 1) % 24);
+            peakWindowStart = timeGap.length() >= 5 ? timeGap.substring(0, 5) : timeGap;
+            try {
+                int startHour = Integer.parseInt(peakWindowStart.substring(0, 2));
+                peakWindowEnd = String.format("%02d:00", (startHour + 1) % 24);
+            } catch (Exception e) {
+                peakWindowEnd = peakWindowStart;
+            }
         }
         if (insights.containsKey("peakAfluenciaPercentage")) {
             peakPercentage = ((Number) insights.get("peakAfluenciaPercentage")).doubleValue();
@@ -121,7 +118,7 @@ public class InterfaceMapaRede {
         resposta.put("invalidValidationsCount",                  totalInvalidas);
         resposta.put("invalidValidationsPercentageOfStopTotal",  taxaInvalidas);
         resposta.put("qualidadeDegradada",                       qualidadeDegradada);
-        resposta.put("topMotivoRejeicao",                        top3Motivos);
+        resposta.put("topMotivoRejeicao",                        top3);
         resposta.put("ticketTypeDistribution",                   ticketTypeDistribution);
         resposta.put("totalValidations",                         totalValidas);
 

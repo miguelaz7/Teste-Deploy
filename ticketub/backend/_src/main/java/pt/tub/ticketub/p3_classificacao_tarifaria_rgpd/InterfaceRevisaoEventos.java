@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/categorizacao")
+@RequestMapping("/categorization")
 public class InterfaceRevisaoEventos {
 
     private final ControladorClassificacaoTarifaria controlador;
