@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8080/api/analise';
+export const API_BASE_URL = 'http://localhost:8080/api/procura';
 
 /**
  * Função utilitária genérica para fetch

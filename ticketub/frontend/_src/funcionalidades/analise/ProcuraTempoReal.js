@@ -59,20 +59,35 @@ function ProcuraTempoReal() {
       return <div className="analise-empty-state">Sem dados disponíveis</div>;
     }
 
-    const headers = Object.keys(dataArray[0]);
+    // Mapeamento de nomes amigáveis
+    const columnMapping = {
+      descricao: activeTab === 'horario' ? 'Hora' : activeTab === 'linha' ? 'Linha' : 'Paragem',
+      totalValidacoes: 'Total',
+      totalInvalidas: 'Inválidas',
+      perfilEstudante: 'Estudante',
+      perfilSenior: 'Sénior',
+      perfilNormal: 'Normal'
+    };
+
+    // Colunas que queremos mostrar (por ordem)
+    const columnsToShow = ['descricao', 'totalValidacoes', 'perfilNormal', 'perfilEstudante', 'perfilSenior', 'totalInvalidas'];
 
     return (
       <div className="analise-table-container">
         <table className="analise-table">
           <thead>
             <tr>
-              {headers.map(h => <th key={h}>{h.charAt(0).toUpperCase() + h.slice(1)}</th>)}
+              {columnsToShow.map(col => <th key={col}>{columnMapping[col]}</th>)}
             </tr>
           </thead>
           <tbody>
             {dataArray.map((row, idx) => (
               <tr key={idx}>
-                {headers.map(h => <td key={`${idx}-${h}`}>{String(row[h])}</td>)}
+                {columnsToShow.map(col => (
+                  <td key={`${idx}-${col}`}>
+                    {row[col] !== undefined && row[col] !== null ? String(row[col]) : ''}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -101,10 +116,21 @@ function ProcuraTempoReal() {
              <div className="analise-empty-state">Sem dados disponíveis</div>
           ) : (
             <div className="historico-metrics-grid">
-              {Object.entries(liveData).map(([key, value]) => (
-                 <div key={key} className="historico-metric-box">
-                    <span className="historico-metric-label">{key}</span>
-                    <span className="historico-metric-value">{String(value)}</span>
+              {[
+                { key: 'timeGap', label: 'Hora de Pico' },
+                { key: 'peakAfluenciaPercentage', label: '% Afluência no Pico', suffix: '%' },
+                { key: 'total', label: 'Total Validações' },
+                { key: 'invalidCount', label: 'Qtd. Inválidas' },
+                { key: 'invalidPercentage', label: '% Inválidas', suffix: '%' },
+                { key: 'stopId', label: 'Filtro (Paragem)', valueOverride: liveData.stopId || 'Toda a Rede' }
+              ].map(metric => (
+                 <div key={metric.key} className="historico-metric-box">
+                    <span className="historico-metric-label">{metric.label}</span>
+                    <span className="historico-metric-value">
+                      {metric.valueOverride !== undefined 
+                        ? metric.valueOverride 
+                        : `${liveData[metric.key]}${metric.suffix || ''}`}
+                    </span>
                  </div>
               ))}
             </div>
