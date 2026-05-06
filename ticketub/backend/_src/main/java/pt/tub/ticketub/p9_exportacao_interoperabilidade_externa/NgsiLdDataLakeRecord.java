@@ -16,10 +16,10 @@ import java.time.OffsetDateTime;
 @Table(
     name = "ngsi_ld_data_lake",
     indexes = {
-        @Index(name = "idx_datalake_batch_id", columnList = "batch_id"),
+        @Index(name = "idx_datalake_batch_id",      columnList = "batch_id"),
         @Index(name = "idx_datalake_partition_date", columnList = "partition_date"),
-        @Index(name = "idx_datalake_temporal", columnList = "observation_datetime"),
-        @Index(name = "idx_datalake_geospatial", columnList = "geo_lat,geo_lon")
+        @Index(name = "idx_datalake_temporal",       columnList = "observation_datetime"),
+        @Index(name = "idx_datalake_geospatial",     columnList = "geo_lat,geo_lon")
     }
 )
 public class NgsiLdDataLakeRecord {
@@ -56,30 +56,35 @@ public class NgsiLdDataLakeRecord {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    public NgsiLdDataLakeRecord() {
-    }
+    public NgsiLdDataLakeRecord() {}
 
     public NgsiLdDataLakeRecord(
-        String batchId,
-        String entityId,
-        String entityType,
-        String payloadJson,
-        LocalDate partitionDate,
+        String batchId, String entityId, String entityType,
+        String payloadJson, LocalDate partitionDate,
         OffsetDateTime observationDateTime,
-        Double geoLat,
-        Double geoLon,
-        OffsetDateTime createdAt
+        Double geoLat, Double geoLon, OffsetDateTime createdAt
     ) {
-        this.batchId = batchId;
-        this.entityId = entityId;
-        this.entityType = entityType;
-        this.payloadJson = payloadJson;
-        this.partitionDate = partitionDate;
+        this.batchId             = batchId;
+        this.entityId            = entityId;
+        this.entityType          = entityType;
+        this.payloadJson         = payloadJson;
+        this.partitionDate       = partitionDate;
         this.observationDateTime = observationDateTime;
-        this.geoLat = geoLat;
-        this.geoLon = geoLon;
-        this.createdAt = createdAt;
+        this.geoLat              = geoLat;
+        this.geoLon              = geoLon;
+        this.createdAt           = createdAt;
     }
+
+    public Long getId()                        { return id; }
+    public String getBatchId()                 { return batchId; }
+    public String getEntityId()                { return entityId; }
+    public String getEntityType()              { return entityType; }
+    public String getPayloadJson()             { return payloadJson; }
+    public LocalDate getPartitionDate()        { return partitionDate; }
+    public OffsetDateTime getObservationDateTime() { return observationDateTime; }
+    public Double getOriginLat()               { return geoLat; }
+    public Double getOriginLon()               { return geoLon; }
+    public OffsetDateTime getCreatedAt()       { return createdAt; }
 }
 
 

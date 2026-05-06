@@ -1,6 +1,6 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p5_analise_operacional_tempo_real.ValidationInsightsService;
+import pt.tub.ticketub.p5_analise_operacional_tempo_real.ControladorAgregacaoProcura;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,27 +22,45 @@ import java.util.Optional;
 @RequestMapping("/api/procura")
 public class InterfaceProcuraTempoReal {
 
-    private final ValidationInsightsService validationInsightsService;
+    private final ControladorAgregacaoProcura controladorAgregacaoProcura;
 
-    public InterfaceProcuraTempoReal(ValidationInsightsService validationInsightsService) {
-        this.validationInsightsService = validationInsightsService;
+    public InterfaceProcuraTempoReal(ControladorAgregacaoProcura controladorAgregacaoProcura) {
+        this.controladorAgregacaoProcura = controladorAgregacaoProcura;
     }
 
-    // Perspectiva por horário e afluência geral, com filtro opcional por paragem
+    // Perspectiva por horário — afluência por hora do dia
+    @GetMapping("/por-horario")
+    public ResponseEntity<List<?>> obterProcuraPorHorario() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("HORARIO"));
+    }
+
+    // Perspectiva por linha — afluência por route_id
+    @GetMapping("/por-linha")
+    public ResponseEntity<List<?>> obterProcuraPorLinha() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("LINHA"));
+    }
+
+    // Perspectiva por zona/paragem — afluência por stop_id
+    @GetMapping("/por-paragem")
+    public ResponseEntity<List<?>> obterProcuraPorParagem() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("ZONA_PARAGEM"));
+    }
+
+    // Insights em tempo real com filtro opcional por paragem
     @GetMapping("/tempo-real")
     public ResponseEntity<Map<String, Object>> obterProcuraTempoReal(
         @RequestParam(required = false) String stopId
     ) {
-        Map<String, Object> dados = validationInsightsService.obterInsights(Optional.ofNullable(stopId));
-        return ResponseEntity.ok(dados);
+        return ResponseEntity.ok(
+            controladorAgregacaoProcura.obterInsights(Optional.ofNullable(stopId)));
     }
 
-    // Perspectiva por perfil tarifário (distribuição por tipo de título)
+    // Distribuição por tipo de título com filtro opcional por paragem
     @GetMapping("/por-tipo")
     public ResponseEntity<List<Object[]>> obterProcuraPorTipo(
         @RequestParam(required = false) String stopId
     ) {
-        List<Object[]> dados = validationInsightsService.obterContagemPorTipo(Optional.ofNullable(stopId));
-        return ResponseEntity.ok(dados);
+        return ResponseEntity.ok(
+            controladorAgregacaoProcura.obterContagemPorTipo(Optional.ofNullable(stopId)));
     }
 }

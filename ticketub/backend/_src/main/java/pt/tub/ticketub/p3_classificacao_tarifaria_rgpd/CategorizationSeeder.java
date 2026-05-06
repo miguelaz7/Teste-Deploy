@@ -1,7 +1,5 @@
 package pt.tub.ticketub.p3_classificacao_tarifaria_rgpd;
 
-import pt.tub.ticketub.p3_classificacao_tarifaria_rgpd.TipologiaPerfilMapping;
-import pt.tub.ticketub.p3_classificacao_tarifaria_rgpd.TipologiaPerfilMappingRepository;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
@@ -11,31 +9,28 @@ import java.time.OffsetDateTime;
 public class CategorizationSeeder {
 
     private final TipologiaPerfilMappingRepository repository;
-    private final CategorizationService categorizationService;
+    private final ControladorClassificacaoTarifaria controlador;
 
     public CategorizationSeeder(TipologiaPerfilMappingRepository repository,
-                                CategorizationService categorizationService) {
-        this.repository = repository;
-        this.categorizationService = categorizationService;
+                                ControladorClassificacaoTarifaria controlador) {
+        this.repository  = repository;
+        this.controlador = controlador;
     }
 
-    // @PostConstruct
+    @PostConstruct
     public void seedMappings() {
         if (repository.count() > 0) return;
 
-        // Códigos canónicos conforme TICKET_TYPES_CANONICOS em ValidationIngestionService
         createIfNotFound("MENSAL",          "normal");
         createIfNotFound("AVULSO",          "normal");
         createIfNotFound("PASSE_ESTUDANTE", "estudante");
         createIfNotFound("PASSE_SENIOR",    "senior");
 
-        // Classificar todos os eventos pendentes com os mapeamentos recém-inseridos
-        categorizationService.classify();
+        controlador.classify();
     }
 
     private void createIfNotFound(String tipoTitulo, String perfil) {
         if (repository.findByTipoTitulo(tipoTitulo).isPresent()) return;
-
         TipologiaPerfilMapping mapping = new TipologiaPerfilMapping();
         mapping.setTipoTitulo(tipoTitulo);
         mapping.setPerfil(perfil);

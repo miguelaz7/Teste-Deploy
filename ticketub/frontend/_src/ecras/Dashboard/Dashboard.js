@@ -3,6 +3,15 @@ import { getGreeting } from "../../logica_do_sistema/utils/greeting";
 import Mapa from "../../funcionalidades/map/Mapa";
 import PainelGeral from "../../funcionalidades/dashboard/PainelGeral";
 import ModuloBilhetes from "../../funcionalidades/ticketing/ModuloBilhetes";
+import ProcuraTempoReal from "../../funcionalidades/analise/ProcuraTempoReal";
+import HistoricoConsolidado from "../../funcionalidades/analise/HistoricoConsolidado";
+import PainelAlertas from "../../funcionalidades/alertas/PainelAlertas";
+import DetalheQuarentena from "../../funcionalidades/alertas/DetalheQuarentena";
+import MatrizOD from "../../funcionalidades/od/MatrizOD";
+import ExportacaoDados from "../../funcionalidades/od/ExportacaoDados";
+import SimulacaoCenarios from "../../funcionalidades/planeamento/SimulacaoCenarios";
+import IntegracaoERP from "../../funcionalidades/planeamento/IntegracaoERP";
+import GestaoRGPD from "../../funcionalidades/rgpd/GestaoRGPD";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 
@@ -53,19 +62,69 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             <span className="nav-icon"><TicketIcon /></span>
             <span className="nav-text">Bilhetes</span>
           </button>
-          <button
-            className={`nav-link ${activeTab === 'notificacoes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('notificacoes')}
-          >
-            <span className="nav-icon"><MailIcon /></span>
-            <span className="nav-text">Tickets</span>
-          </button>
+
           <button
             className={`nav-link ${activeTab === 'mapa' ? 'active' : ''}`}
             onClick={() => setActiveTab('mapa')}
           >
             <span className="nav-icon"><MapIcon /></span>
             <span className="nav-text">Mapa</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'analise' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analise')}
+          >
+            <span className="nav-icon"><ChartIcon /></span>
+            <span className="nav-text">Análise</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'historico' ? 'active' : ''}`}
+            onClick={() => setActiveTab('historico')}
+          >
+            <span className="nav-icon"><ClockIcon /></span>
+            <span className="nav-text">Histórico</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'alertas' ? 'active' : ''}`}
+            onClick={() => setActiveTab('alertas')}
+          >
+            <span className="nav-icon"><BellIcon /></span>
+            <span className="nav-text">Alertas</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'matriz-od' ? 'active' : ''}`}
+            onClick={() => setActiveTab('matriz-od')}
+          >
+            <span className="nav-icon"><NetworkIcon /></span>
+            <span className="nav-text">Matriz O-D</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'exportacao' ? 'active' : ''}`}
+            onClick={() => setActiveTab('exportacao')}
+          >
+            <span className="nav-icon"><DownloadCloudIcon /></span>
+            <span className="nav-text">Exportação</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'planeamento' ? 'active' : ''}`}
+            onClick={() => setActiveTab('planeamento')}
+          >
+            <span className="nav-icon"><TargetIcon /></span>
+            <span className="nav-text">Planeamento</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'erp' ? 'active' : ''}`}
+            onClick={() => setActiveTab('erp')}
+          >
+            <span className="nav-icon"><ServerIcon /></span>
+            <span className="nav-text">ERP</span>
+          </button>
+          <button
+            className={`nav-link ${activeTab === 'rgpd' ? 'active' : ''}`}
+            onClick={() => setActiveTab('rgpd')}
+          >
+            <span className="nav-icon"><ShieldIcon /></span>
+            <span className="nav-text">RGPD</span>
           </button>
 
         </nav>
@@ -107,15 +166,45 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             <ModuloBilhetes />
           )}
 
-          {activeTab === 'notificacoes' && (
-            <div className="welcome-card">
-              <h2>Tickets</h2>
-              <p>Não há novos Tickets.</p>
-            </div>
-          )}
+
 
           {activeTab === 'mapa' && (
             <Mapa />
+          )}
+
+          {activeTab === 'analise' && (
+            <ProcuraTempoReal />
+          )}
+
+          {activeTab === 'historico' && (
+            <HistoricoConsolidado />
+          )}
+
+          {activeTab === 'alertas' && (
+            <div className="alertas-wrapper">
+              <PainelAlertas />
+              <DetalheQuarentena />
+            </div>
+          )}
+
+          {activeTab === 'matriz-od' && (
+            <MatrizOD />
+          )}
+
+          {activeTab === 'exportacao' && (
+            <ExportacaoDados />
+          )}
+
+          {activeTab === 'planeamento' && (
+            <SimulacaoCenarios />
+          )}
+
+          {activeTab === 'erp' && (
+            <IntegracaoERP />
+          )}
+
+          {activeTab === 'rgpd' && (
+            <GestaoRGPD />
           )}
         </div>
       </main>
@@ -191,6 +280,85 @@ function ListIcon() {
       <line x1="3" y1="6" x2="3.01" y2="6"></line>
       <line x1="3" y1="12" x2="3.01" y2="12"></line>
       <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"></line>
+      <line x1="12" y1="20" x2="12" y2="4"></line>
+      <line x1="6" y1="20" x2="6" y2="14"></line>
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    </svg>
+  );
+}
+
+function NetworkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3"></circle>
+      <circle cx="6" cy="12" r="3"></circle>
+      <circle cx="18" cy="19" r="3"></circle>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+    </svg>
+  );
+}
+
+function DownloadCloudIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="8 17 12 21 16 17"></polyline>
+      <line x1="12" y1="12" x2="12" y2="21"></line>
+      <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path>
+    </svg>
+  );
+}
+
+function TargetIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <circle cx="12" cy="12" r="6"></circle>
+      <circle cx="12" cy="12" r="2"></circle>
+    </svg>
+  );
+}
+
+function ServerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
     </svg>
   );
 }

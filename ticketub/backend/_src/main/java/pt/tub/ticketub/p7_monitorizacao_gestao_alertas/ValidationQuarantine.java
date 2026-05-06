@@ -32,52 +32,52 @@ public class ValidationQuarantine {
     @Column(name = "violated_rule", length = 1000)
     private String violatedRule;
 
+    // UC06.3: necessário para consultar inválidas por paragem no popup LIVE DATA
+    @Column(name = "origin_stop_id")
+    private String originStopId;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    public ValidationQuarantine() {
-    }
+    public ValidationQuarantine() {}
 
     public ValidationQuarantine(String rawLine, String reason, OffsetDateTime createdAt) {
-        this.rawLine = rawLine;
-        this.reason = reason;
+        this.rawLine   = rawLine;
+        this.reason    = reason;
         this.createdAt = createdAt;
     }
 
-    public ValidationQuarantine(
-        String rawLine,
-        String reason,
-        String invalidField,
-        String receivedValue,
-        String violatedRule,
-        OffsetDateTime createdAt
-    ) {
-        this.rawLine = rawLine;
-        this.reason = reason;
+    public ValidationQuarantine(String rawLine, String reason, String invalidField,
+                                String receivedValue, String violatedRule,
+                                OffsetDateTime createdAt) {
+        this.rawLine      = rawLine;
+        this.reason       = reason;
         this.invalidField = invalidField;
         this.receivedValue = receivedValue;
         this.violatedRule = violatedRule;
-        this.createdAt = createdAt;
+        this.createdAt    = createdAt;
     }
 
-    public Long getId() {
-        return id;
+    // Construtor completo com originStopId
+    public ValidationQuarantine(String rawLine, String reason, String invalidField,
+                                String receivedValue, String violatedRule,
+                                String originStopId, OffsetDateTime createdAt) {
+        this.rawLine       = rawLine;
+        this.reason        = reason;
+        this.invalidField  = invalidField;
+        this.receivedValue = receivedValue;
+        this.violatedRule  = violatedRule;
+        this.originStopId  = originStopId;
+        this.createdAt     = createdAt;
     }
 
-    public String getRawLine() {
-        return rawLine;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public Long getId()              { return id; }
+    public String getRawLine()       { return rawLine; }
+    public String getReason()        { return reason; }
+    public String getInvalidField()  { return invalidField; }
+    public String getReceivedValue() { return receivedValue; }
+    public String getViolatedRule()  { return violatedRule; }
+    public String getOriginStopId()  { return originStopId; }
+    public void setOriginStopId(String originStopId) { this.originStopId = originStopId; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
 }
-
-
-
-
-
