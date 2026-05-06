@@ -67,11 +67,11 @@ public class ValidationIngestionService {
 
         for (ValidationIngestionRequestDto dto : validacoes) {
 
-            // Payload nulo
             if (dto == null) {
                 quarentena.add(new ValidationQuarantine(
                     "{}", "Payload nulo", "payload",
-                    null, "Objeto de validacao obrigatorio", OffsetDateTime.now()));
+                    null, "Objeto de validacao obrigatorio",
+                    null, OffsetDateTime.now()));
                 motivosRejeicao.add("payload_nulo");
                 continue;
             }
@@ -79,9 +79,11 @@ public class ValidationIngestionService {
             // O0.2.1.c — Validar com regras lidas da BD (O0.2.1.d)
             ControladorValidacaoPicagens.ResultadoValidacao resultado = validacao.validar(dto);
             if (!resultado.isValido()) {
+                // Passa o originStopId para a quarentena (UC06.3)
                 quarentena.add(new ValidationQuarantine(
                     toJson(dto), resultado.getMotivo(), resultado.getCampo(),
-                    resultado.getValorRecebido(), resultado.getRegra(), OffsetDateTime.now()));
+                    resultado.getValorRecebido(), resultado.getRegra(),
+                    dto.getOriginStopId(), OffsetDateTime.now()));
                 motivosRejeicao.add(resultado.getRuleCode());
                 continue;
             }
@@ -107,7 +109,8 @@ public class ValidationIngestionService {
             } catch (Exception e) {
                 quarentena.add(new ValidationQuarantine(
                     toJson(dto), "Falha na normalizacao", "payload",
-                    null, e.getMessage(), OffsetDateTime.now()));
+                    null, e.getMessage(),
+                    dto.getOriginStopId(), OffsetDateTime.now()));
                 motivosRejeicao.add("falha_normalizacao");
             }
         }

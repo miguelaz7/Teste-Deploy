@@ -1,6 +1,7 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
 import pt.tub.ticketub.p5_analise_operacional_tempo_real.ValidationInsightsService;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +17,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 // =============================================================================
-// O0.6.1.i – Interface do Mapa de Rede (UC06.1)
+// O0.6.1.i – Interface do Mapa de Rede (UC06.1, UC06.2, UC06.3)
 // Mapa interactivo com marcadores das paragens. Ao clicar, abre popup
 // LIVE DATA com afluência, validações inválidas e distribuição por perfil
-// tarifário. Consome dados de: O0.5.1.c e O0.5.1.d.
+// tarifário. Consome dados de: O0.5.1.c, O0.5.1.d e O0.9.1.d.
 // =============================================================================
 
 @RestController
@@ -28,11 +29,14 @@ public class InterfaceMapaRede {
 
     private final StopRepository stopRepository;
     private final ValidationInsightsService validationInsightsService;
+    private final ValidationQuarantineRepository validationQuarantineRepository;
 
     public InterfaceMapaRede(StopRepository stopRepository,
-                             ValidationInsightsService validationInsightsService) {
-        this.stopRepository = stopRepository;
-        this.validationInsightsService = validationInsightsService;
+                             ValidationInsightsService validationInsightsService,
+                             ValidationQuarantineRepository validationQuarantineRepository) {
+        this.stopRepository               = stopRepository;
+        this.validationInsightsService    = validationInsightsService;
+        this.validationQuarantineRepository = validationQuarantineRepository;
     }
 
     // Lista todas as paragens com coordenadas para marcadores no mapa
@@ -44,7 +48,7 @@ public class InterfaceMapaRede {
         return ResponseEntity.ok(paragens);
     }
 
-    // Popup LIVE DATA de uma paragem específica — campos alinhados com StopLiveDataPopup.js
+    // UC06.1, UC06.2, UC06.3 — Popup LIVE DATA completo
     @GetMapping("/paragens/{stopId}/live-data")
     public ResponseEntity<Map<String, Object>> obterLiveData(@PathVariable String stopId) {
         Optional<Stop> stopOpt = stopRepository.findById(stopId);
@@ -52,12 +56,12 @@ public class InterfaceMapaRede {
             return ResponseEntity.notFound().build();
         }
 
+        // UC06.1 — afluência e distribuição por tipo (eventos válidos)
         Map<String, Object> insights = validationInsightsService
             .obterInsights(Optional.of(stopId));
         List<Object[]> porTipo = validationInsightsService
             .obterContagemPorTipo(Optional.of(stopId));
 
-        // Distribuição por tipo de título no formato Map<String,Long> esperado pelo frontend
         Map<String, Long> ticketTypeDistribution = new LinkedHashMap<>();
         for (Object[] row : porTipo) {
             if (row[0] != null) {
@@ -65,20 +69,38 @@ public class InterfaceMapaRede {
             }
         }
 
-        long totalValidations = insights.containsKey("total")
+        long totalValidas = insights.containsKey("total")
             ? ((Number) insights.get("total")).longValue() : 0L;
-        long invalidCount = insights.containsKey("invalidCount")
-            ? ((Number) insights.get("invalidCount")).longValue() : 0L;
-        double invalidPercentage = insights.containsKey("invalidPercentage")
-            ? ((Number) insights.get("invalidPercentage")).doubleValue() : 0.0;
 
-        // Janela de pico: timeGap vem como OffsetDateTime string, extraímos a hora
+        // UC06.3 — validações inválidas por paragem
+        long totalInvalidas = validationQuarantineRepository.countByOriginStopId(stopId);
+        long totalGeral     = totalValidas + totalInvalidas;
+        double taxaInvalidas = totalGeral > 0
+            ? Math.round((double) totalInvalidas / totalGeral * 10000.0) / 100.0
+            : 0.0;
+
+        // UC06.3 — top 3 motivos de rejeição
+        List<Object[]> topMotivos = validationQuarantineRepository
+            .findTopMotivosByOriginStopId(stopId);
+        List<Map<String, Object>> top3Motivos = topMotivos.stream()
+            .limit(3)
+            .map(row -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("motivo", row[0].toString());
+                m.put("total",  ((Number) row[1]).longValue());
+                return m;
+            })
+            .collect(Collectors.toList());
+
+        // UC06.2 — alerta qualidade degradada se taxa > 2%
+        boolean qualidadeDegradada = taxaInvalidas > 2.0;
+
+        // Janela de pico
         String peakWindowStart = "";
         String peakWindowEnd   = "";
         double peakPercentage  = 0.0;
         if (insights.containsKey("timeGap") && insights.get("timeGap") != null) {
             String timeGap = insights.get("timeGap").toString();
-            // formato: "2025-01-01T08:00:00Z" — extraímos HH:mm
             peakWindowStart = timeGap.length() >= 16 ? timeGap.substring(11, 16) : timeGap;
             int startHour = peakWindowStart.length() >= 2
                 ? Integer.parseInt(peakWindowStart.substring(0, 2)) : 0;
@@ -88,18 +110,20 @@ public class InterfaceMapaRede {
             peakPercentage = ((Number) insights.get("peakAfluenciaPercentage")).doubleValue();
         }
 
-        // Campos exatamente como StopLiveDataPopup.js os espera
+        // Campos alinhados com StopLiveDataPopup.js
         Map<String, Object> resposta = new LinkedHashMap<>();
-        resposta.put("stopId",                                    stopOpt.get().getStopId());
-        resposta.put("stopName",                                  stopOpt.get().getStopName());
-        resposta.put("peakHourWindowStart",                       peakWindowStart);
-        resposta.put("peakHourWindowEnd",                         peakWindowEnd);
-        resposta.put("peakHourValidationsCount",                  totalValidations > 0 ? (long)(totalValidations * peakPercentage / 100) : 0L);
-        resposta.put("peakHourValidationsPercentageOfStopTotal",  peakPercentage);
-        resposta.put("invalidValidationsCount",                   invalidCount);
-        resposta.put("invalidValidationsPercentageOfStopTotal",   invalidPercentage);
-        resposta.put("ticketTypeDistribution",                    ticketTypeDistribution);
-        resposta.put("totalValidations",                          totalValidations);
+        resposta.put("stopId",                                   stopOpt.get().getStopId());
+        resposta.put("stopName",                                 stopOpt.get().getStopName());
+        resposta.put("peakHourWindowStart",                      peakWindowStart);
+        resposta.put("peakHourWindowEnd",                        peakWindowEnd);
+        resposta.put("peakHourValidationsCount",                 totalValidas > 0 ? (long)(totalValidas * peakPercentage / 100) : 0L);
+        resposta.put("peakHourValidationsPercentageOfStopTotal", peakPercentage);
+        resposta.put("invalidValidationsCount",                  totalInvalidas);
+        resposta.put("invalidValidationsPercentageOfStopTotal",  taxaInvalidas);
+        resposta.put("qualidadeDegradada",                       qualidadeDegradada);
+        resposta.put("topMotivoRejeicao",                        top3Motivos);
+        resposta.put("ticketTypeDistribution",                   ticketTypeDistribution);
+        resposta.put("totalValidations",                         totalValidas);
 
         return ResponseEntity.ok(resposta);
     }

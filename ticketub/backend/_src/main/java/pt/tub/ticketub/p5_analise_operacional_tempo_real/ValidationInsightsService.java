@@ -30,6 +30,7 @@ public class ValidationInsightsService {
         "ACEITE",
         "ACEITO",
         "APROVADO",
+        "ACCEPTED",
         "1"
     );
 
