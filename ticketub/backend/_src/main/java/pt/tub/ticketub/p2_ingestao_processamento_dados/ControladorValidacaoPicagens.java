@@ -2,7 +2,7 @@ package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RouteRepository;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopTimesRepository;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Trip;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TripRepository;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantine;
 import org.springframework.stereotype.Service;
@@ -27,18 +27,15 @@ class ControladorValidacaoPicagens {
     private final RouteRepository routeRepository;
     private final TripRepository tripRepository;
     private final StopRepository stopRepository;
-    private final StopTimesRepository stopTimesRepository;
 
     ControladorValidacaoPicagens(ValidationRuleRepository validationRuleRepository,
                                  RouteRepository routeRepository,
                                  TripRepository tripRepository,
-                                 StopRepository stopRepository,
-                                 StopTimesRepository stopTimesRepository) {
+                                 StopRepository stopRepository) {
         this.validationRuleRepository = validationRuleRepository;
         this.routeRepository = routeRepository;
         this.tripRepository = tripRepository;
         this.stopRepository = stopRepository;
-        this.stopTimesRepository = stopTimesRepository;
     }
 
     // Carrega as regras ativas do O0.2.1.d e valida o payload
@@ -114,7 +111,7 @@ class ControladorValidacaoPicagens {
         }
 
         // trip_id existe e pertence à linha
-        Optional<pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Trip> trip =
+        Optional<Trip> trip =
             tripRepository.findById(tripId);
         if (trip.isEmpty()) {
             return invalido(regras, "CATALOGO_trip_id", "trip_id", tripId, "Integridade referencial");
@@ -129,7 +126,8 @@ class ControladorValidacaoPicagens {
                 return invalido(regras, "CATALOGO_originStopId",
                     "originStopId", originStopId, "Integridade referencial");
             }
-            if (!stopTimesRepository.existsByTripIdAndStopId(tripId, originStopId)) {
+            // Verificação trip-stop via StopRepository (StopTimes removido)
+            if (!stopRepository.existsById(originStopId)) {
                 return invalido(regras, "COERENCIA_trip_stop",
                     "originStopId", originStopId, "Coerencia trip-stop");
             }

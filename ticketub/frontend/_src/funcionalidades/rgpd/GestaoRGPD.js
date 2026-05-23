@@ -8,10 +8,11 @@ const GestaoRGPD = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
-    nome: '',
-    tipoDado: 'BIOMETRICO',
-    tempoRetencao: 30,
-    descricao: ''
+    campo: '',
+    metodo: 'HMAC_SHA256',
+    retencaoDias: 365,
+    aprovadoPor: '',
+    notas: ''
   });
 
   const fetchPoliticas = useCallback(async () => {
@@ -34,19 +35,15 @@ const GestaoRGPD = () => {
   const handleOpenModal = (politica = null) => {
     if (politica) {
       setFormData({
-        nome: politica.nome,
-        tipoDado: politica.tipoDado,
-        tempoRetencao: politica.tempoRetencao,
-        descricao: politica.descricao || ''
+        campo:       politica.campo       || '',
+        metodo:      politica.metodo      || 'HMAC_SHA256',
+        retencaoDias: politica.retencaoDias || 365,
+        aprovadoPor: politica.aprovadoPor  || '',
+        notas:       politica.notas        || ''
       });
       setEditingId(politica.id);
     } else {
-      setFormData({
-        nome: '',
-        tipoDado: 'BIOMETRICO',
-        tempoRetencao: 30,
-        descricao: ''
-      });
+      setFormData({ campo: '', metodo: 'HMAC_SHA256', retencaoDias: 365, aprovadoPor: '', notas: '' });
       setEditingId(null);
     }
     setIsModalOpen(true);
@@ -72,13 +69,13 @@ const GestaoRGPD = () => {
     }
   };
 
-  const handleDelete = async (id, nome) => {
-    if (window.confirm(`Tem a certeza que deseja eliminar a política "${nome}"?`)) {
+  const handleDelete = async (id, campo) => {
+    if (window.confirm(`Tem a certeza que deseja revogar a política para o campo "${campo}"?`)) {
       try {
         await deletePolitica(id);
         await fetchPoliticas();
       } catch (err) {
-        console.error('Erro a eliminar política', err);
+        console.error('Erro a revogar política', err);
       }
     }
   };
@@ -88,7 +85,7 @@ const GestaoRGPD = () => {
       <div className="rgpd-header">
         <h2>Políticas de Anonimização (RGPD)</h2>
         <button className="btn-primary" onClick={() => handleOpenModal()}>
-          Criar Nova Política
+          Nova Política
         </button>
       </div>
 
@@ -99,9 +96,11 @@ const GestaoRGPD = () => {
           <table className="rgpd-table">
             <thead>
               <tr>
-                <th>Nome da Política</th>
-                <th>Tipo de Dado</th>
+                <th>Campo</th>
+                <th>Método</th>
                 <th>Retenção (Dias)</th>
+                <th>Aprovado por</th>
+                <th>Estado</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -109,18 +108,20 @@ const GestaoRGPD = () => {
               {politicas.length > 0 ? (
                 politicas.map((p) => (
                   <tr key={p.id}>
-                    <td style={{ fontWeight: 600 }}>{p.nome}</td>
-                    <td>{p.tipoDado}</td>
-                    <td>{p.tempoRetencao}</td>
+                    <td style={{ fontWeight: 600 }}>{p.campo}</td>
+                    <td>{p.metodo}</td>
+                    <td>{p.retencaoDias}</td>
+                    <td>{p.aprovadoPor}</td>
+                    <td>{p.estado}</td>
                     <td className="actions-cell">
                       <button className="btn-icon-edit" onClick={() => handleOpenModal(p)}>Editar</button>
-                      <button className="btn-icon-delete" onClick={() => handleDelete(p.id, p.nome)}>Eliminar</button>
+                      <button className="btn-icon-delete" onClick={() => handleDelete(p.id, p.campo)}>Revogar</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', color: '#6b7280', padding: '2rem' }}>
                     Nenhuma política definida.
                   </td>
                 </tr>
@@ -138,44 +139,53 @@ const GestaoRGPD = () => {
             </div>
             <form className="modal-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Nome da Política</label>
+                <label>Campo a Pseudonimizar</label>
                 <input
                   type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Ex: Limpeza de Logs"
+                  value={formData.campo}
+                  onChange={(e) => setFormData({ ...formData, campo: e.target.value })}
+                  placeholder="Ex: cardId, ticketId"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Tipo de Dado</label>
+                <label>Método de Anonimização</label>
                 <select
-                  value={formData.tipoDado}
-                  onChange={(e) => setFormData({ ...formData, tipoDado: e.target.value })}
+                  value={formData.metodo}
+                  onChange={(e) => setFormData({ ...formData, metodo: e.target.value })}
                 >
-                  <option value="BIOMETRICO">Biométrico</option>
-                  <option value="LOCALIZACAO">Localização</option>
-                  <option value="CONTACTO">Contacto</option>
-                  <option value="TRANSACIONAL">Transacional</option>
+                  <option value="HMAC_SHA256">HMAC-SHA256</option>
+                  <option value="SUPRESSAO">Supressão</option>
+                  <option value="MASCARA">Máscara</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>Tempo de Retenção (Dias)</label>
+                <label>Retenção (Dias)</label>
                 <input
                   type="number"
-                  value={formData.tempoRetencao}
-                  onChange={(e) => setFormData({ ...formData, tempoRetencao: parseInt(e.target.value) })}
+                  value={formData.retencaoDias}
+                  onChange={(e) => setFormData({ ...formData, retencaoDias: parseInt(e.target.value) })}
                   min="1"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Descrição</label>
+                <label>Aprovado por (DPO)</label>
                 <input
                   type="text"
-                  value={formData.descricao}
-                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Breve descrição da política"
+                  value={formData.aprovadoPor}
+                  onChange={(e) => setFormData({ ...formData, aprovadoPor: e.target.value })}
+                  placeholder="Nome do DPO"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Notas</label>
+                <input
+                  type="text"
+                  value={formData.notas}
+                  onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+                  placeholder="Observações opcionais"
                 />
               </div>
               <div className="modal-actions">

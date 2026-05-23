@@ -20,7 +20,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "eventos_nao_categorizados")
-class EventoNaoCategorizado {
+public class EventoNaoCategorizado {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,16 +57,16 @@ class EventoNaoCategorizado {
         this.criadoEm       = criadoEm;
     }
 
-    Long getId()                           { return id; }
-    String getIngestionHash()              { return ingestionHash; }
-    String getMotivoRejeicao()             { return motivoRejeicao; }
-    String getEstado()                     { return estado; }
-    void setEstado(String estado)          { this.estado = estado; }
-    OffsetDateTime getCriadoEm()           { return criadoEm; }
-    OffsetDateTime getResolvidoEm()        { return resolvidoEm; }
-    void setResolvidoEm(OffsetDateTime t)  { this.resolvidoEm = t; }
-    String getResolvidoPor()               { return resolvidoPor; }
-    void setResolvidoPor(String r)         { this.resolvidoPor = r; }
+    public Long getId()                           { return id; }
+    public String getIngestionHash()              { return ingestionHash; }
+    public String getMotivoRejeicao()             { return motivoRejeicao; }
+    public String getEstado()                     { return estado; }
+    public void setEstado(String estado)          { this.estado = estado; }
+    public OffsetDateTime getCriadoEm()           { return criadoEm; }
+    public OffsetDateTime getResolvidoEm()        { return resolvidoEm; }
+    public void setResolvidoEm(OffsetDateTime t)  { this.resolvidoEm = t; }
+    public String getResolvidoPor()               { return resolvidoPor; }
+    public void setResolvidoPor(String r)         { this.resolvidoPor = r; }
 }
 
 @Repository

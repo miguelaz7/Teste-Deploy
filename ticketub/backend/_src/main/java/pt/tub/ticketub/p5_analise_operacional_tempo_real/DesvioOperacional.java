@@ -21,7 +21,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "desvios_operacionais")
-class DesvioOperacional {
+public class DesvioOperacional {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,15 +70,15 @@ class DesvioOperacional {
         this.calculadoEm          = calculadoEm;
     }
 
-    Long getId()                    { return id; }
-    String getRouteId()             { return routeId; }
-    LocalDate getDataCalculo()      { return dataCalculo; }
-    String getPeriodo()             { return periodo; }
-    long getValidacoesRealizadas()  { return validacoesRealizadas; }
-    double getMediaHistorica()      { return mediaHistorica; }
-    double getDesvioPercentual()    { return desvioPercentual; }
-    boolean isCritico()             { return critico; }
-    OffsetDateTime getCalculadoEm() { return calculadoEm; }
+    public Long getId()                    { return id; }
+    public String getRouteId()             { return routeId; }
+    public LocalDate getDataCalculo()      { return dataCalculo; }
+    public String getPeriodo()             { return periodo; }
+    public long getValidacoesRealizadas()  { return validacoesRealizadas; }
+    public double getMediaHistorica()      { return mediaHistorica; }
+    public double getDesvioPercentual()    { return desvioPercentual; }
+    public boolean isCritico()             { return critico; }
+    public OffsetDateTime getCalculadoEm() { return calculadoEm; }
 }
 
 @Repository

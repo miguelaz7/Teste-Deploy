@@ -1,38 +1,25 @@
-export const API_BASE_URL = 'http://localhost:8080/api/analise';
+// UC05 — Procura em Tempo Real → /api/procura/*
+// UC10 — Histórico             → /api/historico/*
+// UC04 — Dashboard KPIs        → /api/dashboard/*
 
-/**
- * Função utilitária genérica para fetch
- */
-const fetchAnalise = async (endpoint) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store'
-    });
+const BASE_PROCURA   = 'http://localhost:8080/api/procura';
+const BASE_HISTORICO = 'http://localhost:8080/api/historico';
+const BASE_DASHBOARD = 'http://localhost:8080/api/dashboard';
 
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status} ao obter dados de ${endpoint}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Falha no fetch para ${endpoint}:`, error);
-    throw error;
-  }
+const fetchJSON = async (url) => {
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store'
+  });
+  if (!res.ok) throw new Error(`Erro ${res.status} em ${url}`);
+  return res.json();
 };
 
-// -- Endpoints de Tempo Real --
-
-export const getTempoReal = () => fetchAnalise('/tempo-real');
-export const getPorHorario = () => fetchAnalise('/por-horario');
-export const getPorLinha = () => fetchAnalise('/por-linha');
-export const getPorParagem = () => fetchAnalise('/por-paragem');
-
-// -- Endpoints de Histórico Consolidado --
-
-// Note: assuming /metricas-ingestao in analise backend too. If it's the dashboard one, it might be different, but for now we'll put it here.
-export const getMetricasIngestao = () => fetchAnalise('/metricas-ingestao');
-export const getComparacaoPeriodos = (inicio, fim) => fetchAnalise(`/comparacao-periodos?inicio=${inicio}&fim=${fim}`);
+export const getTempoReal          = () => fetchJSON(`${BASE_PROCURA}/tempo-real`);
+export const getPorHorario         = () => fetchJSON(`${BASE_PROCURA}/por-horario`);
+export const getPorLinha           = () => fetchJSON(`${BASE_PROCURA}/por-linha`);
+export const getPorParagem         = () => fetchJSON(`${BASE_PROCURA}/por-paragem`);
+export const getMetricasIngestao   = () => fetchJSON(`${BASE_DASHBOARD}/metricas-ingestao`);
+export const getComparacaoPeriodos = (inicio, fim) =>
+  fetchJSON(`${BASE_HISTORICO}/comparacao-periodos?inicio=${inicio}&fim=${fim}`);

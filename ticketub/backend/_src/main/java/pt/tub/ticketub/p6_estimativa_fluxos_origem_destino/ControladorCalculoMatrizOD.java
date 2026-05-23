@@ -5,6 +5,11 @@ import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Trip;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TripRepository;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +35,9 @@ import java.util.stream.Collectors;
 // =============================================================================
 
 @Service
-class ControladorCalculoMatrizOD {
+@RestController
+@RequestMapping("/api/od")
+public class ControladorCalculoMatrizOD {
 
     private final ValidationEventRepository validationEventRepository;
     private final MatrizODRepository matrizODRepository;
@@ -184,5 +191,22 @@ class ControladorCalculoMatrizOD {
         // Ponta tarde: 17h–19h
         if (h >= 17 && h < 19) return "PONTA_TARDE";
         return "VAZIO";
+    }
+
+    @PostMapping("/forcar-calculo")
+    public ResponseEntity<Map<String, Object>> forcarCalculo() {
+        try {
+            calcularMatrizDiaria();
+            return ResponseEntity.ok(Map.of(
+                "status", "sucesso",
+                "mensagem", "Calculo da Matriz O-D concluido.",
+                "data", java.time.LocalDate.now().toString()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                "status", "erro",
+                "mensagem", e.getMessage() != null ? e.getMessage() : "Erro desconhecido"
+            ));
+        }
     }
 }

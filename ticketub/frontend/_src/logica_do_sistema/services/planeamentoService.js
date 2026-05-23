@@ -1,34 +1,19 @@
-export const API_BASE_URL = 'http://localhost:8080/api/planeamento';
+// UC11 — Planeamento/ERP → /api/planeamento/*, /api/simulacao/*, /api/erp/*
 
-const fetchPlaneamento = async (endpoint, method = 'GET', body = null) => {
-  try {
-    const options = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store'
-    };
+const BASE_PLANEAMENTO = 'http://localhost:8080/api/planeamento';
+const BASE_SIMULACAO   = 'http://localhost:8080/api/simulacao';
+const BASE_ERP         = 'http://localhost:8080/api/erp';
 
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status} ao contactar ${endpoint}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Falha no fetch para ${endpoint}:`, error);
-    throw error;
-  }
+const fetchJSON = async (url, method = 'GET', body = null) => {
+  const opts = { method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`Erro ${res.status} em ${url}`);
+  return res.json();
 };
 
-export const submeterSimulacao = (payload) => fetchPlaneamento('/simular', 'POST', payload);
-export const getCenarios = () => fetchPlaneamento('/cenarios');
-export const getProjecao = () => fetchPlaneamento('/projecao');
-export const getDadosFinanceiros = () => fetchPlaneamento('/dados-financeiros');
-export const gerarParaERP = (payload) => fetchPlaneamento('/erp/gerar', 'POST', payload);
+export const getCenarios         = () => fetchJSON(`${BASE_PLANEAMENTO}/cenarios`);
+export const submeterSimulacao   = (payload) => fetchJSON(`${BASE_PLANEAMENTO}/simular`, 'POST', payload);
+export const getProjecao         = () => fetchJSON(`${BASE_SIMULACAO}/projecao`);
+export const getDadosFinanceiros = () => fetchJSON(`${BASE_ERP}/dados-financeiros`);
+export const gerarParaERP        = (payload) => fetchJSON(`${BASE_ERP}/dados-financeiros`, 'POST', payload);

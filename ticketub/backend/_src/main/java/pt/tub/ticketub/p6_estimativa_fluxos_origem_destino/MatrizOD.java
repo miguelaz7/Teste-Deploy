@@ -22,7 +22,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "matriz_od")
-class MatrizOD {
+public class MatrizOD {
 
     // Limiar mínimo de privacidade — pares com menos ocorrências não são exportados
     static final int LIMIAR_PRIVACIDADE = 5;
@@ -83,17 +83,17 @@ class MatrizOD {
         this.calculadoEm         = calculadoEm;
     }
 
-    Long getId()                   { return id; }
-    String getOrigemStopId()       { return origemStopId; }
-    String getDestinoStopId()      { return destinoStopId; }
-    boolean isDestinoDesconhecido(){ return destinoDesconhecido; }
-    String getRouteId()            { return routeId; }
-    String getPeriodo()            { return periodo; }
-    LocalDate getDataCalculo()     { return dataCalculo; }
-    int getVolume()                { return volume; }
-    String getIndiceConfianca()    { return indiceConfianca; }
-    OffsetDateTime getCalculadoEm(){ return calculadoEm; }
-    void setVolume(int volume)     { this.volume = volume; }
+    public Long getId()                   { return id; }
+    public String getOrigemStopId()       { return origemStopId; }
+    public String getDestinoStopId()      { return destinoStopId; }
+    public boolean isDestinoDesconhecido(){ return destinoDesconhecido; }
+    public String getRouteId()            { return routeId; }
+    public String getPeriodo()            { return periodo; }
+    public LocalDate getDataCalculo()     { return dataCalculo; }
+    public int getVolume()                { return volume; }
+    public String getIndiceConfianca()    { return indiceConfianca; }
+    public OffsetDateTime getCalculadoEm(){ return calculadoEm; }
+    public void setVolume(int volume)     { this.volume = volume; }
 }
 
 @Repository

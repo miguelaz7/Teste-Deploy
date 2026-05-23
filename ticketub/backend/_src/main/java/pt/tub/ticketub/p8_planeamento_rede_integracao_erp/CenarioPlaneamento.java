@@ -21,7 +21,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "cenarios_planeamento")
-class CenarioPlaneamento {
+public class CenarioPlaneamento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -102,26 +102,26 @@ class CenarioPlaneamento {
         this.estado                = "RASCUNHO";
     }
 
-    Long getId()                        { return id; }
-    String getCodigoCenario()           { return codigoCenario; }
-    String getRouteId()                 { return routeId; }
-    String getDescricao()               { return descricao; }
-    String getPeriodoAplicavel()        { return periodoAplicavel; }
-    BigDecimal getValorAntes()          { return valorAntes; }
-    BigDecimal getValorDepois()         { return valorDepois; }
-    BigDecimal getOcupacaoEsperada()    { return ocupacaoEsperada; }
-    BigDecimal getReceitaEstimadaImpacto() { return receitaEstimadaImpacto; }
-    double getNivelConfianca()          { return nivelConfianca; }
-    String getVersaoDadosBase()         { return versaoDadosBase; }
-    String getHashDadosBase()           { return hashDadosBase; }
-    String getCriadoPor()               { return criadoPor; }
-    OffsetDateTime getCriadoEm()        { return criadoEm; }
-    String getEstado()                  { return estado; }
-    void setEstado(String estado)       { this.estado = estado; }
-    void setOcupacaoEsperada(BigDecimal v)       { this.ocupacaoEsperada = v; }
-    void setReceitaEstimadaImpacto(BigDecimal v) { this.receitaEstimadaImpacto = v; }
-    void setNivelConfianca(double v)    { this.nivelConfianca = v; }
-    void setHashDadosBase(String v)     { this.hashDadosBase = v; }
+    public Long getId()                        { return id; }
+    public String getCodigoCenario()           { return codigoCenario; }
+    public String getRouteId()                 { return routeId; }
+    public String getDescricao()               { return descricao; }
+    public String getPeriodoAplicavel()        { return periodoAplicavel; }
+    public BigDecimal getValorAntes()          { return valorAntes; }
+    public BigDecimal getValorDepois()         { return valorDepois; }
+    public BigDecimal getOcupacaoEsperada()    { return ocupacaoEsperada; }
+    public BigDecimal getReceitaEstimadaImpacto() { return receitaEstimadaImpacto; }
+    public double getNivelConfianca()          { return nivelConfianca; }
+    public String getVersaoDadosBase()         { return versaoDadosBase; }
+    public String getHashDadosBase()           { return hashDadosBase; }
+    public String getCriadoPor()               { return criadoPor; }
+    public OffsetDateTime getCriadoEm()        { return criadoEm; }
+    public String getEstado()                  { return estado; }
+    public void setEstado(String estado)       { this.estado = estado; }
+    public void setOcupacaoEsperada(BigDecimal v)       { this.ocupacaoEsperada = v; }
+    public void setReceitaEstimadaImpacto(BigDecimal v) { this.receitaEstimadaImpacto = v; }
+    public void setNivelConfianca(double v)    { this.nivelConfianca = v; }
+    public void setHashDadosBase(String v)     { this.hashDadosBase = v; }
 }
 
 @Repository

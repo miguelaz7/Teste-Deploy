@@ -73,12 +73,12 @@ function Mapa() {
   const markerRefs = useRef({});
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/stops')
+    fetch('http://localhost:8080/api/mapa/paragens')
       .then(res => res.json())
       .then(data => {
         const grouped = {};
         data.forEach(s => {
-          const key = `${s.stopLat},${s.stopLon}`;
+          const key = `${s.lat},${s.lon}`;
           if (!grouped[key]) grouped[key] = [];
           grouped[key].push(s);
         });
@@ -93,7 +93,7 @@ function Mapa() {
               const offset = (idx - (group.length - 1) / 2) * spacing;
               finalStops.push({
                 ...s,
-                stopLon: s.stopLon + offset
+                lon: s.lon + offset
               });
             });
           }
@@ -217,7 +217,7 @@ function Mapa() {
                       setSearchTerm(stop.stopName);
                       setShowDropdown(false);
                       if (mapRef.current) {
-                        mapRef.current.flyTo([stop.stopLat, stop.stopLon], 18, { animate: true });
+                        mapRef.current.flyTo([stop.lat, stop.lon], 18, { animate: true });
                         mapRef.current.once('moveend', () => {
                           const m = markerRefs.current[stop.stopId];
                           if (m) m.openPopup();
@@ -267,7 +267,7 @@ function Mapa() {
             {filteredStops.map(stop => (
               <Marker 
                 key={stop.stopId} 
-                position={[stop.stopLat, stop.stopLon]}
+                position={[stop.lat, stop.lon]}
                 ref={(r) => { markerRefs.current[stop.stopId] = r; }}
               >
                 <StopLiveDataPopup stop={stop} />

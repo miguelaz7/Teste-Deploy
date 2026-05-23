@@ -4,107 +4,52 @@ import './Planeamento.css';
 
 function IntegracaoERP() {
   const [financas, setFinancas] = useState(null);
+  const [historico, setHistorico] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingGerar, setLoadingGerar] = useState(false);
-  const [ultimoEstado, setUltimoEstado] = useState(null);
 
   const fetchFinancas = useCallback(async () => {
     setLoadingList(true);
     try {
       const data = await getDadosFinanceiros();
-      const arr = Array.isArray(data) ? data : [];
-      setFinancas(arr);
-      
-      // Assumir que o primeiro ou último da lista tem o estado mais recente
-      if (arr.length > 0) {
-        setUltimoEstado(arr[0].estadoERP || arr[arr.length - 1].estadoERP || 'Desconhecido');
-      }
-    } catch (err) {
+      // Backend devolve { perioDias, geradoEm, porLinha, porTipoTitulo }
+      setFinancas(data && typeof data === 'object' && !Array.isArray(data) ? data : null);
+    } catch {
       setFinancas(null);
-      setUltimoEstado('Erro de Ligação');
     } finally {
       setLoadingList(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchFinancas();
-  }, [fetchFinancas]);
+  useEffect(() => { fetchFinancas(); }, [fetchFinancas]);
 
   const handleGerarERP = async () => {
     setLoadingGerar(true);
     try {
-      // Exemplo de payload, num cenário real poderia vir de um formulário ou contexto selecionado
       const payload = {
-        routeId: "TODAS",
-        periodoInicio: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        periodoFim: new Date().toISOString().split('T')[0]
+        routeId: '12',
+        periodoInicio: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+        periodoFim:    new Date().toISOString().split('T')[0],
+        geradoPor:     'utilizador'
       };
-      
-      await gerarParaERP(payload);
-      // Após gerar, atualizamos a lista para ver o novo estado (normalmente PENDENTE ou ENVIADO)
+      const resultado = await gerarParaERP(payload);
+      // Adicionar ao histórico local
+      setHistorico(prev => [resultado, ...prev]);
       await fetchFinancas();
     } catch (err) {
-      console.error("Erro ao gerar dados para ERP", err);
-      // Mock estado local para não bloquear demonstração
-      setUltimoEstado("PENDENTE");
-      if (financas) {
-        setFinancas([{
-          id: Math.random().toString(36).substr(2, 9),
-          routeId: "TODAS",
-          receitaEstimada: "4500.00",
-          totalValidacoes: "3200",
-          estadoERP: "PENDENTE",
-          dataExportacao: new Date().toISOString().split('T')[0]
-        }, ...financas]);
-      }
+      console.error('Erro ao gerar dados para ERP', err);
     } finally {
       setLoadingGerar(false);
     }
   };
 
-  const renderBadgeEstado = (estado) => {
-    const s = String(estado).toUpperCase();
-    if (s === 'ENVIADO' || s === 'SUCESSO') {
+  const renderBadge = (estado) => {
+    const s = String(estado || '').toUpperCase();
+    if (s === 'ENVIADO' || s === 'SUCESSO')
       return <span className="badge-estado estado-sucesso">{s}</span>;
-    }
-    if (s === 'FALHA' || s === 'ERRO') {
+    if (s === 'FALHA' || s === 'ERRO')
       return <span className="badge-estado estado-falha">{s}</span>;
-    }
     return <span className="badge-estado estado-pendente">{s || 'PENDENTE'}</span>;
-  };
-
-  const renderTable = () => {
-    if (!financas || financas.length === 0) {
-      return <div className="planeamento-empty-state">Sem dados financeiros registados.</div>;
-    }
-
-    const headers = Object.keys(financas[0]);
-
-    return (
-      <div className="planeamento-table-container">
-        <table className="planeamento-table">
-          <thead>
-            <tr>
-              {headers.map(h => <th key={h}>{h.charAt(0).toUpperCase() + h.slice(1).replace(/([A-Z])/g, ' $1')}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {financas.map((row, idx) => (
-              <tr key={idx}>
-                {headers.map(h => {
-                  const val = row[h];
-                  if (h.toLowerCase().includes('estado')) {
-                    return <td key={`${idx}-${h}`}>{renderBadgeEstado(val)}</td>;
-                  }
-                  return <td key={`${idx}-${h}`}>{String(val || '')}</td>;
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
   };
 
   return (
@@ -112,34 +57,100 @@ function IntegracaoERP() {
       <div className="planeamento-card">
         <div className="planeamento-card-header">
           <h2>Integração Financeira ERP</h2>
-          <button 
-            className="btn-primary" 
-            onClick={handleGerarERP}
-            disabled={loadingGerar}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
+          <button className="btn-primary" onClick={handleGerarERP} disabled={loadingGerar}>
             {loadingGerar ? 'A gerar...' : 'Gerar para ERP'}
           </button>
         </div>
-        <div className="planeamento-card-body">
-          
-          <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-main, #111827)' }}>Estado do Último Envio:</span>
-            {ultimoEstado ? renderBadgeEstado(ultimoEstado) : <span style={{ color: 'var(--text-muted, #6b7280)' }}>Nenhum envio recente</span>}
-          </div>
 
+        <div className="planeamento-card-body">
           {loadingList ? (
             <div className="planeamento-empty-state">A carregar dados financeiros...</div>
           ) : !financas ? (
-            <div className="planeamento-empty-state">Sem dados disponíveis ou erro de ligação.</div>
+            <div className="planeamento-empty-state">Sem dados disponíveis.</div>
           ) : (
-            renderTable()
+            <>
+              {/* Resumo geral */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Resumo — Últimos {financas.perioDias} dias</h3>
+                <div className="historico-metrics-grid">
+                  <div className="historico-metric-box">
+                    <span className="historico-metric-label">Gerado em</span>
+                    <span className="historico-metric-value">
+                      {financas.geradoEm ? new Date(financas.geradoEm).toLocaleString('pt-PT') : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Por Linha */}
+              {financas.porLinha && financas.porLinha.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Validações por Linha</h3>
+                  <div className="planeamento-table-container">
+                    <table className="planeamento-table">
+                      <thead>
+                        <tr><th>Linha</th><th>Total Validações</th></tr>
+                      </thead>
+                      <tbody>
+                        {financas.porLinha.map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.routeId}</td>
+                            <td>{r.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Por Tipo de Título */}
+              {financas.porTipoTitulo && financas.porTipoTitulo.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Validações por Tipo de Título</h3>
+                  <div className="planeamento-table-container">
+                    <table className="planeamento-table">
+                      <thead>
+                        <tr><th>Tipo de Título</th><th>Total</th></tr>
+                      </thead>
+                      <tbody>
+                        {financas.porTipoTitulo.map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.tipoTitulo}</td>
+                            <td>{r.total}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-          
+
+          {/* Histórico de exportações geradas nesta sessão */}
+          {historico.length > 0 && (
+            <div>
+              <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Exportações Geradas</h3>
+              <div className="planeamento-table-container">
+                <table className="planeamento-table">
+                  <thead>
+                    <tr><th>Versão</th><th>Validações</th><th>Receita</th><th>Estado</th></tr>
+                  </thead>
+                  <tbody>
+                    {historico.map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ fontSize: '0.75rem' }}>{r.versaoExportacao}</td>
+                        <td>{r.totalValidacoes}</td>
+                        <td>{r.receitaEstimada ? `${r.receitaEstimada}€` : '—'}</td>
+                        <td>{renderBadge(r.estadoERP)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "politicas_anonimizacao")
-class PoliticaAnonimizacao {
+public class PoliticaAnonimizacao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,21 +66,21 @@ class PoliticaAnonimizacao {
         this.notas       = notas;
     }
 
-    Long getId()                    { return id; }
-    String getCampo()               { return campo; }
-    void setCampo(String campo)     { this.campo = campo; }
-    String getMetodo()              { return metodo; }
-    void setMetodo(String metodo)   { this.metodo = metodo; }
-    int getRetencaoDias()           { return retencaoDias; }
-    void setRetencaoDias(int d)     { this.retencaoDias = d; }
-    String getEstado()              { return estado; }
-    void setEstado(String estado)   { this.estado = estado; }
-    String getAprovadoPor()         { return aprovadoPor; }
-    void setAprovadoPor(String a)   { this.aprovadoPor = a; }
-    OffsetDateTime getAprovadoEm()  { return aprovadoEm; }
-    void setAprovadoEm(OffsetDateTime a) { this.aprovadoEm = a; }
-    String getNotas()               { return notas; }
-    void setNotas(String notas)     { this.notas = notas; }
+    public Long getId()                    { return id; }
+    public String getCampo()               { return campo; }
+    public void setCampo(String campo)     { this.campo = campo; }
+    public String getMetodo()              { return metodo; }
+    public void setMetodo(String metodo)   { this.metodo = metodo; }
+    public int getRetencaoDias()           { return retencaoDias; }
+    public void setRetencaoDias(int d)     { this.retencaoDias = d; }
+    public String getEstado()              { return estado; }
+    public void setEstado(String estado)   { this.estado = estado; }
+    public String getAprovadoPor()         { return aprovadoPor; }
+    public void setAprovadoPor(String a)   { this.aprovadoPor = a; }
+    public OffsetDateTime getAprovadoEm()  { return aprovadoEm; }
+    public void setAprovadoEm(OffsetDateTime a) { this.aprovadoEm = a; }
+    public String getNotas()               { return notas; }
+    public void setNotas(String notas)     { this.notas = notas; }
 }
 
 @Repository

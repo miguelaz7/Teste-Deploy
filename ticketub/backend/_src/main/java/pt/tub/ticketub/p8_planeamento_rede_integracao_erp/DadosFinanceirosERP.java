@@ -25,7 +25,7 @@ import java.util.Optional;
 
 @Entity
 @Table(name = "dados_financeiros_erp")
-class DadosFinanceirosERP {
+public class DadosFinanceirosERP {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -122,27 +122,27 @@ class DadosFinanceirosERP {
         this.payloadERP                 = payloadERP;
     }
 
-    Long getId()                            { return id; }
-    String getRouteId()                     { return routeId; }
-    String getTipoTitulo()                  { return tipoTitulo; }
-    LocalDate getPeriodoInicio()            { return periodoInicio; }
-    LocalDate getPeriodoFim()               { return periodoFim; }
-    long getTotalValidacoes()               { return totalValidacoes; }
-    BigDecimal getReceitaEstimada()         { return receitaEstimada; }
-    BigDecimal getReceitaPorKm()            { return receitaPorKm; }
-    BigDecimal getReceitaPorPassageiro()    { return receitaPorPassageiro; }
-    BigDecimal getTaxaAnomalias()           { return taxaAnomalias; }
-    BigDecimal getImpactoFinanceiroAnomalias() { return impactoFinanceiroAnomalias; }
-    String getVersaoExportacao()            { return versaoExportacao; }
-    String getHashIntegridade()             { return hashIntegridade; }
-    String getEstadoERP()                   { return estadoERP; }
-    void setEstadoERP(String estado)        { this.estadoERP = estado; }
-    boolean isRequerValidacaoManual()       { return requerValidacaoManual; }
-    String getGeradoPor()                   { return geradoPor; }
-    OffsetDateTime getGeradoEm()            { return geradoEm; }
-    OffsetDateTime getEnviadoEm()           { return enviadoEm; }
-    void setEnviadoEm(OffsetDateTime t)     { this.enviadoEm = t; }
-    String getPayloadERP()                  { return payloadERP; }
+    public Long getId()                            { return id; }
+    public String getRouteId()                     { return routeId; }
+    public String getTipoTitulo()                  { return tipoTitulo; }
+    public LocalDate getPeriodoInicio()            { return periodoInicio; }
+    public LocalDate getPeriodoFim()               { return periodoFim; }
+    public long getTotalValidacoes()               { return totalValidacoes; }
+    public BigDecimal getReceitaEstimada()         { return receitaEstimada; }
+    public BigDecimal getReceitaPorKm()            { return receitaPorKm; }
+    public BigDecimal getReceitaPorPassageiro()    { return receitaPorPassageiro; }
+    public BigDecimal getTaxaAnomalias()           { return taxaAnomalias; }
+    public BigDecimal getImpactoFinanceiroAnomalias() { return impactoFinanceiroAnomalias; }
+    public String getVersaoExportacao()            { return versaoExportacao; }
+    public String getHashIntegridade()             { return hashIntegridade; }
+    public String getEstadoERP()                   { return estadoERP; }
+    public void setEstadoERP(String estado)        { this.estadoERP = estado; }
+    public boolean isRequerValidacaoManual()       { return requerValidacaoManual; }
+    public String getGeradoPor()                   { return geradoPor; }
+    public OffsetDateTime getGeradoEm()            { return geradoEm; }
+    public OffsetDateTime getEnviadoEm()           { return enviadoEm; }
+    public void setEnviadoEm(OffsetDateTime t)     { this.enviadoEm = t; }
+    public String getPayloadERP()                  { return payloadERP; }
 }
 
 @Repository

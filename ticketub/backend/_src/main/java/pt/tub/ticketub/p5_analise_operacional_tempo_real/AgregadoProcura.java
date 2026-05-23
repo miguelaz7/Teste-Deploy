@@ -23,7 +23,7 @@ import java.util.Optional;
 
 @Entity
 @Table(name = "agregados_procura")
-class AgregadoProcura {
+public class AgregadoProcura {
 
     // Perspectiva: HORARIO, LINHA, ZONA_PARAGEM
     @Id
@@ -71,14 +71,14 @@ class AgregadoProcura {
     }
 
     Long getId()                  { return id; }
-    String getPerspectiva()       { return perspectiva; }
-    String getChave()             { return chave; }
-    long getTotalValidacoes()     { return totalValidacoes; }
-    long getTotalInvalidas()      { return totalInvalidas; }
-    long getPerfilEstudante()     { return perfilEstudante; }
-    long getPerfilSenior()        { return perfilSenior; }
-    long getPerfilNormal()        { return perfilNormal; }
-    OffsetDateTime getActualizadoEm() { return actualizadoEm; }
+    public String getPerspectiva()       { return perspectiva; }
+    public String getChave()             { return chave; }
+    public long getTotalValidacoes()     { return totalValidacoes; }
+    public long getTotalInvalidas()      { return totalInvalidas; }
+    public long getPerfilEstudante()     { return perfilEstudante; }
+    public long getPerfilSenior()        { return perfilSenior; }
+    public long getPerfilNormal()        { return perfilNormal; }
+    public OffsetDateTime getActualizadoEm() { return actualizadoEm; }
     void setTotalValidacoes(long v) { this.totalValidacoes = v; }
     void setTotalInvalidas(long v)  { this.totalInvalidas = v; }
     void setPerfilEstudante(long v) { this.perfilEstudante = v; }
