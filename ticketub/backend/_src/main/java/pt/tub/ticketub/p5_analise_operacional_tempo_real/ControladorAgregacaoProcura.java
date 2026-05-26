@@ -32,13 +32,16 @@ public class ControladorAgregacaoProcura {
 
     private final ValidationEventRepository validationEventRepository;
     private final AgregadoProcuraRepository agregadoProcuraRepository;
+    private final pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RouteRepository routeRepository;
 
     public ControladorAgregacaoProcura(
         ValidationEventRepository validationEventRepository,
-        AgregadoProcuraRepository agregadoProcuraRepository
+        AgregadoProcuraRepository agregadoProcuraRepository,
+        pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RouteRepository routeRepository
     ) {
         this.validationEventRepository = validationEventRepository;
         this.agregadoProcuraRepository = agregadoProcuraRepository;
+        this.routeRepository = routeRepository;
     }
 
     // Agrega a cada 2 minutos — actualização contínua (UC05)
@@ -113,8 +116,9 @@ public class ControladorAgregacaoProcura {
 
         for (Map.Entry<Integer, List<ValidationEvent>> entrada : porHora.entrySet()) {
             String chave = String.valueOf(entrada.getKey());
+            String desc = String.format("%02d:00", entrada.getKey());
             List<ValidationEvent> grupo = entrada.getValue();
-            guardarAgregado("HORARIO", chave, grupo);
+            guardarAgregado("HORARIO", chave, desc, grupo);
         }
     }
 
@@ -124,7 +128,16 @@ public class ControladorAgregacaoProcura {
             .collect(Collectors.groupingBy(ValidationEvent::getRouteId));
 
         for (Map.Entry<String, List<ValidationEvent>> entrada : porLinha.entrySet()) {
-            guardarAgregado("LINHA", entrada.getKey(), entrada.getValue());
+            String routeId = entrada.getKey();
+            String desc = routeId;
+            try {
+                Long id = Long.parseLong(routeId);
+                desc = routeRepository.findById(id)
+                    .map(r -> r.getRouteShortName() + " - " + r.getRouteLongName())
+                    .orElse(routeId);
+            } catch (Exception e) { /* fallback */ }
+            
+            guardarAgregado("LINHA", routeId, desc, entrada.getValue());
         }
     }
 
@@ -134,24 +147,38 @@ public class ControladorAgregacaoProcura {
             .collect(Collectors.groupingBy(e -> e.getOriginStop().getStopId()));
 
         for (Map.Entry<String, List<ValidationEvent>> entrada : porParagem.entrySet()) {
-            guardarAgregado("ZONA_PARAGEM", entrada.getKey(), entrada.getValue());
+            String nome = entrada.getValue().get(0).getOriginStop().getStopName();
+            guardarAgregado("ZONA_PARAGEM", entrada.getKey(), nome, entrada.getValue());
         }
     }
 
-    private void guardarAgregado(String perspectiva, String chave,
+    private void guardarAgregado(String perspectiva, String chave, String descricao,
                                   List<ValidationEvent> grupo) {
         long total     = grupo.size();
         long invalidas = grupo.stream().filter(this::isInvalida).count();
-        long estudante = grupo.stream().filter(e -> "estudante".equals(e.getPerfilClassificado())).count();
-        long senior    = grupo.stream().filter(e -> "senior".equals(e.getPerfilClassificado())).count();
-        long normal    = grupo.stream().filter(e -> "normal".equals(e.getPerfilClassificado())).count();
+        
+        long estudante = grupo.stream().filter(e -> {
+            String c = e.getTicketType() != null ? e.getTicketType().getCode() : "";
+            return c != null && c.toUpperCase().contains("ESTUDANTE");
+        }).count();
+        
+        long senior = grupo.stream().filter(e -> {
+            String c = e.getTicketType() != null ? e.getTicketType().getCode() : "";
+            return c != null && c.toUpperCase().contains("SENIOR");
+        }).count();
+        
+        long normal = total - invalidas - estudante - senior;
+        if (normal < 0) normal = 0;
 
         Optional<AgregadoProcura> existente = agregadoProcuraRepository
             .findByPerspectivaAndChave(perspectiva, chave);
 
         AgregadoProcura agregado = existente.orElse(
-            new AgregadoProcura(perspectiva, chave, 0, 0, 0, 0, 0, OffsetDateTime.now())
+            new AgregadoProcura(perspectiva, chave, descricao, 0, 0, 0, 0, 0, OffsetDateTime.now())
         );
+
+        // Atualizar descrição caso tenha mudado ou seja novo
+        agregado.setDescricao(descricao);
 
         // UC05.1: comparar com baseline histórico (últimas 4 semanas)
         // Se variação > 20% face ao histórico, registar no log de auditoria
