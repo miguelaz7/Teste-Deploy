@@ -3,17 +3,16 @@ import { getAlertasAtivos } from '../../logica_do_sistema/services/alertasServic
 import './Alertas.css';
 
 function PainelAlertas() {
-  const [alertas, setAlertas] = useState(null);
+  const [resumo, setResumo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAlertas = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getAlertasAtivos();
-      // Se não for um array, garantimos que passa a array vazio
-      setAlertas(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setAlertas(null);
+      setResumo(data && typeof data === 'object' ? data : null);
+    } catch {
+      setResumo(null);
     } finally {
       setLoading(false);
     }
@@ -21,69 +20,69 @@ function PainelAlertas() {
 
   useEffect(() => {
     fetchAlertas();
+    const id = setInterval(fetchAlertas, 30000);
+    return () => clearInterval(id);
   }, [fetchAlertas]);
 
-  const handleResolver = (alertaId) => {
-    // Simula a resolução do alerta no frontend removendo-o da lista
-    if (alertas) {
-      setAlertas(alertas.filter(a => (a.id || a.alertaId) !== alertaId));
-    }
-    // TODO: Num cenário real, faria um POST/PUT ao backend para resolver o alerta
-  };
-
-  const renderSeveridade = (severidade) => {
-    const s = String(severidade).toUpperCase();
-    if (s.includes('ALTA') || s.includes('CRITICA') || s.includes('CRÍTICA')) {
-      return <span className="badge-severidade badge-alta">Alta</span>;
-    }
-    if (s.includes('BAIXA') || s.includes('INFO')) {
-      return <span className="badge-severidade badge-baixa">Baixa</span>;
-    }
-    return <span className="badge-severidade badge-media">Média</span>;
+  const renderSeveridade = (s) => {
+    const v = String(s || '').toUpperCase();
+    if (v === 'CRITICO') return <span className="badge-severidade badge-alta">Crítico</span>;
+    if (v === 'AVISO')   return <span className="badge-severidade badge-media">Aviso</span>;
+    return <span className="badge-severidade badge-baixa">Normal</span>;
   };
 
   return (
     <div className="alertas-card">
       <div className="alertas-card-header">
         <h2>Alertas Ativos</h2>
+        <button className="btn-resolver" onClick={fetchAlertas}>Atualizar</button>
       </div>
       <div className="alertas-card-body">
         {loading ? (
           <div className="alertas-empty-state">A carregar alertas...</div>
-        ) : !alertas ? (
+        ) : !resumo ? (
           <div className="alertas-empty-state">Sem dados disponíveis</div>
-        ) : alertas.length === 0 ? (
-          <div className="alertas-empty-state">Não existem alertas ativos no momento.</div>
         ) : (
-          <div className="alertas-list">
-            {alertas.map((alerta, idx) => {
-              // Tentativa de obter as propriedades, assumindo nomes padrão
-              const id = alerta.id || alerta.alertaId || idx;
-              const titulo = alerta.titulo || alerta.tipo || alerta.mensagem || `Alerta #${id}`;
-              const linha = alerta.linha || alerta.routeId || 'Linha Desconhecida';
-              const severidade = alerta.severidade || alerta.nivel || 'Media';
-              
-              return (
-                <div key={id} className="alerta-item">
-                  <div className="alerta-info">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span className="alerta-title">{titulo}</span>
-                      {renderSeveridade(severidade)}
+          <>
+            {/* Resumo geral */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <div className="historico-metric-box" style={{ minWidth: 140 }}>
+                <span className="historico-metric-label">Total Alertas</span>
+                <span className="historico-metric-value">{resumo.totalAlertas ?? 0}</span>
+              </div>
+              <div className="historico-metric-box" style={{ minWidth: 140 }}>
+                <span className="historico-metric-label">Severidade</span>
+                <span className="historico-metric-value">{renderSeveridade(resumo.severidade)}</span>
+              </div>
+              <div className="historico-metric-box" style={{ minWidth: 140 }}>
+                <span className="historico-metric-label">Janela</span>
+                <span className="historico-metric-value">Últimas {resumo.janelaHoras}h</span>
+              </div>
+            </div>
+
+            {/* Por motivo */}
+            {resumo.porMotivo && Object.keys(resumo.porMotivo).length > 0 ? (
+              <div>
+                <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>Distribuição por Motivo</h3>
+                <div className="alertas-list">
+                  {Object.entries(resumo.porMotivo).map(([motivo, count]) => (
+                    <div key={motivo} className="alerta-item">
+                      <div className="alerta-info">
+                        <span className="alerta-title">{motivo}</span>
+                        <span className="alerta-subtitle">Ocorrências: {count}</span>
+                      </div>
                     </div>
-                    <span className="alerta-subtitle">Linha: {linha}</span>
-                  </div>
-                  <div>
-                    <button 
-                      className="btn-resolver"
-                      onClick={() => handleResolver(id)}
-                    >
-                      Resolver
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            ) : (
+              <div className="alertas-empty-state">
+                {resumo.totalAlertas === 0
+                  ? 'Não existem alertas ativos nas últimas 24 horas.'
+                  : 'Sem detalhes de motivos disponíveis.'}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

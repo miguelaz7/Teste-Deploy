@@ -1,5 +1,6 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
+import pt.tub.ticketub.p3_classificacao_tarifaria_rgpd.ControladorClassificacaoTarifaria;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantine;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +27,7 @@ public class ValidationIngestionService {
 
     private static final java.time.Duration JANELA_DUPLICADOS = java.time.Duration.ofHours(24);
 
+    private final ControladorClassificacaoTarifaria classificacao;
     private final ControladorValidacaoPicagens validacao;
     private final ControladorNormalizacaoAnonimizacao normalizacao;
     private final ControladorPersistenciaDataLake persistencia;
@@ -35,6 +37,7 @@ public class ValidationIngestionService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ValidationIngestionService(
+        ControladorClassificacaoTarifaria classificacao,
         ControladorValidacaoPicagens validacao,
         ControladorNormalizacaoAnonimizacao normalizacao,
         ControladorPersistenciaDataLake persistencia,
@@ -42,6 +45,7 @@ public class ValidationIngestionService {
         ValidationEventRepository validationEventRepository,
         ValidationQuarantineRepository validationQuarantineRepository
     ) {
+        this.classificacao = classificacao;
         this.validacao = validacao;
         this.normalizacao = normalizacao;
         this.persistencia = persistencia;
@@ -121,6 +125,7 @@ public class ValidationIngestionService {
 
         // O0.2.3.c — Persistir no Data Lake (O0.2.4.d)
         persistencia.persistir(eventos, batchId, inicioCiclo);
+        if (!eventos.isEmpty()) classificacao.classify();
 
         // O0.2.4.c — Registar estatísticas do ciclo (O0.2.4.d)
         estatisticas.registar(batchId, validacoes.size(), eventos.size(),

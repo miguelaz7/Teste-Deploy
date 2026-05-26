@@ -1,6 +1,8 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecord;
+import pt.tub.ticketub.p6_estimativa_fluxos_origem_destino.MatrizOD;
+import pt.tub.ticketub.p6_estimativa_fluxos_origem_destino.MatrizODRepository;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecordRepository;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
 import org.springframework.http.ResponseEntity;
@@ -27,65 +29,55 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/od")
 public class InterfaceVisualizacaoExportacaoOD {
 
+    private final MatrizODRepository matrizODRepository;
     private final NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository;
     private final StopRepository stopRepository;
 
     public InterfaceVisualizacaoExportacaoOD(
+        MatrizODRepository matrizODRepository,
         NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository,
         StopRepository stopRepository
     ) {
+        this.matrizODRepository = matrizODRepository;
         this.ngsiLdDataLakeRecordRepository = ngsiLdDataLakeRecordRepository;
         this.stopRepository = stopRepository;
     }
 
-    // Fluxos O-D agregados por paragem de origem para visualização no mapa
+    // Fluxos O-D lidos directamente da tabela matriz_od (O0.8.1.d)
     @GetMapping("/fluxos")
     public ResponseEntity<List<Map<String, Object>>> obterFluxosOD(
         @RequestParam(required = false) String dataInicio,
         @RequestParam(required = false) String dataFim
     ) {
-        LocalDate inicio = dataInicio != null ? LocalDate.parse(dataInicio) : LocalDate.now().minusDays(1);
+        LocalDate inicio = dataInicio != null ? LocalDate.parse(dataInicio) : LocalDate.now().minusDays(7);
         LocalDate fim    = dataFim    != null ? LocalDate.parse(dataFim)    : LocalDate.now();
 
-        // Agrega registos do Data Lake por paragem de origem dentro do período
-        List<NgsiLdDataLakeRecord> registos = ngsiLdDataLakeRecordRepository.findAll().stream()
-            .filter(r -> r.getPartitionDate() != null
-                && !r.getPartitionDate().isBefore(inicio)
-                && !r.getPartitionDate().isAfter(fim))
+        List<MatrizOD> pares = matrizODRepository.findAll().stream()
+            .filter(m -> m.getDataCalculo() != null
+                && !m.getDataCalculo().isBefore(inicio)
+                && !m.getDataCalculo().isAfter(fim))
             .collect(Collectors.toList());
 
-        // Agrupa por coordenada de origem e conta volume
-        Map<String, List<NgsiLdDataLakeRecord>> porOrigem = registos.stream()
-            .filter(r -> r.getOriginLat() != null && r.getOriginLon() != null)
-            .collect(Collectors.groupingBy(
-                r -> r.getOriginLat() + "," + r.getOriginLon()
-            ));
-
         List<Map<String, Object>> fluxos = new ArrayList<>();
-        for (Map.Entry<String, List<NgsiLdDataLakeRecord>> entrada : porOrigem.entrySet()) {
-            long volume = entrada.getValue().size();
-            NgsiLdDataLakeRecord exemplo = entrada.getValue().get(0);
-
-            // Nível de ocupação para coloração no mapa
-            String nivelOcupacao;
-            if (volume > 100) nivelOcupacao = "ALTO";
-            else if (volume > 30) nivelOcupacao = "MEDIO";
-            else nivelOcupacao = "BAIXO";
-
+        for (MatrizOD par : pares) {
             Map<String, Object> fluxo = new LinkedHashMap<>();
-            fluxo.put("origemLat",      exemplo.getOriginLat());
-            fluxo.put("origemLon",      exemplo.getOriginLon());
-            fluxo.put("volume",         volume);
-            fluxo.put("nivelOcupacao",  nivelOcupacao);
-            fluxo.put("periodo",        inicio + " a " + fim);
+            fluxo.put("origemStopId",    par.getOrigemStopId());
+            fluxo.put("destinoStopId",   par.getDestinoStopId() != null ? par.getDestinoStopId() : "Desconhecido");
+            fluxo.put("routeId",         par.getRouteId());
+            fluxo.put("periodo",         par.getPeriodo());
+            fluxo.put("volume",          par.getVolume());
+            fluxo.put("indiceConfianca", par.getIndiceConfianca());
+            fluxo.put("dataCalculo",     par.getDataCalculo());
             fluxos.add(fluxo);
         }
 
-        // Ordenar por volume descendente
-        fluxos.sort((a, b) -> Long.compare(
-            ((Number) b.get("volume")).longValue(),
-            ((Number) a.get("volume")).longValue()
+        fluxos.sort((a, b) -> Integer.compare(
+            ((Number) b.get("volume")).intValue(),
+            ((Number) a.get("volume")).intValue()
         ));
+
+        // Dummy map replacement needed - use empty
+        Map<String, List<Object>> porOrigem = new java.util.LinkedHashMap<>();
 
         return ResponseEntity.ok(fluxos);
     }

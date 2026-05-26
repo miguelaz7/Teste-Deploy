@@ -47,7 +47,8 @@ function SimulacaoCenarios() {
       // 2. Atualizar lista
       await fetchCenarios();
       // 3. Obter projecao do ultimo cenario (ou geral)
-      const proj = await getProjecao();
+      const ajuste = formData.valorAntes && formData.valorDepois ? ((parseFloat(formData.valorDepois) - parseFloat(formData.valorAntes)) / parseFloat(formData.valorAntes) * 100) : 0;
+      const proj = await getProjecao(formData.routeId, ajuste, 30);
       setProjecao(proj);
       
       // Reset basic form fields
@@ -78,7 +79,10 @@ function SimulacaoCenarios() {
         <table className="planeamento-table">
           <thead>
             <tr>
-              {headers.map(h => <th key={h}>{h.charAt(0).toUpperCase() + h.slice(1).replace(/([A-Z])/g, ' $1')}</th>)}
+              {headers.map(h => {
+                const LABELS = { codigoCenario: 'Código', routeId: 'Linha', descricao: 'Descrição', nivelConfianca: 'Confiança', estado: 'Estado', criadoEm: 'Criado Em' };
+                return <th key={h}>{LABELS[h] || h.charAt(0).toUpperCase() + h.slice(1)}</th>;
+              })}
             </tr>
           </thead>
           <tbody>

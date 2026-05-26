@@ -14,6 +14,6 @@ const fetchJSON = async (url, method = 'GET', body = null) => {
 
 export const getCenarios         = () => fetchJSON(`${BASE_PLANEAMENTO}/cenarios`);
 export const submeterSimulacao   = (payload) => fetchJSON(`${BASE_PLANEAMENTO}/simular`, 'POST', payload);
-export const getProjecao         = () => fetchJSON(`${BASE_SIMULACAO}/projecao`);
+export const getProjecao = (routeId = "12", ajustePercent = 0, diasHistorico = 30) => fetchJSON(`${BASE_SIMULACAO}/projecao?routeId=${routeId}&ajustePercent=${ajustePercent}&diasHistorico=${diasHistorico}`);
 export const getDadosFinanceiros = () => fetchJSON(`${BASE_ERP}/dados-financeiros`);
 export const gerarParaERP        = (payload) => fetchJSON(`${BASE_ERP}/dados-financeiros`, 'POST', payload);

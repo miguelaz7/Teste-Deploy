@@ -169,7 +169,10 @@ class ControladorPersistenciaDataLake {
         Map<String, Object> props = new HashMap<>();
         props.put("transactionDateTime", prop(evento.getTransactionDateTime().toString()));
         props.put("transactionType",     prop(evento.getTransactionType()));
-        props.put("ticketTypeCode",      prop(evento.getTicketType().getCode()));
+        // UC02.3: acesso lazy-safe ao ticketType
+        String ticketCode = "UNKNOWN";
+        try { if (evento.getTicketType() != null) ticketCode = evento.getTicketType().getCode(); } catch (Exception ignored) {}
+        props.put("ticketTypeCode", prop(ticketCode));
         props.put("mediaType",           prop(evento.getMediaType()));
         props.put("result",              prop(evento.getResult()));
         props.put("equipmentId",         prop(evento.getEquipmentId()));

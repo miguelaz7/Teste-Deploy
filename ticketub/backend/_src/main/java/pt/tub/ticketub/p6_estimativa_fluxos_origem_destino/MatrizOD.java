@@ -61,7 +61,7 @@ public class MatrizOD {
 
     // Índice de confiança: ALTO (baseado em validação seguinte),
     // MEDIO (baseado em contagem), BAIXO (terminus como fallback)
-    @Column(name = "indice_confianca", nullable = false)
+    @Column(name = "indice_confianca")
     private String indiceConfianca;
 
     @Column(name = "calculado_em", nullable = false)
@@ -96,15 +96,3 @@ public class MatrizOD {
     public void setVolume(int volume)     { this.volume = volume; }
 }
 
-@Repository
-interface MatrizODRepository extends JpaRepository<MatrizOD, Long> {
-
-    // Busca todos os pares de uma data específica
-    List<MatrizOD> findByDataCalculo(LocalDate dataCalculo);
-
-    // Busca pares acima do limiar mínimo de privacidade (para exportação)
-    List<MatrizOD> findByDataCalculoAndVolumeGreaterThanEqual(LocalDate dataCalculo, int limiar);
-
-    // Verifica se já foi calculada a matriz para uma data
-    boolean existsByDataCalculo(LocalDate dataCalculo);
-}

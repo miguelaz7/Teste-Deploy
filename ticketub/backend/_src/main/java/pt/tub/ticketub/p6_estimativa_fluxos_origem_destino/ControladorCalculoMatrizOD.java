@@ -151,7 +151,7 @@ public class ControladorCalculoMatrizOD {
             } else {
                 // Última validação do dia — sem validação seguinte
                 destinoStopId = resolverTerminus(routeId, origem.getTripId());
-                confianca     = destinoStopId != null ? "BAIXO" : null;
+                confianca     = destinoStopId != null ? "BAIXO" : "INDETERMINADO";
             }
 
             // Destino desconhecido se não foi possível estimar
@@ -196,7 +196,8 @@ public class ControladorCalculoMatrizOD {
     @PostMapping("/forcar-calculo")
     public ResponseEntity<Map<String, Object>> forcarCalculo() {
         try {
-            calcularMatrizDiaria();
+            // Forçar cálculo para hoje (não ontem como no agendado)
+            calcularParaData(java.time.LocalDate.now());
             return ResponseEntity.ok(Map.of(
                 "status", "sucesso",
                 "mensagem", "Calculo da Matriz O-D concluido.",

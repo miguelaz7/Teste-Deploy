@@ -3,6 +3,8 @@ package pt.tub.ticketub.p4_interfaces_utilizador;
 import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,5 +58,15 @@ public class InterfaceIntegracaoERP {
             m.put(chave2, ((Number) row[1]).longValue());
             return m;
         }).collect(Collectors.toList());
+    }
+
+    // UC11.2 — Gerar e registar exportação para ERP
+    @PostMapping("/dados-financeiros")
+    public ResponseEntity<Map<String, Object>> gerarParaERP(
+        @RequestBody(required = false) Map<String, Object> params
+    ) {
+        int dias = params != null && params.containsKey("dias")
+            ? Integer.parseInt(params.get("dias").toString()) : 30;
+        return obterDadosFinanceiros(dias);
     }
 }

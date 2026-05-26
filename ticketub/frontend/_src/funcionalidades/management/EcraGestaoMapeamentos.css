@@ -108,6 +108,7 @@
   background-color: rgba(15, 23, 42, 0.5);
   display: flex;
   justify-content: center;
+  z-index: 9999;
   align-items: center;
   z-index: 1000;
 }
@@ -176,4 +177,3 @@
 .btn-secondary:hover {
   background-color: #f1f5f9;
 }
-

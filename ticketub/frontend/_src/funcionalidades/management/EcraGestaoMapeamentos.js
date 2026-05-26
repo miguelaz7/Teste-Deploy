@@ -72,18 +72,18 @@ const EcraGestaoMapeamentos = ({ onMappingChange }) => {
     try {
       if (editingId) {
         await updateMapping(editingId, formData);
-        await logAuditAction('UPDATE', formData.tipo_titulo, editingAnterior, formData.perfil);
       } else {
         await createMapping(formData);
-        await logAuditAction('CREATE', formData.tipo_titulo, null, formData.perfil);
       }
-      await reprocessEvents();
-      if (onMappingChange) onMappingChange();
-      await fetchMappings(false);
-      handleCloseModal();
     } catch (err) {
       console.error('Erro a guardar mapeamento', err);
+      return;
     }
+    try { await logAuditAction(editingId ? 'UPDATE' : 'CREATE', formData.tipo_titulo, editingAnterior, formData.perfil); } catch {}
+    try { await reprocessEvents(); } catch {}
+    if (onMappingChange) onMappingChange();
+    await fetchMappings(false);
+    handleCloseModal();
   };
 
   const handleDelete = async (id, tipoTitulo, perfil) => {
@@ -146,7 +146,7 @@ const EcraGestaoMapeamentos = ({ onMappingChange }) => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" style={{zIndex: 99999, position: 'fixed'}}>
           <div className="modal-content">
             <div className="modal-header">
               {editingId ? 'Editar Mapeamento' : 'Novo Mapeamento'}
@@ -190,5 +190,3 @@ const EcraGestaoMapeamentos = ({ onMappingChange }) => {
 };
 
 export default EcraGestaoMapeamentos;
-
-

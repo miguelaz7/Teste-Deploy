@@ -78,9 +78,13 @@ public class InterfaceGestaoAlertas {
             .filter(q -> q.getCreatedAt().isAfter(desde))
             .map(q -> {
                 Map<String, Object> item = new LinkedHashMap<>();
-                item.put("id",         q.getId());
-                item.put("motivo",     q.getReason());
-                item.put("criadoEm",   q.getCreatedAt());
+                item.put("id",           q.getId());
+                item.put("motivo",       q.getReason());
+                item.put("campoInvalido", q.getInvalidField());
+                item.put("valorRecebido", q.getReceivedValue());
+                item.put("regraViolada",  q.getViolatedRule());
+                item.put("paragem",       q.getOriginStopId());
+                item.put("criadoEm",     q.getCreatedAt());
                 return item;
             })
             .collect(Collectors.toList());
