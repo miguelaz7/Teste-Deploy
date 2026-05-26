@@ -6,7 +6,14 @@
   margin-top: 4px;
 }
 
+.painel-geral-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .metrics-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
@@ -21,6 +28,8 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .metric-card:hover {
@@ -34,7 +43,7 @@
 .border-top-semana { border-top: 4px solid #f59e0b; }
 
 .metric-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -44,7 +53,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #0f172a;
   text-transform: uppercase;
@@ -53,10 +62,10 @@
 
 /* Status Badges */
 .status-badge {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 20px;
   letter-spacing: 0.4px;
 }
@@ -67,13 +76,13 @@
 
 /* Main Volume Value Highlight */
 .metric-main-val {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   padding: 2px 0;
 }
 
 .main-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
@@ -81,7 +90,7 @@
 }
 
 .main-value {
-  font-size: 2.2rem;
+  font-size: 3.2rem;
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -1px;
@@ -91,13 +100,14 @@
 .metric-body {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .metric-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 20px 0;
   border-bottom: 0.5px solid #f1f5f9;
 }
 
@@ -106,18 +116,18 @@
 }
 
 .metric-label {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #64748b;
   font-weight: 600;
 }
 
 .metric-value {
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   font-weight: 800;
 }
 
 .metric-value small {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   opacity: 0.8;
   margin-left: 2px;
@@ -135,7 +145,7 @@
 }
 
 .progress-bar-bg {
-  height: 6px;
+  height: 10px;
   background: #f1f5f9;
   border-radius: 10px;
   position: relative;

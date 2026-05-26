@@ -60,7 +60,18 @@ function DetalheQuarentena() {
 
   const renderTable = (dataArray) => {
     if (dataArray.length === 0) {
-      return <div className="alertas-empty-state">Sem registos em quarentena para o filtro selecionado.</div>;
+      return (
+        <div className="alertas-empty-state-container">
+          <div className="empty-state-icon-wrapper">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="m9 11 2 2 4-4" strokeWidth="2"></path>
+            </svg>
+          </div>
+          <h4 className="empty-state-title">Quarentena Limpa</h4>
+          <p className="empty-state-description">Sem registos em quarentena para o filtro selecionado.</p>
+        </div>
+      );
     }
 
     const headers = Object.keys(dataArray[0]);
@@ -94,7 +105,7 @@ function DetalheQuarentena() {
         
         <div className="quarentena-controls">
           <div className="quarentena-filter">
-            <label htmlFor="motivoFilter" style={{ fontWeight: 500, color: 'var(--text-main, #111827)' }}>
+            <label htmlFor="motivoFilter" style={{ fontWeight: 600, color: 'var(--text-main, #111827)', fontSize: '0.9rem' }}>
               Filtrar por Motivo:
             </label>
             <select 
@@ -124,9 +135,34 @@ function DetalheQuarentena() {
         </div>
 
         {loading ? (
-          <div className="alertas-empty-state">A carregar registos...</div>
+          <div className="alertas-empty-state-container">
+            <div className="empty-state-icon-wrapper loading">
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="spinning-icon">
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+            </div>
+            <h4 className="empty-state-title">A carregar registos...</h4>
+            <p className="empty-state-description">Por favor aguarde enquanto sincronizamos os dados de quarentena.</p>
+          </div>
         ) : !registos ? (
-          <div className="alertas-empty-state">Sem dados disponíveis</div>
+          <div className="alertas-empty-state-container">
+            <div className="empty-state-icon-wrapper" style={{ backgroundColor: '#fee2e2' }}>
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h4 className="empty-state-title">Sem dados disponíveis</h4>
+            <p className="empty-state-description">Não foi possível carregar os registos de quarentena neste momento.</p>
+          </div>
         ) : (
           renderTable(registosFiltrados)
         )}

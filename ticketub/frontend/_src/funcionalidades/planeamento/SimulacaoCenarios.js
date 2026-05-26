@@ -69,7 +69,16 @@ function SimulacaoCenarios() {
 
   const renderTable = () => {
     if (!cenarios || cenarios.length === 0) {
-      return <div className="planeamento-empty-state">Sem cenários guardados.</div>;
+      return (
+        <div className="planeamento-empty-state">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', opacity: 0.7 }}>
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Sem cenários guardados.</span>
+        </div>
+      );
     }
 
     const headers = Object.keys(cenarios[0]);
@@ -153,11 +162,15 @@ function SimulacaoCenarios() {
             </div>
             <div className="form-group" style={{ justifyContent: 'flex-end' }}>
               <button type="submit" className="btn-primary" disabled={loadingSim}>
+                <svg style={{ marginRight: '6px' }} className={loadingSim ? "spinning-icon" : ""} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
                 {loadingSim ? 'A simular...' : 'Simular Impacto'}
               </button>
             </div>
           </form>
-
+ 
           {/* Painel de Projeção após simulação */}
           {projecao && (
             <div className="projecao-panel">
@@ -179,7 +192,7 @@ function SimulacaoCenarios() {
           )}
         </div>
       </div>
-
+ 
       {/* Tabela de Histórico */}
       <div className="planeamento-card">
         <div className="planeamento-card-header">
@@ -187,9 +200,28 @@ function SimulacaoCenarios() {
         </div>
         <div className="planeamento-card-body">
           {loadingList ? (
-            <div className="planeamento-empty-state">A carregar cenários...</div>
+            <div className="planeamento-empty-state">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinning-icon" style={{ marginBottom: '8px' }}>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+              <span>A carregar cenários...</span>
+            </div>
           ) : !cenarios ? (
-            <div className="planeamento-empty-state">Sem cenários disponíveis ou erro de conexão.</div>
+            <div className="planeamento-empty-state">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', opacity: 0.7 }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span>Sem cenários disponíveis ou erro de conexão.</span>
+            </div>
           ) : (
             renderTable()
           )}

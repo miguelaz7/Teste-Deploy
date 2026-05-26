@@ -1,12 +1,12 @@
 .gestao-mapeamentos-container {
-  padding: 24px;
+  padding: 0;
 }
 
 .gestao-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .header-actions {
@@ -15,10 +15,17 @@
 }
 
 .gestao-header h2 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
   margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-left: 4px solid #3b82f6;
+  padding-left: 10px;
+  text-transform: uppercase;
+  letter-spacing: -0.2px;
+  font-weight: 800;
 }
 
 .btn-primary {
@@ -26,10 +33,11 @@
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s;
+  font-size: 0.85rem;
 }
 
 .btn-primary:hover {
@@ -37,31 +45,39 @@
 }
 
 .btn-icon-edit {
-  background-color: #f59e0b;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-weight: 600;
+  background-color: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-weight: 700;
   cursor: pointer;
   margin-right: 8px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-.btn-icon-edit:hover { background-color: #d97706; }
+.btn-icon-edit:hover {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
 
 .btn-icon-delete {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-weight: 600;
+  background-color: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-.btn-icon-delete:hover { background-color: #dc2626; }
+.btn-icon-delete:hover {
+  background-color: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
 
 .table-container {
   background: white;
@@ -77,7 +93,7 @@
 }
 
 .mappings-table th, .mappings-table td {
-  padding: 14px 20px;
+  padding: 10px 16px;
   text-align: left;
   border-bottom: 1px solid #f1f5f9;
 }

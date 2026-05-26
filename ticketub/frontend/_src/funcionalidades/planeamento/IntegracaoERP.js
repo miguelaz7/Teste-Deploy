@@ -58,15 +58,38 @@ function IntegracaoERP() {
         <div className="planeamento-card-header">
           <h2>Integração Financeira ERP</h2>
           <button className="btn-primary" onClick={handleGerarERP} disabled={loadingGerar}>
+            <svg style={{ marginRight: '6px' }} className={loadingGerar ? "spinning-icon" : ""} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
             {loadingGerar ? 'A gerar...' : 'Gerar para ERP'}
           </button>
         </div>
 
         <div className="planeamento-card-body">
           {loadingList ? (
-            <div className="planeamento-empty-state">A carregar dados financeiros...</div>
+            <div className="planeamento-empty-state">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinning-icon" style={{ marginBottom: '8px' }}>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <line x1="12" y1="18" x2="12" y2="22"></line>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="12"></line>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+              </svg>
+              <span>A carregar dados financeiros...</span>
+            </div>
           ) : !financas ? (
-            <div className="planeamento-empty-state">Sem dados disponíveis.</div>
+            <div className="planeamento-empty-state">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', opacity: 0.7 }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Sem dados disponíveis.</span>
+            </div>
           ) : (
             <>
               {/* Resumo geral */}
