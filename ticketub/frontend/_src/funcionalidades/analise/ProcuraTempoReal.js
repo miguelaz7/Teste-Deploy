@@ -224,7 +224,7 @@ function ProcuraTempoReal() {
     return (
       <div className="historico-metrics-grid">
         {campos.filter(k => k in liveData).map(k => (
-          <div key={k} className="historico-metric-box">
+          <div key={k} className={`historico-metric-box border-top-${k}`} title={label(k)}>
             <span className="historico-metric-label">{label(k)}</span>
             <span className="historico-metric-value">{fmt(k, liveData[k])}</span>
           </div>
@@ -494,7 +494,9 @@ function ProcuraTempoReal() {
           text-transform: uppercase;
         }
         .analise-filter-input {
-          padding: 6px 12px;
+          height: 32px;
+          padding: 0 12px;
+          box-sizing: border-box;
           border-radius: 6px;
           border: 1px solid #cbd5e1;
           background-color: #ffffff;
@@ -505,8 +507,10 @@ function ProcuraTempoReal() {
         }
         .analise-export-btn {
           margin-left: auto;
-          align-self: flex-end;
-          padding: 8px 16px;
+          align-self: center;
+          height: 32px;
+          padding: 0 16px;
+          box-sizing: border-box;
           border-radius: 6px;
           border: none;
           background-color: #10b981;
@@ -515,6 +519,10 @@ function ProcuraTempoReal() {
           cursor: pointer;
           font-size: 13px;
           transition: background-color 0.2s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
         }
         .analise-export-btn:hover {
           background-color: #059669;
@@ -593,7 +601,12 @@ function ProcuraTempoReal() {
           disabled={filteredData.length === 0}
           style={filteredData.length === 0 ? { backgroundColor: '#cbd5e1', color: '#94a3b8', cursor: 'not-allowed', opacity: 0.5 } : {}}
         >
-          📥 Exportar Resultados (JSON)
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Exportar Resultados (JSON)
         </button>
       </div>
 
@@ -601,49 +614,96 @@ function ProcuraTempoReal() {
         <div className="analise-card" style={{ marginBottom: '20px' }}>
           <div className="analise-card-header">
             <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🏆</span> Top 10 Linhas com Maior Procura
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M6 4h12v8c0 3.3-2.7 6-6 6s-6-2.7-6-6V4z" />
+                <path d="M6 6H4c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2" />
+                <path d="M18 6h2c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-2" />
+                <line x1="12" y1="18" x2="12" y2="21" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+              </svg>
+              Top 10 Linhas com Maior Procura
             </h2>
           </div>
           <div className="analise-card-body" style={{ paddingTop: '10px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-              {top10Data.map((route, idx) => (
-                <div 
-                  key={route.chave} 
-                  className="top-route-card"
-                  onClick={() => handleRouteClick(route.chave, route.descricao || route.chave)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #ffffff, #f8fafc)',
-                    border: '1px solid #e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.05)';
-                    e.currentTarget.style.borderColor = '#3b82f6';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#3b82f6' }}>#{idx + 1}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {route.chave}</span>
+              {top10Data.map((route, idx) => {
+                const badgeBg = idx === 0 
+                  ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
+                  : idx === 1 
+                  ? 'linear-gradient(135deg, #94a3b8, #64748b)' 
+                  : idx === 2 
+                  ? 'linear-gradient(135deg, #b45309, #78350f)' 
+                  : 'linear-gradient(135deg, #f1f5f9, #e2e8f0)';
+                const badgeColor = idx < 3 ? '#ffffff' : '#475569';
+                
+                return (
+                  <div 
+                    key={route.chave} 
+                    className="top-route-card"
+                    onClick={() => handleRouteClick(route.chave, route.descricao || route.chave)}
+                    style={{
+                      padding: '16px',
+                      borderRadius: '16px',
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 20px -8px rgba(59, 130, 246, 0.15)';
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)';
+                      e.currentTarget.style.borderColor = '#e2e8f0';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ 
+                        fontSize: '11px', 
+                        fontWeight: '800', 
+                        background: badgeBg, 
+                        color: badgeColor,
+                        padding: '3px 8px',
+                        borderRadius: '20px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: idx < 3 ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+                      }}>
+                        #{idx + 1}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>ID: {route.chave}</span>
+                    </div>
+                    <div style={{ 
+                      fontWeight: '700', 
+                      fontSize: '14px', 
+                      color: '#0f172a', 
+                      whiteSpace: 'nowrap', 
+                      overflow: 'hidden', 
+                      textOverflow: 'ellipsis', 
+                      marginBottom: '8px' 
+                    }} title={route.descricao || `Linha ${route.chave}`}>
+                      {route.descricao || `Linha ${route.chave}`}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#475569' }}>
+                      <span style={{ 
+                        color: '#3b82f6', 
+                        fontWeight: '800',
+                        fontSize: '15px'
+                      }}>
+                        {route.totalValidacoes}
+                      </span> 
+                      <span style={{ color: '#64748b', fontWeight: '500' }}>validações</span>
+                    </div>
                   </div>
-                  <div style={{ fontWeight: '600', fontSize: '14px', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '4px' }}>
-                    {route.descricao || `Linha ${route.chave}`}
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#475569' }}>
-                    <strong>{route.totalValidacoes}</strong> validações
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -681,8 +741,8 @@ function ProcuraTempoReal() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -692,75 +752,113 @@ function ProcuraTempoReal() {
           <div style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
-            borderRadius: '16px',
+            borderRadius: '24px',
             width: '100%',
             maxWidth: '650px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
             color: '#1e293b',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            animation: 'fadeIn 0.25s ease-out'
           }} onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '20px 24px',
-              borderBottom: '1px solid #e2e8f0'
+              padding: '24px 28px',
+              borderBottom: '1px solid #f1f5f9'
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#3b82f6' }}>
-                  Detalhe Horário em Tempo Real
+                <h3 style={{
+                  margin: 0,
+                  fontSize: '1.25rem',
+                  fontWeight: '800',
+                  color: '#0f172a',
+                  borderLeft: '4px solid #3b82f6',
+                  paddingLeft: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Detalhe Horário
                 </h3>
-                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                <span style={{ fontSize: '13px', color: '#64748b', marginLeft: '16px', display: 'block', marginTop: '4px' }}>
                   {selectedRouteName}
                 </span>
               </div>
               <button 
                 onClick={() => setSelectedRouteId(null)}
                 style={{
-                  background: 'transparent',
+                  background: '#f1f5f9',
                   border: 'none',
                   color: '#64748b',
-                  fontSize: '24px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   cursor: 'pointer',
-                  padding: '4px',
-                  lineHeight: '1'
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  lineHeight: '1',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#e2e8f0';
+                  e.currentTarget.style.color = '#0f172a';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#64748b';
                 }}
               >&times;</button>
             </div>
             
             {/* Modal Body */}
-            <div style={{ padding: '24px', maxHeight: '450px', overflowY: 'auto' }}>
+            <div style={{ padding: '28px', maxHeight: '450px', overflowY: 'auto' }}>
               {loadingDrillDown ? (
-                <div style={{ display: 'grid', placeItems: 'center', minHeight: '120px' }}>
-                  A carregar detalhe horário...
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '160px', gap: '12px' }}>
+                  <div className="loader-ring"><div></div><div></div><div></div><div></div></div>
+                  <span style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>A carregar detalhe horário...</span>
                 </div>
               ) : routeHourlyDetail ? (
                 <div>
-                  <h4 style={{ margin: '0 0 16px', fontSize: '14px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <h4 style={{ margin: '0 0 20px', fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Distribuição de Procura (Validações por Hora)
                   </h4>
                   
                   {/* Custom Bar Chart */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {Object.entries(routeHourlyDetail).map(([hour, val]) => {
                       const maxVal = Math.max(...Object.values(routeHourlyDetail), 1);
                       const pct = (val / maxVal) * 100;
                       return (
-                        <div key={hour} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ width: '45px', fontSize: '13px', color: '#64748b', textAlign: 'right' }}>
+                        <div 
+                          key={hour} 
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '14px',
+                            padding: '6px 8px',
+                            borderRadius: '8px',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <span style={{ width: '50px', fontSize: '13px', color: '#64748b', textAlign: 'right', fontWeight: '600' }}>
                             {String(hour).padStart(2, '0')}:00
                           </span>
-                          <div style={{ flex: 1, height: '14px', backgroundColor: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ flex: 1, height: '16px', backgroundColor: '#f1f5f9', borderRadius: '6px', overflow: 'hidden' }}>
                             <div style={{
                               width: `${pct}%`,
                               height: '100%',
-                              background: 'linear-gradient(90deg, #3b82f6, #2563eb)',
-                              borderRadius: '4px',
-                              transition: 'width 0.6s ease'
+                              background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                              borderRadius: '6px',
+                              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
                             }} />
                           </div>
-                          <span style={{ width: '60px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          <span style={{ width: '70px', fontSize: '13px', fontWeight: '700', color: '#0f172a', textAlign: 'right' }}>
                             {val} val
                           </span>
                         </div>
@@ -769,7 +867,7 @@ function ProcuraTempoReal() {
                   </div>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', color: '#64748b' }}>
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#64748b' }}>
                   Não foi possível obter os detalhes horários para esta linha.
                 </div>
               )}

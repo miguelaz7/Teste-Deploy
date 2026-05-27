@@ -32,13 +32,15 @@
 
 .stat-header {
   margin-bottom: 8px;
-  display: flex;
-  align-items: center;
+  display: block; /* Changed from flex to support text-overflow */
   font-size: 0.8rem;
   font-weight: 800;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-value {

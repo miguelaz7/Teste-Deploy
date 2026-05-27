@@ -45,7 +45,6 @@ public class ConfiguracaoSeguranca {
                     .requestMatchers("/api/od/**").hasAnyRole("ANALISTA", "ADMIN")
                     .requestMatchers("/api/planeamento/**").hasAnyRole("ANALISTA", "GESTOR", "ADMIN")
                     .requestMatchers("/api/simulacao/**").hasAnyRole("ANALISTA", "GESTOR", "ADMIN")
-                    .requestMatchers("/api/rgpd/**").hasAnyRole("DPO", "ADMIN")
                     
                     .anyRequest().authenticated())
                     .oauth2ResourceServer(oauth2 -> oauth2

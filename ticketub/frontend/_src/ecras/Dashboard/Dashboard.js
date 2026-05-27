@@ -6,12 +6,10 @@ import ModuloBilhetes from "../../funcionalidades/ticketing/ModuloBilhetes";
 import ProcuraTempoReal from "../../funcionalidades/analise/ProcuraTempoReal";
 import HistoricoConsolidado from "../../funcionalidades/analise/HistoricoConsolidado";
 import PainelAlertas from "../../funcionalidades/alertas/PainelAlertas";
-import DetalheQuarentena from "../../funcionalidades/alertas/DetalheQuarentena";
 import MatrizOD from "../../funcionalidades/od/MatrizOD";
 import ExportacaoDados from "../../funcionalidades/od/ExportacaoDados";
 import SimulacaoCenarios from "../../funcionalidades/planeamento/SimulacaoCenarios";
 import IntegracaoERP from "../../funcionalidades/planeamento/IntegracaoERP";
-import GestaoRGPD from "../../funcionalidades/rgpd/GestaoRGPD";
 import DesvioOperacional from "../../funcionalidades/analise/DesvioOperacional";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
@@ -44,16 +42,15 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
     const tabs = [];
     if (hasRole(['GESTOR', 'ANALISTA', 'ADMIN'])) tabs.push('geral');
     tabs.push('bilhetes');
+    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('planeamento');
+    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('erp');
     tabs.push('mapa');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('analise');
     if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('desvios');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('historico');
-    if (hasRole(['GESTOR', 'ADMIN'])) tabs.push('alertas');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('matriz-od');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('exportacao');
-    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('planeamento');
-    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('erp');
-    if (hasRole(['DPO', 'ADMIN'])) tabs.push('rgpd');
+    if (hasRole(['GESTOR', 'ADMIN'])) tabs.push('alertas');
     return tabs;
   };
 
@@ -102,6 +99,26 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
             <span className="nav-text">Bilhetes</span>
           </button>
 
+          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'planeamento' ? 'active' : ''}`}
+              onClick={() => setActiveTab('planeamento')}
+            >
+              <span className="nav-icon"><TargetIcon /></span>
+              <span className="nav-text">Planeamento</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'erp' ? 'active' : ''}`}
+              onClick={() => setActiveTab('erp')}
+            >
+              <span className="nav-icon"><ServerIcon /></span>
+              <span className="nav-text">ERP</span>
+            </button>
+          )}
+
           <button
             className={`nav-link ${activeTab === 'mapa' ? 'active' : ''}`}
             onClick={() => setActiveTab('mapa')}
@@ -140,16 +157,6 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
             </button>
           )}
 
-          {hasRole(['GESTOR', 'ADMIN']) && (
-            <button
-              className={`nav-link ${activeTab === 'alertas' ? 'active' : ''}`}
-              onClick={() => setActiveTab('alertas')}
-            >
-              <span className="nav-icon"><BellIcon /></span>
-              <span className="nav-text">Alertas</span>
-            </button>
-          )}
-
           {hasRole(['ANALISTA', 'ADMIN']) && (
             <button
               className={`nav-link ${activeTab === 'matriz-od' ? 'active' : ''}`}
@@ -170,33 +177,13 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
             </button>
           )}
 
-          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+          {hasRole(['GESTOR', 'ADMIN']) && (
             <button
-              className={`nav-link ${activeTab === 'planeamento' ? 'active' : ''}`}
-              onClick={() => setActiveTab('planeamento')}
+              className={`nav-link ${activeTab === 'alertas' ? 'active' : ''}`}
+              onClick={() => setActiveTab('alertas')}
             >
-              <span className="nav-icon"><TargetIcon /></span>
-              <span className="nav-text">Planeamento</span>
-            </button>
-          )}
-
-          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
-            <button
-              className={`nav-link ${activeTab === 'erp' ? 'active' : ''}`}
-              onClick={() => setActiveTab('erp')}
-            >
-              <span className="nav-icon"><ServerIcon /></span>
-              <span className="nav-text">ERP</span>
-            </button>
-          )}
-
-          {hasRole(['DPO', 'ADMIN']) && (
-            <button
-              className={`nav-link ${activeTab === 'rgpd' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rgpd')}
-            >
-              <span className="nav-icon"><ShieldIcon /></span>
-              <span className="nav-text">RGPD</span>
+              <span className="nav-icon"><BellIcon /></span>
+              <span className="nav-text">Alertas</span>
             </button>
           )}
         </nav>
@@ -253,10 +240,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
           )}
 
           {activeTab === 'alertas' && hasRole(['GESTOR', 'ADMIN']) && (
-            <div className="alertas-wrapper">
-              <PainelAlertas />
-              <DetalheQuarentena />
-            </div>
+            <PainelAlertas />
           )}
 
           {activeTab === 'matriz-od' && hasRole(['ANALISTA', 'ADMIN']) && (
@@ -273,10 +257,6 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
 
           {activeTab === 'erp' && hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
             <IntegracaoERP />
-          )}
-
-          {activeTab === 'rgpd' && hasRole(['DPO', 'ADMIN']) && (
-            <GestaoRGPD />
           )}
         </div>
       </main>
@@ -296,9 +276,9 @@ function HomeIcon() {
 
 function TicketIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: '2px' }}>
-      <path d="M4 7V5c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v2c-1.1 0-2 .9-2 2s.9 2 2 2v2c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2v-2c1.1 0 2-.9 2-2s-.9-2-2-2z"></path>
-      <line x1="12" y1="8" x2="12" y2="16" strokeDasharray="2 2"></line>
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"></path>
+      <line x1="12" y1="5" x2="12" y2="19" strokeDasharray="3 3"></line>
     </svg>
   );
 }

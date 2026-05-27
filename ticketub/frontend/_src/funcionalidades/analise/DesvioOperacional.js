@@ -69,163 +69,149 @@ function DesvioOperacional() {
   }
 
   return (
-    <div className="od-container">
-      <div className="map-header" style={{ marginBottom: '24px' }}>
+    <div className="desvio-container">
+      <div className="map-header" style={{ marginBottom: '16px' }}>
         <h2>Desvio e Correlação Operacional</h2>
-        <p>Análise de cruzamento das validações com telemetria GPS (SAE-IP) e desvios de horários da frota TUB.</p>
+        <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>
+          Análise de cruzamento das validações com telemetria GPS (SAE-IP) e desvios de horários da frota TUB.
+        </p>
       </div>
 
-      {/* Alertas de Qualidade UC07.3 */}
+      {/* Alertas de Qualidade */}
       {qualidade && qualidade.alertaDegradacaoQualidade && (
-        <div className="degradacao-alerta" style={{
-          backgroundColor: '#fffbeb',
-          border: '1px solid #fde68a',
-          color: '#b45309',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div className="desvio-alert desvio-alert-warning">
           <IconAlert />
           <div>
-            <strong>Alerta de Qualidade de Localização Degradada (UC07.3):</strong> A percentagem de localizações indeterminadas está acima de 10% ({qualidade.percentagemIndeterminada}%). Por favor verifique as ligações dos validadores.
+            <strong>Alerta de Qualidade de Localização Degradada:</strong> A percentagem de localizações indeterminadas está acima de 10% ({qualidade.percentagemIndeterminada}%). Por favor verifique as ligações dos validadores.
           </div>
         </div>
       )}
 
       {qualidade && qualidade.alertaSaeIp && (
-        <div className="degradacao-alerta" style={{
-          backgroundColor: '#fee2e2',
-          border: '1px solid #fca5a5',
-          color: '#b91c1c',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div className="desvio-alert desvio-alert-danger">
           <IconAlert />
           <div>
-            <strong>Alerta de Falha do Serviço SAE-IP (UC07.3):</strong> A cobertura de localização exata por GPS está abaixo do limiar de 50% face às estimadas por horário.
+            <strong>Alerta de Falha do Serviço SAE-IP:</strong> A cobertura de localização exata por GPS está abaixo do limiar de 50% face às estimadas por horário.
           </div>
         </div>
       )}
 
       {/* Grid Superior: Qualidade de Localização vs KPIs Operacionais */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+      <div className="desvio-grid">
         
-        {/* Bloco 1: Qualidade da Localização (UC07.3) */}
-        <div className="premium-card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <IconCompass />
-            <strong style={{ fontSize: '1.1rem', color: '#0f172a' }}>Qualidade da Localização (UC07.3)</strong>
+        {/* Bloco 1: Qualidade da Localização */}
+        <div className="desvio-card">
+          <div className="desvio-card-header">
+            <h2>
+              <IconCompass />
+              Qualidade da Localização
+            </h2>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span style={{ color: '#475569', fontWeight: '500' }}>GPS Preciso (Telemetria Real)</span>
-                <strong style={{ color: '#10b981' }}>{qualidade?.percentagemGpsPreciso}%</strong>
+            <div className="desvio-progress-group">
+              <div className="desvio-progress-info">
+                <span className="desvio-progress-label">GPS Preciso (Telemetria Real)</span>
+                <span className="desvio-progress-value" style={{ color: '#10b981' }}>{qualidade?.percentagemGpsPreciso}%</span>
               </div>
-              <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${qualidade?.percentagemGpsPreciso}%`, backgroundColor: '#10b981', borderRadius: '4px' }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span style={{ color: '#475569', fontWeight: '500' }}>Estimada por Horário (Schedule)</span>
-                <strong style={{ color: '#3b82f6' }}>{qualidade?.percentagemEstimadaSchedule}%</strong>
-              </div>
-              <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${qualidade?.percentagemEstimadaSchedule}%`, backgroundColor: '#3b82f6', borderRadius: '4px' }}></div>
+              <div className="desvio-progress-bar">
+                <div className="desvio-progress-fill" style={{ width: `${qualidade?.percentagemGpsPreciso}%`, backgroundColor: '#10b981' }}></div>
               </div>
             </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
-                <span style={{ color: '#475569', fontWeight: '500' }}>Localização Indeterminada</span>
-                <strong style={{ color: '#ef4444' }}>{qualidade?.percentagemIndeterminada}%</strong>
+            <div className="desvio-progress-group">
+              <div className="desvio-progress-info">
+                <span className="desvio-progress-label">Estimada por Horário (Schedule)</span>
+                <span className="desvio-progress-value" style={{ color: '#3b82f6' }}>{qualidade?.percentagemEstimadaSchedule}%</span>
               </div>
-              <div style={{ height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${qualidade?.percentagemIndeterminada}%`, backgroundColor: '#ef4444', borderRadius: '4px' }}></div>
+              <div className="desvio-progress-bar">
+                <div className="desvio-progress-fill" style={{ width: `${qualidade?.percentagemEstimadaSchedule}%`, backgroundColor: '#3b82f6' }}></div>
+              </div>
+            </div>
+
+            <div className="desvio-progress-group">
+              <div className="desvio-progress-info">
+                <span className="desvio-progress-label">Localização Indeterminada</span>
+                <span className="desvio-progress-value" style={{ color: '#ef4444' }}>{qualidade?.percentagemIndeterminada}%</span>
+              </div>
+              <div className="desvio-progress-bar">
+                <div className="desvio-progress-fill" style={{ width: `${qualidade?.percentagemIndeterminada}%`, backgroundColor: '#ef4444' }}></div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bloco 2: Indicadores Planeado vs Executado (UC07.2) */}
-        <div className="premium-card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <IconActivity />
-            <strong style={{ fontSize: '1.1rem', color: '#0f172a' }}>Serviço Executado vs. Planeado (UC07.2)</strong>
+        {/* Bloco 2: Indicadores Planeado vs Executado */}
+        <div className="desvio-card">
+          <div className="desvio-card-header">
+            <h2>
+              <IconActivity />
+              Serviço Executado vs. Planeado
+            </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '600' }}>Rácio Procura/Oferta</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#0f172a', marginTop: '4px' }}>{desvios?.procuraVsOfertaRatio}</div>
-              <div style={{ fontSize: '0.65rem', color: '#10b981', marginTop: '2px' }}>Dentro da meta TUB</div>
+          <div className="desvio-stats-grid">
+            <div className="desvio-stat-box">
+              <span className="desvio-stat-label">Rácio Procura/Oferta</span>
+              <span className="desvio-stat-value">{desvios?.procuraVsOfertaRatio}</span>
+              <span className="desvio-stat-sub success">Dentro da meta TUB</span>
             </div>
 
-            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '600' }}>Taxa Geral Atrasos</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>{desvios?.taxaAtrasoLinhapct}%</div>
-              <div style={{ fontSize: '0.65rem', color: '#ef4444', marginTop: '2px' }}>Atraso &gt; 5 min</div>
+            <div className="desvio-stat-box">
+              <span className="desvio-stat-label">Taxa Geral Atrasos</span>
+              <span className="desvio-stat-value danger">{desvios?.taxaAtrasoLinhapct}%</span>
+              <span className="desvio-stat-sub danger">Atraso &gt; 5 min</span>
             </div>
 
-            <div style={{ gridColumn: 'span 2', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '600' }}>Zona Crítica Impactada</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>{desvios?.impactoGeoAtraso}</div>
+            <div className="desvio-stat-box desvio-stat-box-full">
+              <span className="desvio-stat-label">Zona Crítica Impactada</span>
+              <span className="desvio-stat-value" style={{ fontSize: '1.05rem', fontWeight: '700' }}>{desvios?.impactoGeoAtraso}</span>
             </div>
           </div>
         </div>
 
       </div>
 
-      {/* Tabela de Desvios de Viagens em Tempo Real (UC07.2) */}
-      <div className="premium-card" style={{ padding: '20px' }}>
-        <h3 style={{ fontSize: '1.1rem', color: '#0f172a', marginBottom: '16px' }}>Monitorização de Viagens e Desvios em Tempo Real</h3>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* Tabela de Desvios de Viagens em Tempo Real */}
+      <div className="desvio-card">
+        <div className="desvio-card-header">
+          <h2>Monitorização de Viagens e Desvios em Tempo Real</h2>
+        </div>
+        <div className="desvio-table-container">
+          <table className="desvio-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '12px 8px', color: '#475569', fontSize: '0.85rem' }}>Linha / Rota</th>
-                <th style={{ padding: '12px 8px', color: '#475569', fontSize: '0.85rem' }}>Atraso Estimado (min)</th>
-                <th style={{ padding: '12px 8px', color: '#475569', fontSize: '0.85rem' }}>Velocidade (Real vs Planeada)</th>
-                <th style={{ padding: '12px 8px', color: '#475569', fontSize: '0.85rem' }}>Estado Operacional</th>
+              <tr>
+                <th>Linha / Rota</th>
+                <th>Atraso Estimado</th>
+                <th>Velocidade (Real vs Planeada)</th>
+                <th>Estado Operacional</th>
               </tr>
             </thead>
             <tbody>
               {desvios?.desviosDetalhados.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 8px', fontWeight: '600', color: '#0f172a' }}>Linha {item.routeId}</td>
-                  <td style={{ padding: '12px 8px', color: '#1e293b' }}>
+                <tr key={idx}>
+                  <td style={{ fontWeight: '600', color: '#0f172a' }}>Linha {item.routeId}</td>
+                  <td style={{ color: '#1e293b' }}>
                     {item.atrasoMinutos === 0 ? 'Sem Atraso' : `+${item.atrasoMinutos} min`}
                   </td>
-                  <td style={{ padding: '12px 8px', color: '#475569', fontSize: '0.9rem' }}>
+                  <td style={{ color: '#475569', fontSize: '0.9rem' }}>
                     {item.velocidadeExecutadaKmh} km/h vs {item.velocidadeEstimadaKmh} km/h
                   </td>
-                  <td style={{ padding: '12px 8px' }}>
+                  <td>
                     {item.naoApresentacao ? (
-                      <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                      <span className="desvio-badge desvio-badge-nao-apresentacao">
                         NÃO-APRESENTAÇÃO
                       </span>
                     ) : item.status === 'ATRASADO_SIGNIFICATIVO' ? (
-                      <span style={{ backgroundColor: '#fef2f2', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                      <span className="desvio-badge desvio-badge-atraso-significativo">
                         ATRASO SIGNIFICATIVO
                       </span>
                     ) : item.status === 'ATRASADO_LIGEIRO' ? (
-                      <span style={{ backgroundColor: '#fffbeb', color: '#d97706', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                      <span className="desvio-badge desvio-badge-atraso-ligeiro">
                         ATRASO LIGEIRO
                       </span>
                     ) : (
-                      <span style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>
+                      <span className="desvio-badge desvio-badge-limiar">
                         DENTRO DO LIMIAR
                       </span>
                     )}

@@ -165,34 +165,37 @@
 
 .sidebar-nav {
   flex: 1;
-  padding: 24px 10px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none; /* Firefox */
+  justify-content: flex-start;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
-.nav-link {
+.nav-link,
+.sidebar-logout {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
-  padding: 10px 15px;
+  height: 40px; /* Slightly taller base height for better rectangle shape */
+  min-height: 40px;
+  padding: 0 14px;
   border: none;
   background: transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: 0.95rem; /* Slightly larger text */
   font-weight: 600;
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s ease, color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .nav-link:hover {
@@ -213,9 +216,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
+  min-width: 32px;
+  max-width: 32px;
   color: #8da4b3;
   transition: color 0.2s ease, transform 0.3s ease;
+}
+
+.nav-icon svg {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  max-width: 26px !important;
+  max-height: 26px !important;
+  margin: 0 !important;
+  display: block;
 }
 
 .sidebar:hover .nav-icon {
@@ -225,31 +240,57 @@
 .nav-text {
   opacity: 0;
   transition: opacity 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar:hover .nav-text {
   opacity: 1;
 }
 
+/* Perfect centering rules when sidebar is closed/collapsed */
+.sidebar:not(:hover) .nav-link,
+.sidebar:not(:hover) .sidebar-logout {
+  padding: 0 !important;
+  justify-content: center !important;
+}
+
+.sidebar:not(:hover) .nav-text {
+  display: none !important;
+}
+
 .sidebar-footer {
-  padding: 12px 10px;
+  padding: 8px;
   border-top: 1px solid #edf1f5;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 8px;
+  gap: 12px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  transition: padding 0.2s ease, justify-content 0.2s ease;
+}
+
+/* Perfect centering for avatar footer when collapsed */
+.sidebar:not(:hover) .user-profile {
+  padding: 4px 0 !important;
+  justify-content: center !important;
+}
+
+.sidebar:not(:hover) .user-info {
+  display: none !important;
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: 36px; /* Slightly larger avatar */
+  height: 36px;
+  min-width: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--brand-green), var(--brand-blue));
   color: white;
@@ -257,12 +298,15 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .user-info {
   opacity: 0;
   transition: opacity 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar:hover .user-info {
@@ -274,22 +318,13 @@
   font-weight: 700;
   font-size: 0.9rem;
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-logout {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 15px;
-  background: transparent;
   color: #cf222e;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
   justify-content: flex-start;
 }
 
@@ -304,6 +339,87 @@
 
 .sidebar:hover .sidebar-logout .nav-text {
   opacity: 1;
+}
+
+/* Responsive adjustments for medium-small screens (height >= 780px) */
+@media (min-height: 780px) {
+  .nav-link,
+  .sidebar-logout {
+    height: 44px; /* Taller rectangles */
+    min-height: 44px;
+    font-size: 1rem; /* Slightly larger text */
+  }
+  .sidebar-nav {
+    gap: 8px; /* Moderate min-gap to let space-between distribute */
+    padding: 16px 10px;
+  }
+  .sidebar-footer {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+  .user-profile {
+    padding: 6px 12px;
+  }
+}
+
+/* Responsive adjustments for medium-tall screens (height >= 900px) */
+@media (min-height: 900px) {
+  .nav-link,
+  .sidebar-logout {
+    height: 50px; /* Taller rectangles */
+    min-height: 50px;
+    font-size: 1.05rem; /* Larger text */
+  }
+  .sidebar-nav {
+    gap: 10px; /* Moderate min-gap to let space-between distribute */
+    padding: 24px 10px;
+  }
+  .sidebar-footer {
+    padding: 16px 10px;
+    gap: 12px;
+  }
+  .user-profile {
+    padding: 8px 14px;
+  }
+}
+
+/* Responsive adjustments for tall screens (height >= 1000px) */
+@media (min-height: 1000px) {
+  .nav-link,
+  .sidebar-logout {
+    height: 56px; /* Taller rectangles */
+    min-height: 56px;
+    font-size: 1.08rem; /* Larger text */
+  }
+  .sidebar-nav {
+    gap: 12px; /* Moderate min-gap to let space-between distribute */
+    padding: 28px 10px;
+  }
+  .sidebar-footer {
+    padding: 20px 10px;
+    gap: 16px;
+  }
+  .user-profile {
+    padding: 8px 16px;
+  }
+}
+
+/* Responsive adjustments for ultra-tall screens (height >= 1080px) */
+@media (min-height: 1080px) {
+  .nav-link,
+  .sidebar-logout {
+    height: 60px; /* Taller rectangles */
+    min-height: 60px;
+    font-size: 1.12rem; /* Larger text */
+  }
+  .sidebar-nav {
+    gap: 14px; /* Moderate min-gap to let space-between distribute */
+    padding: 32px 10px;
+  }
+  .sidebar-footer {
+    padding: 24px 10px;
+    gap: 18px;
+  }
 }
 
 /* Main Dashboard Area */
@@ -947,4 +1063,29 @@
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Uniform Page / Section Headers (Ensures blue-bar, uppercase, uniform size/weight on all tabs) */
+.content-area h2,
+.gestao-header h2,
+.od-card-header h2,
+.analise-header h2,
+.analise-card-header h2,
+.alertas-header h2,
+.map-header h2,
+.section-header h2,
+.historico-section-title,
+.historico-periodo-title {
+  margin: 0 0 16px 0 !important;
+  font-size: 1.25rem !important;
+  color: #0f172a !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  border-left: 4px solid #3b82f6 !important;
+  padding-left: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
 }

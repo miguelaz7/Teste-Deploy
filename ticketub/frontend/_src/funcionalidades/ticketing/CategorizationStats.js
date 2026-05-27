@@ -39,23 +39,23 @@ const CategorizationStats = ({ refreshTrigger }) => {
     <div className="stats-container">
       <div className="stats-grid">
         <div className="stat-card border-top-blue">
-          <div className="stat-header">Total Classificados</div>
+          <div className="stat-header" title="Total Classificados">Total Classificados</div>
           <div className="stat-value">{stats.totalClassificados}</div>
         </div>
         <div className="stat-card border-top-gray">
-          <div className="stat-header">Total Não Categorizado</div>
+          <div className="stat-header" title="Total Não Categorizado">Total Não Categorizado</div>
           <div className="stat-value">{stats.totalNaoCategorizado}</div>
         </div>
         <div className="stat-card border-top-green">
-          <div className="stat-header">Estudante</div>
+          <div className="stat-header" title="Estudante">Estudante</div>
           <div className="stat-value">{stats.estudante}</div>
         </div>
         <div className="stat-card border-top-purple">
-          <div className="stat-header">Sénior</div>
+          <div className="stat-header" title="Sénior">Sénior</div>
           <div className="stat-value">{stats.senior}</div>
         </div>
         <div className="stat-card border-top-orange">
-          <div className="stat-header">Normal</div>
+          <div className="stat-header" title="Normal">Normal</div>
           <div className="stat-value">{stats.normal}</div>
         </div>
       </div>

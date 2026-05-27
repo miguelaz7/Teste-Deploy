@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDadosAbertos, getExportacoes } from '../../logica_do_sistema/services/odService';
 import { apiGet, apiPost } from '../../logica_do_sistema/services/apiClient';
+import CustomDatePicker from '../analise/CustomDatePicker';
 import './Od.css';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -159,162 +160,162 @@ function ExportacaoDados() {
   };
 
   return (
-    <div className="planeamento-container">
-      {/* Menu Superior de Interoperabilidade */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-        <button 
-          onClick={() => setActiveTab('export')}
-          className={`btn-primary ${activeTab === 'export' ? '' : 'inactive-tab-btn'}`}
-          style={{ background: activeTab === 'export' ? '#2563eb' : '#94a3b8', border: 'none' }}
-        >
-          Exportar Dados Abertos (UC12.1)
-        </button>
-        <button 
-          onClick={() => setActiveTab('dpo')}
-          className={`btn-primary ${activeTab === 'dpo' ? '' : 'inactive-tab-btn'}`}
-          style={{ background: activeTab === 'dpo' ? '#2563eb' : '#94a3b8', border: 'none' }}
-        >
-          Aprovações DPO (UC12.1 / UC12.3)
-        </button>
-        <button 
-          onClick={() => setActiveTab('api')}
-          className={`btn-primary ${activeTab === 'api' ? '' : 'inactive-tab-btn'}`}
-          style={{ background: activeTab === 'api' ? '#2563eb' : '#94a3b8', border: 'none' }}
-        >
-          API NGSI-LD Integrador (UC12.2)
-        </button>
-      </div>
+    <div className="analise-container">
+      <div className="analise-card">
+        {/* Menu Superior de Interoperabilidade */}
+        <div className="analise-tabs" style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #e2e8f0', marginBottom: '1.5rem' }}>
+          <button 
+            onClick={() => setActiveTab('export')}
+            className={`analise-tab ${activeTab === 'export' ? 'active' : ''}`}
+          >
+            Exportar Dados Abertos
+          </button>
+          <button 
+            onClick={() => setActiveTab('dpo')}
+            className={`analise-tab ${activeTab === 'dpo' ? 'active' : ''}`}
+          >
+            Aprovações DPO
+          </button>
+          <button 
+            onClick={() => setActiveTab('api')}
+            className={`analise-tab ${activeTab === 'api' ? 'active' : ''}`}
+          >
+            API NGSI-LD Integrador
+          </button>
+        </div>
 
-      {activeTab === 'export' && (
-        <>
-          {/* Cartão de exportação */}
-          <div className="planeamento-card">
-            <div className="planeamento-card-header">
-              <h2>Configuração do Dataset Aprovado (UC12.1)</h2>
-            </div>
-            <div className="planeamento-card-body">
-              <form onSubmit={handleExportar} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'flex-end' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                    Data Início:
-                  </label>
-                  <input 
-                    type="date"
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                  />
-                </div>
+        {activeTab === 'export' && (
+          <div className="od-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Cartão de exportação */}
+            <div>
+              <div className="od-card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.75rem' }}>
+                <h2 style={{ fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '4px solid #3b82f6', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '-0.2px', fontWeight: 800 }}>
+                  Configuração do Dataset Aprovado
+                </h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <form onSubmit={handleExportar} style={{ display: 'flex', gap: '1.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', boxSizing: 'border-box', alignItems: 'flex-end', width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <CustomDatePicker label="Data Início" value={dataInicio} onChange={setDataInicio} />
+                  </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                    Data Fim:
-                  </label>
-                  <input 
-                    type="date"
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                  />
-                </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <CustomDatePicker label="Data Fim" value={dataFim} onChange={setDataFim} />
+                  </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                    Formato:
-                  </label>
-                  <select 
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}
-                    value={formato}
-                    onChange={(e) => setFormato(e.target.value)}
-                  >
-                    <option value="CSV">CSV (Formato Aberto)</option>
-                    <option value="EXCEL">Excel (Múltiplas Sheets)</option>
-                    <option value="JSON">JSON (NGSI-LD)</option>
-                    <option value="GEOJSON">GeoJSON (Descaracterizado)</option>
-                  </select>
-                </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Formato</label>
+                    <select 
+                      style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500', boxSizing: 'border-box' }}
+                      value={formato}
+                      onChange={(e) => setFormato(e.target.value)}
+                    >
+                      <option value="CSV">CSV (Formato Aberto)</option>
+                      <option value="EXCEL">Excel (Múltiplas Sheets)</option>
+                      <option value="JSON">JSON (NGSI-LD)</option>
+                      <option value="GEOJSON">GeoJSON (Descaracterizado)</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.55rem' }} disabled={loading}>
+                  <button type="submit" className="btn-download" style={{ height: '38px', flexShrink: 0 }} disabled={loading}>
                     {loading ? 'A processar...' : 'Exportar Dataset'}
                   </button>
-                </div>
-              </form>
+                </form>
 
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '10px' }}>
-                <button className="btn-primary" onClick={handleSubmeterAprovacaoDPO} disabled={solicitando} style={{ background: '#0f766e' }}>
-                  {solicitando ? 'A submeter...' : 'Solicitar Aprovação Oficial ao DPO'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={handleSubmeterAprovacaoDPO} 
+                    disabled={solicitando} 
+                    style={{ 
+                      height: '38px',
+                      padding: '0 1.25rem', 
+                      background: 'linear-gradient(135deg, #0d9488, #0f766e)', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      fontWeight: 700, 
+                      fontSize: '0.85rem',
+                      cursor: solicitando ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 12px rgba(13, 148, 136, 0.15)'
+                    }}
+                  >
+                    {solicitando ? 'A submeter...' : 'Solicitar Aprovação Oficial ao DPO'}
+                  </button>
+                </div>
+
+                {errorMessage && (
+                  <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', marginTop: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                    <strong>🔒 Alerta de Segurança:</strong> {errorMessage}
+                  </div>
+                )}
+
+                {statusMessage && (
+                  <div style={{ padding: '1rem', backgroundColor: '#ecfdf5', color: '#065f46', borderRadius: '8px', border: '1px solid #a7f3d0', marginTop: '0.5rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                    <strong>✓ Sucesso:</strong> {statusMessage}
+                  </div>
+                )}
               </div>
-
-              {/* Status / Error feedback */}
-              {errorMessage && (
-                <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', marginTop: '1rem' }}>
-                  <strong>🔒 Alerta de Segurança (FA1):</strong> {errorMessage}
-                </div>
-              )}
-
-              {statusMessage && (
-                <div style={{ padding: '1rem', backgroundColor: '#ecfdf5', color: '#065f46', borderRadius: '8px', border: '1px solid #a7f3d0', marginTop: '1rem' }}>
-                  <strong>✓ Sucesso:</strong> {statusMessage}
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Resultado das Exportações geradas */}
-          {dadosExportados && (
-            <div className="planeamento-card" style={{ marginTop: '1.5rem' }}>
-              <div className="planeamento-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2>Dataset Processado</h2>
-                <button className="btn-primary" onClick={handleDownloadFile} style={{ background: '#16a34a' }}>
-                  Descarregar Ficheiro ({formato})
-                </button>
-              </div>
-              <div className="planeamento-card-body">
-                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e3a8a' }}>Metadados do Ficheiro</h4>
-                  <p style={{ margin: 0, fontSize: '0.85rem' }}><strong>Disclaimer:</strong> {dadosExportados.metadados?.disclaimer}</p>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem' }}><strong>Checksum (SHA-256):</strong> <code>{dadosExportados.checksum}</code></p>
+            {/* Resultado das Exportações geradas */}
+            {dadosExportados && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <div className="od-card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2 style={{ fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '4px solid #3b82f6', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '-0.2px', fontWeight: 800 }}>
+                    Dataset Processado
+                  </h2>
+                  <button className="btn-resolver" onClick={handleDownloadFile}>
+                    Descarregar Ficheiro ({formato})
+                  </button>
                 </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e3a8a', fontSize: '0.95rem', fontWeight: 800 }}>Metadados do Ficheiro</h4>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569', fontWeight: 500 }}><strong>Disclaimer:</strong> {dadosExportados.metadados?.disclaimer}</p>
+                    <p style={{ margin: '6px 0 0 0', fontSize: '0.85rem', color: '#475569', fontWeight: 500 }}><strong>Checksum (SHA-256):</strong> <code style={{ backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>{dadosExportados.checksum}</code></p>
+                  </div>
 
-                <div className="planeamento-table-container">
-                  <table className="planeamento-table">
-                    <thead>
-                      <tr>
-                        <th>ID Entidade</th>
-                        <th>Modelo/Tipo</th>
-                        <th>Partição</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(dadosExportados.registos || dadosExportados.sheets?.dados || []).slice(0, 10).map((r, i) => (
-                        <tr key={i}>
-                          <td>{r.entityId}</td>
-                          <td>{r.entityType}</td>
-                          <td>{r.partitionDate}</td>
+                  <div className="od-table-container">
+                    <table className="od-table">
+                      <thead>
+                        <tr>
+                          <th>ID Entidade</th>
+                          <th>Modelo/Tipo</th>
+                          <th>Partição</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {(dadosExportados.registos || dadosExportados.sheets?.dados || []).slice(0, 10).map((r, i) => (
+                          <tr key={i}>
+                            <td style={{ color: '#0f172a', fontWeight: 700 }}>{r.entityId}</td>
+                            <td>{r.entityType}</td>
+                            <td>{r.partitionDate}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === 'dpo' && (
-        <div className="planeamento-card">
-          <div className="planeamento-card-header">
-            <h2>Pedidos de Exportação pendentes do DPO (UC12.3)</h2>
+            )}
           </div>
-          <div className="planeamento-card-body">
+        )}
+
+        {activeTab === 'dpo' && (
+          <div className="od-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className="od-card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '4px solid #3b82f6', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '-0.2px', fontWeight: 800 }}>
+                Pedidos de Exportação pendentes do DPO
+              </h2>
+            </div>
+            
             {pedidosExport.length === 0 ? (
-              <div className="planeamento-empty-state">Sem pedidos registados para o DPO.</div>
+              <div className="od-empty-state">Sem pedidos registados para o DPO.</div>
             ) : (
-              <div className="planeamento-table-container">
-                <table className="planeamento-table">
+              <div className="od-table-container">
+                <table className="od-table">
                   <thead>
                     <tr>
                       <th>ID Pedido</th>
@@ -329,11 +330,11 @@ function ExportacaoDados() {
                   <tbody>
                     {pedidosExport.map((row, idx) => (
                       <tr key={idx}>
-                        <td>#{row.id}</td>
-                        <td>{row.requestedBy}</td>
+                        <td style={{ color: '#0f172a', fontWeight: 700 }}>#{row.id}</td>
+                        <td style={{ color: '#0f172a', fontWeight: 600 }}>{row.requestedBy}</td>
                         <td>{row.periodStart} → {row.periodEnd}</td>
                         <td>{row.format}</td>
-                        <td>{row.totalRecords}</td>
+                        <td style={{ color: '#0f172a', fontWeight: 700 }}>{row.totalRecords}</td>
                         <td>
                           <span className={`badge-estado ${row.status === 'EXPORTADA' ? 'estado-sucesso' : row.status === 'REJEITADA' ? 'estado-falha' : 'estado-pendente'}`}>
                             {row.status}
@@ -344,20 +345,20 @@ function ExportacaoDados() {
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <button 
                                 onClick={() => handleDecidirDPO(row.id, 'APROVADA')}
-                                style={{ padding: '2px 8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                style={{ padding: '4px 10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
                               >
                                 Aprovar
                               </button>
                               <button 
                                 onClick={() => handleDecidirDPO(row.id, 'REJEITADA')}
-                                style={{ padding: '2px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                style={{ padding: '4px 10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
                               >
                                 Rejeitar
                               </button>
                             </div>
                           )}
                           {row.status !== 'PENDENTE_DPO' && (
-                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Revisado por {row.approvedBy || 'DPO'}</span>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Revisado por {row.approvedBy || 'DPO'}</span>
                           )}
                         </td>
                       </tr>
@@ -367,66 +368,63 @@ function ExportacaoDados() {
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {activeTab === 'api' && (
-        <div className="planeamento-card">
-          <div className="planeamento-card-header">
-            <h2>Simulador de Cliente API NGSI-LD (UC12.2)</h2>
-          </div>
-          <div className="planeamento-card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                  Chave OAuth2/Token (Authorization Bearer):
-                </label>
-                <input 
-                  type="text" 
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                  value={apiToken}
-                  onChange={(e) => setApiToken(e.target.value)}
-                  placeholder="Bearer ..."
-                />
-              </div>
+        {activeTab === 'api' && (
+          <div className="od-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className="od-card-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.15rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '4px solid #3b82f6', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '-0.2px', fontWeight: 800 }}>
+                Simulador de Cliente API NGSI-LD
+              </h2>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '1.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', boxSizing: 'border-box', alignItems: 'flex-end', width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1.5 }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Chave OAuth2 / Token</label>
+                  <input 
+                    type="text" 
+                    style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500', boxSizing: 'border-box' }}
+                    value={apiToken}
+                    onChange={(e) => setApiToken(e.target.value)}
+                    placeholder="Bearer ..."
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                  Smart Data Model / Entity Type:
-                </label>
-                <select 
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}
-                  value={apiType}
-                  onChange={(e) => setApiType(e.target.value)}
-                >
-                  <option value="FareTransaction">FareTransaction (Smart Data Models)</option>
-                  <option value="PublicTransportRoute">PublicTransportRoute</option>
-                  <option value="PublicTransportStop">PublicTransportStop</option>
-                  <option value="InvalidType">InvalidType (Gera Erro FA3)</option>
-                </select>
-              </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Entity Type</label>
+                  <select 
+                    style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500', boxSizing: 'border-box' }}
+                    value={apiType}
+                    onChange={(e) => setApiType(e.target.value)}
+                  >
+                    <option value="FareTransaction">FareTransaction (Smart Data Models)</option>
+                    <option value="PublicTransportRoute">PublicTransportRoute</option>
+                    <option value="PublicTransportStop">PublicTransportStop</option>
+                    <option value="InvalidType">InvalidType</option>
+                  </select>
+                </div>
 
-              <div>
-                <button className="btn-primary" onClick={handleSimularApiCall} style={{ width: '100%', padding: '0.55rem' }}>
+                <button className="btn-download" onClick={handleSimularApiCall} style={{ height: '38px', flexShrink: 0 }}>
                   Fazer Pedido à API
                 </button>
               </div>
+
+              {apiError && (
+                <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', fontWeight: '500', fontSize: '0.9rem' }}>
+                  {apiError}
+                </div>
+              )}
+
+              {apiResponse && (
+                <div style={{ background: '#0f172a', color: '#38bdf8', padding: '1.25rem', borderRadius: '12px', fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '300px', overflowY: 'auto', border: '1px solid #1e293b', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5)' }}>
+                  <pre style={{ margin: 0 }}>{JSON.stringify(apiResponse, null, 2)}</pre>
+                </div>
+              )}
             </div>
-
-            {apiError && (
-              <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '1rem' }}>
-                {apiError}
-              </div>
-            )}
-
-            {apiResponse && (
-              <div style={{ background: '#0f172a', color: '#38bdf8', padding: '1rem', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '300px', overflowY: 'auto' }}>
-                <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

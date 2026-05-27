@@ -268,8 +268,7 @@ const EcraGestaoMapeamentos = ({ onMappingChange }) => {
                       </td>
                       <td>
                         <button
-                          className="btn-icon-edit"
-                          style={{ backgroundColor: '#ecfdf5', color: '#10b981', borderColor: '#a7f3d0' }}
+                          className="btn-icon-approve"
                           onClick={() => handleOpenModal(null, nc)}
                         >
                           Mapear e Corrigir

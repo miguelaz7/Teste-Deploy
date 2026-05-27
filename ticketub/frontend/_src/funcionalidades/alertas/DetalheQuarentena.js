@@ -97,16 +97,16 @@ function DetalheQuarentena() {
   };
 
   return (
-    <div className="alertas-card">
-      <div className="alertas-card-header">
-        <h2>Detalhe de Quarentena</h2>
-      </div>
-      <div className="alertas-card-body">
+    <div style={{ marginTop: '2rem', borderTop: '2px solid #e2e8f0', paddingTop: '1.5rem' }}>
+      <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '-0.2px' }}>
+        Detalhe de Quarentena
+      </h3>
+      <div>
         
         <div className="quarentena-controls">
           <div className="quarentena-filter">
-            <label htmlFor="motivoFilter" style={{ fontWeight: 600, color: 'var(--text-main, #111827)', fontSize: '0.9rem' }}>
-              Filtrar por Motivo:
+            <label htmlFor="motivoFilter" style={{ fontWeight: 700, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Filtrar por Motivo
             </label>
             <select 
               id="motivoFilter" 
@@ -125,7 +125,7 @@ function DetalheQuarentena() {
             onClick={handleExportar}
             disabled={!registos || registosFiltrados.length === 0}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>

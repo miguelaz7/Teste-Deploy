@@ -28,18 +28,15 @@ const renderDesvio = (num) => {
   return <span className="desvio-neutro" style={{ marginLeft: '10px' }}>{num}%</span>;
 };
 
-const renderEstadoBadge = (estado) => {
-  if (!estado) return '—';
-  const est = String(estado).toUpperCase().replace('_', ' ');
-  let className = "historico-status-badge status-good";
-  if (est.includes("SEM DADOS") || est.includes("NO DATA")) {
-    className = "historico-status-badge status-neutral";
-  } else if (est.includes("CRITIC") || est.includes("PERIGO") || est.includes("CRÍTICO")) {
-    className = "historico-status-badge status-critical";
-  } else if (est.includes("ALERT") || est.includes("ATEN")) {
-    className = "historico-status-badge status-attention";
+const renderEstadoBadge = (metric) => {
+  if (!metric) return '—';
+  if (metric.taxaValidas > 80) {
+    return <span className="historico-status-badge status-good">BOM</span>;
   }
-  return <span className={className}>{est}</span>;
+  if (metric.taxaValidas >= 60) {
+    return <span className="historico-status-badge status-attention">ATENÇÃO</span>;
+  }
+  return <span className="historico-status-badge status-critical">CRÍTICO</span>;
 };
 
 function HistoricoConsolidado() {
@@ -172,9 +169,6 @@ function HistoricoConsolidado() {
       <div className="analise-card">
         <div className="analise-card-header">
           <h2>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
-              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
             Histórico Consolidado & Comparação
           </h2>
         </div>
@@ -209,29 +203,29 @@ function HistoricoConsolidado() {
 
         {/* Filters Section (Common to Comparacao and Series) */}
         {(activeTab === 'comparacao' || activeTab === 'series') && (
-          <div className="historico-filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+          <div className="historico-filters" style={{ display: 'flex', gap: '1.5rem', padding: '1.25rem', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', boxSizing: 'border-box', alignItems: 'flex-end', width: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flex: 1 }}>
               <CustomDatePicker
-                label="Período Principal - Início:"
+                label="Período Principal - Início"
                 value={dates.inicio}
                 onChange={(val) => setDates(prev => ({ ...prev, inicio: val }))}
               />
               <CustomDatePicker
-                label="Fim:"
+                label="Fim"
                 value={dates.fim}
                 onChange={(val) => setDates(prev => ({ ...prev, fim: val }))}
               />
             </div>
 
             {activeTab === 'comparacao' && (
-              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', borderLeft: '2px solid #cbd5e1', paddingLeft: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flex: 1, borderLeft: '2px solid #e2e8f0', paddingLeft: '1.5rem' }}>
                 <CustomDatePicker
-                  label="Comparar com - Início:"
+                  label="Comparar com - Início"
                   value={dates.compInicio}
                   onChange={(val) => setDates(prev => ({ ...prev, compInicio: val }))}
                 />
                 <CustomDatePicker
-                  label="Fim:"
+                  label="Fim"
                   value={dates.compFim}
                   onChange={(val) => setDates(prev => ({ ...prev, compFim: val }))}
                 />
@@ -239,11 +233,11 @@ function HistoricoConsolidado() {
             )}
 
             {activeTab === 'series' && (
-              <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', borderLeft: '2px solid #cbd5e1', paddingLeft: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginRight: '6px' }}>Linha:</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', flex: 1.5, borderLeft: '2px solid #e2e8f0', paddingLeft: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Linha</label>
                   <select 
-                    style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                    style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500' }}
                     value={seriesFilters.routeId}
                     onChange={(e) => setSeriesFilters(prev => ({ ...prev, routeId: e.target.value }))}
                   >
@@ -254,10 +248,10 @@ function HistoricoConsolidado() {
                   </select>
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginRight: '6px' }}>Perfil:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Perfil</label>
                   <select 
-                    style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                    style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500' }}
                     value={seriesFilters.perfilTarifario}
                     onChange={(e) => setSeriesFilters(prev => ({ ...prev, perfilTarifario: e.target.value }))}
                   >
@@ -268,10 +262,10 @@ function HistoricoConsolidado() {
                   </select>
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginRight: '6px' }}>Granularidade:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Granularidade</label>
                   <select 
-                    style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                    style={{ padding: '0.45rem 0.85rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#ffffff', width: '100%', height: '38px', fontSize: '0.9rem', color: '#0f172a', fontWeight: '500' }}
                     value={seriesFilters.granularidade}
                     onChange={(e) => setSeriesFilters(prev => ({ ...prev, granularidade: e.target.value }))}
                   >
@@ -285,7 +279,7 @@ function HistoricoConsolidado() {
 
             <button 
               onClick={activeTab === 'comparacao' ? fetchComparative : fetchSeries}
-              style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              style={{ height: '38px', padding: '0 1.5rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0, transition: 'background-color 0.2s' }}
             >
               Atualizar
             </button>
@@ -600,30 +594,34 @@ function HistoricoConsolidado() {
                 Utilize esta consola técnica para forçar o reprocessamento parcial de séries temporais se detetar períodos sem dados ou falhas na ingestão. O sistema recalculará incrementalmente a partição indicada sem duplicar os registos.
               </p>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #fecaca' }}>
-                <CustomDatePicker
-                  label="Início do Intervalo:"
-                  value={recoveryDates.inicio}
-                  onChange={(val) => setRecoveryDates(prev => ({ ...prev, inicio: val }))}
-                />
-                <CustomDatePicker
-                  label="Fim do Intervalo:"
-                  value={recoveryDates.fim}
-                  onChange={(val) => setRecoveryDates(prev => ({ ...prev, fim: val }))}
-                />
+              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', backgroundColor: '#ffffff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #fecaca', boxSizing: 'border-box', width: '100%' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flex: 1 }}>
+                  <CustomDatePicker
+                    label="Início do Intervalo"
+                    value={recoveryDates.inicio}
+                    onChange={(val) => setRecoveryDates(prev => ({ ...prev, inicio: val }))}
+                  />
+                  <CustomDatePicker
+                    label="Fim do Intervalo"
+                    value={recoveryDates.fim}
+                    onChange={(val) => setRecoveryDates(prev => ({ ...prev, fim: val }))}
+                  />
+                </div>
 
                 <button 
                   onClick={handleRecovery}
                   disabled={recoveryLoading}
                   style={{ 
-                    padding: '0.55rem 1.25rem', 
+                    height: '38px',
+                    padding: '0 1.5rem', 
                     background: '#dc2626', 
                     color: '#ffffff', 
                     border: 'none', 
                     borderRadius: '8px', 
                     fontWeight: 'bold', 
                     cursor: recoveryLoading ? 'not-allowed' : 'pointer',
-                    opacity: recoveryLoading ? 0.7 : 1
+                    opacity: recoveryLoading ? 0.7 : 1,
+                    flexShrink: 0
                   }}
                 >
                   {recoveryLoading ? 'A Processar...' : 'Reprocessar Intervalo'}

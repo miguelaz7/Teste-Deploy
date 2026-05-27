@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDadosFinanceiros, gerarParaERP } from '../../logica_do_sistema/services/planeamentoService';
 import { apiGet, apiPost } from '../../logica_do_sistema/services/apiClient';
+import CustomDatePicker from '../analise/CustomDatePicker';
 import './Planeamento.css';
 
 function IntegracaoERP() {
+  // eslint-disable-next-line no-unused-vars
   const [financas, setFinancas] = useState(null);
   const [exportacoes, setExportacoes] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -85,19 +87,17 @@ function IntegracaoERP() {
       {/* Formulário para gerar exportação */}
       <div className="planeamento-card">
         <div className="planeamento-card-header">
-          <h2>Nova Exportação Corporativa ERP (UC11.2)</h2>
-          <button className="btn-primary" onClick={handleForcarRetry} disabled={loadingRetry} style={{ background: '#475569', marginRight: '8px' }}>
-            {loadingRetry ? 'Retrying...' : 'Forçar Reenvio (Retry)'}
+          <h2>Nova Exportação Corporativa ERP</h2>
+          <button className="btn-secondary" onClick={handleForcarRetry} disabled={loadingRetry}>
+            {loadingRetry ? 'A Reenviar...' : 'Forçar Reenvio (Retry)'}
           </button>
         </div>
         <div className="planeamento-card-body">
-          <form onSubmit={handleGerarERP} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'flex-end' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                Linha:
-              </label>
+          <form onSubmit={handleGerarERP} className="simulacao-form" style={{ gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'flex-end' }}>
+            <div className="form-group">
+              <label>Linha:</label>
               <select 
-                style={{ width: '100%', padding: '0.5rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                className="planeamento-select"
                 value={formConfig.routeId}
                 onChange={(e) => setFormConfig(prev => ({ ...prev, routeId: e.target.value }))}
               >
@@ -108,12 +108,10 @@ function IntegracaoERP() {
               </select>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                Tipo de Título:
-              </label>
+            <div className="form-group">
+              <label>Tipo de Título:</label>
               <select 
-                style={{ width: '100%', padding: '0.5rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                className="planeamento-select"
                 value={formConfig.tipoTitulo}
                 onChange={(e) => setFormConfig(prev => ({ ...prev, tipoTitulo: e.target.value }))}
               >
@@ -123,20 +121,16 @@ function IntegracaoERP() {
               </select>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                Período Início:
-              </label>
-              <input 
-                type="date"
-                style={{ width: '100%', padding: '0.45rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+            <div className="form-group">
+              <CustomDatePicker 
                 value={formConfig.periodoInicio}
-                onChange={(e) => setFormConfig(prev => ({ ...prev, periodoInicio: e.target.value }))}
+                label="Período Início:"
+                onChange={(val) => setFormConfig(prev => ({ ...prev, periodoInicio: val }))}
               />
             </div>
 
-            <div>
-              <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.55rem' }} disabled={loadingGerar}>
+            <div className="form-group">
+              <button type="submit" className="btn-primary" disabled={loadingGerar}>
                 {loadingGerar ? 'A Gerar...' : 'Gerar para ERP'}
               </button>
             </div>
@@ -145,9 +139,9 @@ function IntegracaoERP() {
       </div>
 
       {/* Histórico de exportações e Auditoria */}
-      <div className="planeamento-card" style={{ marginTop: '1.5rem' }}>
+      <div className="planeamento-card" style={{ marginTop: '0.85rem' }}>
         <div className="planeamento-card-header">
-          <h2>Fila de Integração e Log de Auditoria ERP (FA2)</h2>
+          <h2>Fila de Integração e Log de Auditoria ERP</h2>
         </div>
         <div className="planeamento-card-body">
           {loadingList ? (
@@ -156,38 +150,38 @@ function IntegracaoERP() {
             <div className="planeamento-empty-state">Sem exportações geradas no sistema.</div>
           ) : (
             <div className="planeamento-table-container">
-              <table className="planeamento-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table className="planeamento-table">
                 <thead>
-                  <tr style={{ backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '10px', textAlign: 'left' }}>Versão Exportação</th>
-                    <th style={{ padding: '10px', textAlign: 'left' }}>Linha</th>
-                    <th style={{ padding: '10px', textAlign: 'right' }}>Validações</th>
-                    <th style={{ padding: '10px', textAlign: 'right' }}>Receita Est.</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Valid. Manual</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Gerado por</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Data Geração</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Estado ERP</th>
+                  <tr>
+                    <th style={{ textAlign: 'left' }}>Versão Exportação</th>
+                    <th style={{ textAlign: 'left' }}>Linha</th>
+                    <th style={{ textAlign: 'right' }}>Validações</th>
+                    <th style={{ textAlign: 'right' }}>Receita Est.</th>
+                    <th style={{ textAlign: 'center' }}>Valid. Manual</th>
+                    <th style={{ textAlign: 'center' }}>Gerado por</th>
+                    <th style={{ textAlign: 'center' }}>Data Geração</th>
+                    <th style={{ textAlign: 'center' }}>Estado ERP</th>
                   </tr>
                 </thead>
                 <tbody>
                   {exportacoes.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px', fontWeight: 'bold', fontSize: '0.8rem' }}>{row.versaoExportacao}</td>
-                      <td style={{ padding: '10px' }}>{row.routeId ? `Linha ${row.routeId}` : 'Consolidado'}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>{row.totalValidacoes}</td>
-                      <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>{parseFloat(row.receitaEstimada || 0).toFixed(2)} €</td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{row.versaoExportacao}</td>
+                      <td>{row.routeId ? `Linha ${row.routeId}` : 'Consolidado'}</td>
+                      <td style={{ textAlign: 'right' }}>{row.totalValidacoes}</td>
+                      <td style={{ textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>{parseFloat(row.receitaEstimada || 0).toFixed(2)} €</td>
+                      <td style={{ textAlign: 'center' }}>
                         {row.requerValidacaoManual ? (
                           <span style={{ color: '#dc2626', fontWeight: 'bold', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>⚠️ Sim</span>
                         ) : (
                           <span style={{ color: '#16a34a', fontSize: '0.75rem' }}>Não</span>
                         )}
                       </td>
-                      <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{row.geradoPor}</td>
-                      <td style={{ padding: '10px', textAlign: 'center', fontSize: '0.85rem' }}>
+                      <td style={{ textAlign: 'center', color: '#475569' }}>{row.geradoPor}</td>
+                      <td style={{ textAlign: 'center', fontSize: '0.85rem' }}>
                         {new Date(row.geradoEm).toLocaleString('pt-PT')}
                       </td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center' }}>
                         {renderBadge(row.estadoERP)}
                       </td>
                     </tr>

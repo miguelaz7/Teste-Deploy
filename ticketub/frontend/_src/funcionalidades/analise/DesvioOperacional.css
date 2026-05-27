@@ -13,10 +13,240 @@
   }
 }
 
-.custom-table th, .custom-table td {
-  border-bottom: 1px solid #f1f5f9;
+.desvio-container {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.custom-table tr:hover {
+.desvio-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  animation: slideIn 0.3s ease;
+}
+
+.desvio-alert-warning {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.desvio-alert-danger {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.desvio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.desvio-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 14px 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.desvio-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.desvio-card-header h2,
+.desvio-card-header h3 {
+  margin: 0 !important;
+  font-size: 1.15rem !important;
+  color: #0f172a !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  border-left: 4px solid #3b82f6 !important;
+  padding-left: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.desvio-progress-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desvio-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.desvio-progress-label {
+  color: #475569;
+}
+
+.desvio-progress-value {
+  font-weight: 700;
+}
+
+.desvio-progress-bar {
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.desvio-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.desvio-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.desvio-stat-box {
   background-color: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.desvio-stat-box-full {
+  grid-column: span 2;
+}
+
+.desvio-stat-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.desvio-stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+.desvio-stat-value.danger {
+  color: #ef4444;
+}
+
+.desvio-stat-sub {
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.desvio-stat-sub.success {
+  color: #10b981;
+}
+
+.desvio-stat-sub.danger {
+  color: #ef4444;
+}
+
+/* Tabelas */
+.desvio-table-container {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.desvio-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.desvio-table th {
+  background-color: #f8fafc;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.desvio-table td {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.desvio-table tr:last-child td {
+  border-bottom: none;
+}
+
+.desvio-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Badges de Estado Operacional */
+.desvio-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.desvio-badge-limiar {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.desvio-badge-atraso-ligeiro {
+  background-color: #fffbeb;
+  color: #b45309;
+}
+
+.desvio-badge-atraso-significativo {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.desvio-badge-nao-apresentacao {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px dashed #fca5a5;
 }

@@ -183,3 +183,27 @@
   transform: translateY(0);
 }
 
+/* Custom DatePicker inline overrides for EcraRevisaoEventos filter bar */
+.date-filter-group .custom-datepicker-container {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  width: auto !important;
+}
+
+.date-filter-group .custom-datepicker-label {
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.date-filter-group .custom-datepicker-input-wrapper {
+  width: auto !important;
+  min-width: 120px !important;
+  height: 32px !important;
+  padding: 4px 8px !important;
+}
+
+
