@@ -94,10 +94,28 @@ public class InterfaceRevisaoEventos {
     ) {
         EventoNaoCategorizado evento = eventoNaoCategorizadoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Evento não encontrado: " + id));
-        evento.setStatus(body.getOrDefault("estado", "RECLASSIFICADO"));
+        
+        String oldStatus = evento.getStatus();
+        String newStatus = body.getOrDefault("estado", "RECLASSIFICADO");
+        String user = body.getOrDefault("resolvidoPor", "admin");
+
+        evento.setStatus(newStatus);
         evento.setResolvedAt(OffsetDateTime.now());
-        evento.setResolvedBy(body.getOrDefault("resolvidoPor", "admin"));
-        return ResponseEntity.ok(eventoNaoCategorizadoRepository.save(evento));
+        evento.setResolvedBy(user);
+        
+        EventoNaoCategorizado saved = eventoNaoCategorizadoRepository.save(evento);
+
+        // Audit resolution
+        AuditoriaCategorizacao audit = new AuditoriaCategorizacao();
+        audit.setAcao("RESOLUTION");
+        audit.setTipoTitulo(evento.getIngestionHash());
+        audit.setPerfilAnterior(oldStatus);
+        audit.setPerfilNovo(newStatus);
+        audit.setTimestamp(OffsetDateTime.now());
+        audit.setUtilizador(user);
+        controlador.logAudit(audit);
+
+        return ResponseEntity.ok(saved);
     }
 
     // Regista auditoria

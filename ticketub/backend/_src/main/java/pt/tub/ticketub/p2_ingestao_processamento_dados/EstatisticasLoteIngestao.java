@@ -76,6 +76,7 @@ public class EstatisticasLoteIngestao {
     public int getTotalDuplicados()          { return totalDuplicados; }
     public long getTempoProcessamentoMs()    { return tempoProcessamentoMs; }
     public String getEstado()                { return estado; }
+    public void setEstado(String estado)     { this.estado = estado; }
     public String getMotivosRejeicao()       { return motivosRejeicao; }
     public boolean isQualityAlert()          { return qualityAlert; }
 }

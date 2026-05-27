@@ -3,6 +3,7 @@ package pt.tub.ticketub.p4_interfaces_utilizador;
 import pt.tub.ticketub.p5_analise_operacional_tempo_real.ControladorAgregacaoProcura;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -62,6 +63,19 @@ public class InterfaceProcuraTempoReal {
     @GetMapping("/por-paragem")
     public ResponseEntity<List<?>> getDemandByStop() {
         return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("ZONA_PARAGEM"));
+    }
+
+    // Perspectiva por zona — afluência agregada por zona geográfica (UC05.3)
+    @GetMapping("/por-zona")
+    public ResponseEntity<List<?>> getDemandByZone() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("ZONA"));
+    }
+
+    // Endpoint para forçar a agregação de dados manualmente (UC05)
+    @PostMapping("/aggregate")
+    public ResponseEntity<Void> triggerAggregation() {
+        controladorAgregacaoProcura.aggregate();
+        return ResponseEntity.ok().build();
     }
 
     // Insights em tempo real com filtro opcional por paragem

@@ -36,6 +36,7 @@ public class ConfiguracaoSeguranca {
                     .requestMatchers("/api/stops/**").permitAll()
                     .requestMatchers("/api/validations/**").permitAll()
                     .requestMatchers("/api/metrics").permitAll()
+                    .requestMatchers("/api/procura/aggregate").permitAll()
                     
                     // RBAC endpoint protection (UC01.3 & UC04.1)
                     .requestMatchers("/api/dashboard/**").hasAnyRole("GESTOR", "ANALISTA", "ADMIN")

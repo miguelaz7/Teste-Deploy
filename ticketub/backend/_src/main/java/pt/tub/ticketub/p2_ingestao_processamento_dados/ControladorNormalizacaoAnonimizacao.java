@@ -27,7 +27,7 @@ import java.util.List;
 // =============================================================================
 
 @Service
-class ControladorNormalizacaoAnonimizacao {
+public class ControladorNormalizacaoAnonimizacao {
 
     private static final Map<String, String> TICKET_TYPES_CANONICOS = Map.ofEntries(
         Map.entry("PASSE_ESTUDANTE", "PASSE_ESTUDANTE"),
@@ -48,7 +48,7 @@ class ControladorNormalizacaoAnonimizacao {
     private final RepositorioSistemaBilhetica repositorioSistemaBilhetica;
     private final RepositorioPoliticaAnonimizacao repositorioPoliticaAnonimizacao;
 
-    ControladorNormalizacaoAnonimizacao(RepositorioTipoBilhete repositorioTipoBilhete,
+    public ControladorNormalizacaoAnonimizacao(RepositorioTipoBilhete repositorioTipoBilhete,
                                         RepositorioParagem repositorioParagem,
                                         RepositorioSistemaBilhetica repositorioSistemaBilhetica,
                                         RepositorioPoliticaAnonimizacao repositorioPoliticaAnonimizacao) {
@@ -59,7 +59,7 @@ class ControladorNormalizacaoAnonimizacao {
     }
 
     // Normaliza o DTO para EventoValidacao e pseudonimiza o cardId
-    EventoValidacao normalize(DtoPedidoIngestaoValidacao dto, String ingestionHash) {
+    public EventoValidacao normalize(DtoPedidoIngestaoValidacao dto, String ingestionHash) {
         String mediaType           = valueOrNull(dto.getMediaType());
         String ticketTypeCode      = canonicalTicketType(valueOrNull(dto.getTicketTypeCode()));
         String transactionType     = valueOrNull(dto.getTransactionType());
@@ -88,33 +88,52 @@ class ControladorNormalizacaoAnonimizacao {
         String cardId = valueOrNull(dto.getCardId());
         String ticketId = valueOrNull(dto.getTicketId());
 
+        StringBuilder maskedFields = new StringBuilder();
+        Long policyId = null;
+        String policyVersion = null;
+
         // Process cardId: default is HMAC-SHA256 pseudonimization unless DPO chose SUPRESSAO
         boolean cardIdPolicyApplied = false;
         for (PoliticaAnonimizacao policy : activePolicies) {
             if ("cardId".equalsIgnoreCase(policy.getField())) {
                 if ("SUPRESSAO".equalsIgnoreCase(policy.getMethod())) {
                     cardId = null;
+                    maskedFields.append("cardId(SUPRESSAO);");
                 } else {
                     cardId = pseudonymize(cardId);
+                    maskedFields.append("cardId(HMAC_SHA256);");
                 }
+                policyId = policy.getId();
+                policyVersion = policy.getVersion() != null ? policy.getVersion() : "1.0.0";
                 cardIdPolicyApplied = true;
                 break;
             }
         }
         if (!cardIdPolicyApplied) {
             cardId = pseudonymize(cardId);
+            maskedFields.append("cardId(DEFAULT_HMAC_SHA256);");
         }
 
-        // Process ticketId: default is original raw value unless DPO configured a policy
+        // Process ticketId: default is pseudonymize (minimization policy) instead of raw
+        boolean ticketIdPolicyApplied = false;
         for (PoliticaAnonimizacao policy : activePolicies) {
             if ("ticketId".equalsIgnoreCase(policy.getField())) {
                 if ("SUPRESSAO".equalsIgnoreCase(policy.getMethod())) {
                     ticketId = null;
+                    maskedFields.append("ticketId(SUPRESSAO);");
                 } else if ("HMAC_SHA256".equalsIgnoreCase(policy.getMethod()) || "PSEUDONIMIZACAO".equalsIgnoreCase(policy.getMethod())) {
                     ticketId = pseudonymize(ticketId);
+                    maskedFields.append("ticketId(HMAC_SHA256);");
                 }
+                policyId = policy.getId();
+                policyVersion = policy.getVersion() != null ? policy.getVersion() : "1.0.0";
+                ticketIdPolicyApplied = true;
                 break;
             }
+        }
+        if (!ticketIdPolicyApplied) {
+            ticketId = pseudonymize(ticketId);
+            maskedFields.append("ticketId(DEFAULT_HMAC_SHA256);");
         }
 
         EventoValidacao evento = new EventoValidacao();
@@ -135,6 +154,9 @@ class ControladorNormalizacaoAnonimizacao {
         evento.setTransactionVehicleNum(vehicleNum);
         evento.setResult(result);
         evento.setRejectReason(rejectReason);
+        evento.setPolicyId(policyId);
+        evento.setPolicyVersion(policyVersion);
+        evento.setMaskedFields(maskedFields.toString());
 
         return evento;
     }

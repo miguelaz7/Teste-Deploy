@@ -58,6 +58,33 @@ public class AgregadoProcura {
     @Column(name = "actualizado_em", nullable = false)
     private OffsetDateTime actualizadoEm;
 
+    // UC05.1: Baseline historical metrics
+    @Column(name = "baseline_media")
+    private Double baselineMedia = 0.0;
+
+    @Column(name = "variacao_baseline")
+    private Double variacaoBaseline = 0.0;
+
+    @Column(name = "desvio_detectado")
+    private Boolean desvioDetectado = false;
+
+    // UC05.2: Ingestion metrics
+    @Column(name = "velocidade_validacao")
+    private Double velocidadeValidacao = 0.0; // validations per minute
+
+    @Column(name = "tempo_resposta_medio")
+    private Double tempoRespostaMedio = 0.0; // average response time in ms
+
+    // UC05.3: Geography information
+    @Column(name = "stop_lat")
+    private Double stopLat;
+
+    @Column(name = "stop_lon")
+    private Double stopLon;
+
+    @Column(name = "zone_id")
+    private String zoneId;
+
     AgregadoProcura() {}
 
     AgregadoProcura(String perspectiva, String chave, long totalValidacoes,
@@ -90,4 +117,28 @@ public class AgregadoProcura {
     void setPerfilNormal(long v)    { this.perfilNormal = v; }
     public void setDescricao(String d)     { this.descricao = d; }
     void setActualizadoEm(OffsetDateTime t) { this.actualizadoEm = t; }
+
+    public Double getBaselineMedia() { return baselineMedia; }
+    public void setBaselineMedia(Double baselineMedia) { this.baselineMedia = baselineMedia; }
+
+    public Double getVariacaoBaseline() { return variacaoBaseline; }
+    public void setVariacaoBaseline(Double variacaoBaseline) { this.variacaoBaseline = variacaoBaseline; }
+
+    public Boolean getDesvioDetectado() { return desvioDetectado; }
+    public void setDesvioDetectado(Boolean desvioDetectado) { this.desvioDetectado = desvioDetectado; }
+
+    public Double getVelocidadeValidacao() { return velocidadeValidacao; }
+    public void setVelocidadeValidacao(Double velocidadeValidacao) { this.velocidadeValidacao = velocidadeValidacao; }
+
+    public Double getTempoRespostaMedio() { return tempoRespostaMedio; }
+    public void setTempoRespostaMedio(Double tempoRespostaMedio) { this.tempoRespostaMedio = tempoRespostaMedio; }
+
+    public Double getStopLat() { return stopLat; }
+    public void setStopLat(Double stopLat) { this.stopLat = stopLat; }
+
+    public Double getStopLon() { return stopLon; }
+    public void setStopLon(Double stopLon) { this.stopLon = stopLon; }
+
+    public String getZoneId() { return zoneId; }
+    public void setZoneId(String zoneId) { this.zoneId = zoneId; }
 }

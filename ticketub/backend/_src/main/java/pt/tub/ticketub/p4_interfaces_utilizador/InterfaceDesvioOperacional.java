@@ -23,17 +23,22 @@ import java.util.Map;
 // Consome dados de: O0.7.2.d (desvios operacionais) e O0.7.1.d (correlações GPS).
 // =============================================================================
 
+import pt.tub.ticketub.p5_analise_operacional_tempo_real.ControladorCorrelacaoGPS;
+
 @RestController
 @RequestMapping("/api/desvio-operacional")
 public class InterfaceDesvioOperacional {
 
     private final RepositorioEventoValidacao validationEventRepository;
     private final RepositorioRota routeRepository;
+    private final ControladorCorrelacaoGPS gpsCorrelationController;
 
     public InterfaceDesvioOperacional(RepositorioEventoValidacao validationEventRepository,
-                                      RepositorioRota routeRepository) {
+                                      RepositorioRota routeRepository,
+                                      ControladorCorrelacaoGPS gpsCorrelationController) {
         this.validationEventRepository = validationEventRepository;
         this.routeRepository = routeRepository;
+        this.gpsCorrelationController = gpsCorrelationController;
     }
 
     // Desvio de procura por linha: validações recentes vs. média histórica
@@ -98,5 +103,17 @@ public class InterfaceDesvioOperacional {
             }
         }
         return mapa;
+    }
+
+    // UC07.3: obter percentagem de eventos por qualidade de localização
+    @GetMapping("/qualidade-localizacao")
+    public ResponseEntity<Map<String, Object>> obterQualidadeLocalizacao() {
+        return ResponseEntity.ok(gpsCorrelationController.getQualidadeLocalizacao());
+    }
+
+    // UC07.2: obter desvios de serviço executado vs planeado
+    @GetMapping("/analise-desvios")
+    public ResponseEntity<Map<String, Object>> obterAnaliseDesvios() {
+        return ResponseEntity.ok(gpsCorrelationController.getAnaliseDesvios());
     }
 }

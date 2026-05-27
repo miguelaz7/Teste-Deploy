@@ -91,6 +91,15 @@ public class EventoValidacao {
     @Column(name = "pii_detected")
     private Boolean piiDetected = false;
 
+    @Column(name = "policy_version")
+    private String policyVersion;
+
+    @Column(name = "policy_id")
+    private Long policyId;
+
+    @Column(name = "masked_fields", length = 1000)
+    private String maskedFields;
+
     public EventoValidacao() {}
 
     public Long getId()                                      { return id; }
@@ -133,4 +142,11 @@ public class EventoValidacao {
     public void setPerfilClassificado(String p)              { this.perfilClassificado = p; }
     public Boolean getPiiDetected()                          { return piiDetected; }
     public void setPiiDetected(Boolean piiDetected)          { this.piiDetected = piiDetected; }
+
+    public String getPolicyVersion()                         { return policyVersion; }
+    public void setPolicyVersion(String policyVersion)       { this.policyVersion = policyVersion; }
+    public Long getPolicyId()                                { return policyId; }
+    public void setPolicyId(Long policyId)                   { this.policyId = policyId; }
+    public String getMaskedFields()                          { return maskedFields; }
+    public void setMaskedFields(String maskedFields)         { this.maskedFields = maskedFields; }
 }

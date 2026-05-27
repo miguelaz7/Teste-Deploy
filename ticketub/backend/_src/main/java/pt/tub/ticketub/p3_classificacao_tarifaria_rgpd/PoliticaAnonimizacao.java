@@ -60,6 +60,10 @@ public class PoliticaAnonimizacao {
     @Column(name = "notas", length = 1000)
     private String notes;
 
+    @JsonProperty("versao")
+    @Column(name = "versao")
+    private String version = "1.0.0";
+
     public PoliticaAnonimizacao() {}
 
     public PoliticaAnonimizacao(String field, String method, int retentionDays,
@@ -72,6 +76,13 @@ public class PoliticaAnonimizacao {
         this.approvedBy    = approvedBy;
         this.approvedAt    = approvedAt;
         this.notes         = notes;
+    }
+
+    public PoliticaAnonimizacao(String field, String method, int retentionDays,
+                         String status, String approvedBy,
+                         OffsetDateTime approvedAt, String notes, String version) {
+        this(field, method, retentionDays, status, approvedBy, approvedAt, notes);
+        this.version = version;
     }
 
     public Long getId()                         { return id; }
@@ -89,4 +100,6 @@ public class PoliticaAnonimizacao {
     public void setApprovedAt(OffsetDateTime a) { this.approvedAt = a; }
     public String getNotes()                    { return notes; }
     public void setNotes(String notes)          { this.notes = notes; }
+    public String getVersion()                  { return version; }
+    public void setVersion(String version)      { this.version = version; }
 }

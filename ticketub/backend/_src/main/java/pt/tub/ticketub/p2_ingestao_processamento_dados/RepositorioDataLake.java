@@ -74,6 +74,7 @@ class ControloLoteIngestao {
     public String getPipelineVersion() { return pipelineVersion; }
     public LocalDate getPartitionDate() { return partitionDate; }
     public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public Long getPersistenceTimeMs() { return persistenceTimeMs; }
 }
 

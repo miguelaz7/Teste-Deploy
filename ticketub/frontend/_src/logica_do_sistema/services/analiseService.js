@@ -7,6 +7,7 @@ export const getTempoReal           = () => apiGet('/api/procura/tempo-real');
 export const getPorHorario          = () => apiGet('/api/procura/por-horario');
 export const getPorLinha            = () => apiGet('/api/procura/por-linha');
 export const getPorParagem          = () => apiGet('/api/procura/por-paragem');
+export const getPorZona             = () => apiGet('/api/procura/por-zona');
 export const getTop10Linhas         = () => apiGet('/api/procura/por-linha/top-10');
 export const getDetalheHorarioLinha = (routeId) => apiGet(`/api/procura/por-linha/${routeId}/horario`);
 export const getMetricasIngestao    = () => apiGet('/api/dashboard/metricas-ingestao');

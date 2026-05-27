@@ -68,14 +68,19 @@ function Mapa() {
   const [stops, setStops] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [missingCoordsCount, setMissingCoordsCount] = useState(0);
   const mapRef = useRef(null);
   const markerRefs = useRef({});
 
   useEffect(() => {
     apiGet('/api/mapa/paragens')
       .then(data => {
+        // Filter out stops without valid coordinates (FA3)
+        const validData = data.filter(s => s.lat !== null && s.lon !== null && s.lat !== undefined && s.lon !== undefined);
+        setMissingCoordsCount(data.length - validData.length);
+
         const grouped = {};
-        data.forEach(s => {
+        validData.forEach(s => {
           const key = `${s.lat},${s.lon}`;
           if (!grouped[key]) grouped[key] = [];
           grouped[key].push(s);
@@ -152,6 +157,29 @@ function Mapa() {
         <h2>Mapa de Rede</h2>
         <p>Explore as paragens e rotas dos TUB em Braga.</p>
       </div>
+
+      {missingCoordsCount > 0 && (
+        <div style={{
+          backgroundColor: '#fffbeb',
+          border: '1px solid #fde68a',
+          color: '#b45309',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          fontSize: '13px',
+          marginBottom: '16px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxSizing: 'border-box',
+          width: '100%'
+        }}>
+          <span>⚠️</span>
+          <span>
+            <strong>Qualidade dos Dados (FA3):</strong> Existem {missingCoordsCount} paragens sem coordenadas geográficas registadas no sistema. Estas paragens foram omitidas do mapa e sinalizadas para correção de dados.
+          </span>
+        </div>
+      )}
 
       <div className="map-container-inner" style={{ position: 'relative' }}>
         {/* Dynamic Island Search Bar */}

@@ -316,7 +316,29 @@ function StopLiveDataPopup({ stop }) {
                     alignItems: 'center',
                     gap: '6px'
                   }}>
-                    ⚠️ Qualidade Degradada (>2%)
+                    ⚠️ Qualidade Degradada (&gt;2%)
+                  </div>
+                )}
+
+                {data.topMotivoRejeicao && data.topMotivoRejeicao.length > 0 && (
+                  <div style={{
+                    marginTop: '8px',
+                    backgroundColor: '#fff5f5',
+                    border: '1px solid #ffe3e3',
+                    borderRadius: '8px',
+                    padding: '6px 8px',
+                    fontSize: '9px',
+                    color: '#9b2c2c'
+                  }}>
+                    <div style={{ fontWeight: 'bold', color: '#c53030', marginBottom: '2px', textTransform: 'uppercase', fontSize: '9px' }}>
+                      Principais Motivos de Erro:
+                    </div>
+                    {data.topMotivoRejeicao.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
+                        <span>• {item.motivo}</span>
+                        <strong style={{ marginLeft: '4px' }}>{item.total}</strong>
+                      </div>
+                    ))}
                   </div>
                 )}
 

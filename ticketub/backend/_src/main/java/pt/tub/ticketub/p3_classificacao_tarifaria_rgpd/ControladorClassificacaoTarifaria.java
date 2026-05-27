@@ -1,14 +1,13 @@
 package pt.tub.ticketub.p3_classificacao_tarifaria_rgpd;
 
-// =============================================================================
-// O0.3.1.c – Controlador de Classificação Tarifária
-// Lê a tipologia de cada evento, consulta a tabela de mapeamento (O0.3.1.d)
-// e atribui o perfil tarifário. Eventos sem correspondência vão para o
-// Repositório de Eventos Não Categorizados (O0.3.3.d).
-// =============================================================================
-
 import pt.tub.ticketub.p2_ingestao_processamento_dados.EventoValidacao;
 import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.ServicoSuspensaoLote;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioRegistoDataLakeNgsiLd;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RegistoDataLakeNgsiLd;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.RepositorioAlerta;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.Alerta;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +27,26 @@ public class ControladorClassificacaoTarifaria {
     private final RepositorioAuditoriaCategorizacao auditRepository;
     private final RepositorioEventoValidacao validationEventRepository;
     private final RepositorioEventoNaoCategorizado eventoNaoCategorizadoRepository;
+    private final RepositorioRegistoDataLakeNgsiLd dataLakeRepository;
+    private final ServicoSuspensaoLote servicoSuspensaoLote;
+    private final RepositorioAlerta alertaRepository;
 
     public ControladorClassificacaoTarifaria(
         RepositorioMapeamentoTipologiaPerfil mappingRepository,
         RepositorioAuditoriaCategorizacao auditRepository,
         RepositorioEventoValidacao validationEventRepository,
-        RepositorioEventoNaoCategorizado eventoNaoCategorizadoRepository
+        RepositorioEventoNaoCategorizado eventoNaoCategorizadoRepository,
+        RepositorioRegistoDataLakeNgsiLd dataLakeRepository,
+        ServicoSuspensaoLote servicoSuspensaoLote,
+        RepositorioAlerta alertaRepository
     ) {
         this.mappingRepository              = mappingRepository;
         this.auditRepository                = auditRepository;
         this.validationEventRepository      = validationEventRepository;
         this.eventoNaoCategorizadoRepository = eventoNaoCategorizadoRepository;
+        this.dataLakeRepository             = dataLakeRepository;
+        this.servicoSuspensaoLote           = servicoSuspensaoLote;
+        this.alertaRepository               = alertaRepository;
     }
 
     // Classifica todos os eventos pendentes consultando O0.3.1.d
@@ -55,9 +63,41 @@ public class ControladorClassificacaoTarifaria {
             String ticketCode = event.getTicketType() != null
                 ? event.getTicketType().getCode() : null;
 
+            // 1. Detect PII (FA2)
+            boolean hasPii = detectPII(ticketCode) || detectPII(event.getCardId()) || detectPII(event.getTicketId());
+            if (hasPii) {
+                event.setPiiDetected(true);
+                event.setPerfilClassificado("SUSPENSO");
+
+                // Find batchId from data lake
+                String entityId = "urn:ngsi-ld:FareTransaction:" + event.getIngestionHash();
+                String batchId = dataLakeRepository.findFirstByEntityId(entityId)
+                    .map(RegistoDataLakeNgsiLd::getBatchId)
+                    .orElse("DESCONHECIDO");
+
+                // Suspend the batch
+                if (!"DESCONHECIDO".equals(batchId)) {
+                    servicoSuspensaoLote.suspenderLote(batchId);
+                }
+
+                // Notify DPO
+                Alerta dpoAlert = new Alerta(
+                    "DETECAO_PII",
+                    "CRITICO",
+                    event.getIngestionHash(),
+                    "PII detectada no evento " + event.getIngestionHash() + " (Lote: " + batchId + "). Processamento do lote suspenso.",
+                    OffsetDateTime.now()
+                );
+                alertaRepository.save(dpoAlert);
+
+                registerAudit("PII_DETECTION", ticketCode != null ? ticketCode : "DESCONHECIDO", null, "SUSPENSO", "sistema");
+                continue;
+            }
+
             if (ticketCode == null) {
                 event.setPerfilClassificado(NAO_CATEGORIZADO);
                 registerUncategorizedEvent(event, "Tipo de título nulo");
+                registerAudit("CLASSIFICATION_FAILED", "NULO", null, NAO_CATEGORIZADO, "sistema");
                 continue;
             }
 
@@ -66,12 +106,34 @@ public class ControladorClassificacaoTarifaria {
                 // Sem correspondência → vai para O0.3.3.d
                 event.setPerfilClassificado(NAO_CATEGORIZADO);
                 registerUncategorizedEvent(event, "Sem mapeamento para: " + ticketCode);
+                registerAudit("CLASSIFICATION_FAILED", ticketCode, null, NAO_CATEGORIZADO, "sistema");
             } else {
                 event.setPerfilClassificado(perfil);
+                
+                // Contextual geographic masking for sensitive categories (senior, estudante)
+                if ("senior".equalsIgnoreCase(perfil) || "estudante".equalsIgnoreCase(perfil)) {
+                    event.setOriginStop(null);
+                    event.setMaskedFields(event.getMaskedFields() != null
+                        ? event.getMaskedFields() + "originStop(SENSITIVE_MASK);"
+                        : "originStop(SENSITIVE_MASK);");
+                }
+
+                registerAudit("CLASSIFICATION_SUCCESS", ticketCode, null, perfil, "sistema");
             }
         }
 
         validationEventRepository.saveAll(pendentes);
+    }
+
+    private boolean detectPII(String text) {
+        if (text == null || text.isBlank()) return false;
+        // Check for email pattern
+        if (text.matches(".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}.*")) return true;
+        // Check for 9-digit numbers (Portuguese NIF or phone numbers)
+        if (text.matches(".*\\b[921][0-9]{8}\\b.*")) return true;
+        // Check for international format phone numbers
+        if (text.matches(".*\\+351\\s?[291][0-9]{2}\\s?[0-9]{3}\\s?[0-9]{3}.*")) return true;
+        return false;
     }
 
     public DtoEstatisticasCategorizacao getStats() {

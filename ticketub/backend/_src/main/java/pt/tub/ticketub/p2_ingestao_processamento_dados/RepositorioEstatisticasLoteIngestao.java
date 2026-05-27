@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RepositorioEstatisticasLoteIngestao extends JpaRepository<EstatisticasLoteIngestao, Long> {
+    java.util.Optional<EstatisticasLoteIngestao> findByBatchId(String batchId);
 }

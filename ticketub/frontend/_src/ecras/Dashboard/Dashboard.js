@@ -12,6 +12,7 @@ import ExportacaoDados from "../../funcionalidades/od/ExportacaoDados";
 import SimulacaoCenarios from "../../funcionalidades/planeamento/SimulacaoCenarios";
 import IntegracaoERP from "../../funcionalidades/planeamento/IntegracaoERP";
 import GestaoRGPD from "../../funcionalidades/rgpd/GestaoRGPD";
+import DesvioOperacional from "../../funcionalidades/analise/DesvioOperacional";
 
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 
@@ -45,6 +46,7 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
     tabs.push('bilhetes');
     tabs.push('mapa');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('analise');
+    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('desvios');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('historico');
     if (hasRole(['GESTOR', 'ADMIN'])) tabs.push('alertas');
     if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('matriz-od');
@@ -115,6 +117,16 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
             >
               <span className="nav-icon"><ChartIcon /></span>
               <span className="nav-text">Análise</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'desvios' ? 'active' : ''}`}
+              onClick={() => setActiveTab('desvios')}
+            >
+              <span className="nav-icon"><CompassIcon /></span>
+              <span className="nav-text">Desvios</span>
             </button>
           )}
 
@@ -232,6 +244,10 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRol
             <ProcuraTempoReal />
           )}
 
+          {activeTab === 'desvios' && hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <DesvioOperacional />
+          )}
+
           {activeTab === 'historico' && hasRole(['ANALISTA', 'ADMIN']) && (
             <HistoricoConsolidado />
           )}
@@ -293,6 +309,15 @@ function MapIcon() {
       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
       <line x1="8" y1="2" x2="8" y2="18"></line>
       <line x1="16" y1="6" x2="16" y2="22"></line>
+    </svg>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
     </svg>
   );
 }

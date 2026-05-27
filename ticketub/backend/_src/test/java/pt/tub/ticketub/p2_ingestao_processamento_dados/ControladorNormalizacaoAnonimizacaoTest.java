@@ -41,7 +41,7 @@ class ControladorNormalizacaoAnonimizacaoTest {
         assertNotNull(result);
         assertNotEquals("123456789", result.getCardId());
         assertFalse(result.getCardId().isBlank());
-        assertEquals("TICKET-RAW-123", result.getTicketId());
+        assertNotEquals("TICKET-RAW-123", result.getTicketId());
     }
 
     @Test
@@ -93,6 +93,6 @@ class ControladorNormalizacaoAnonimizacaoTest {
 
         assertNotNull(result);
         assertNull(result.getCardId()); // Should be suppressed
-        assertEquals("TICKET-RAW-123", result.getTicketId());
+        assertNotEquals("TICKET-RAW-123", result.getTicketId());
     }
 }
