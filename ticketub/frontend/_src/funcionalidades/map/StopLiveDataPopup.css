@@ -6,12 +6,12 @@
   padding: 0 !important;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15) !important;
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  width: 220px !important;
+  width: 240px !important;
   overflow: hidden;
 }
 
 .leaflet-popup-content {
-  width: 220px !important;
+  width: 240px !important;
   margin: 0 !important;
 }
 
@@ -23,7 +23,7 @@
 /* ── Premium Popup UI ── */
 .popup-premium {
   color: #1e293b;
-  width: 220px;
+  width: 240px;
   display: flex;
   flex-direction: column;
 }
@@ -324,5 +324,47 @@
   color: #64748b;
   font-weight: 500;
   line-height: 1.4;
+}
+
+/* ── Afluencia Badges ── */
+.afluencia-badge {
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.afluencia-badge.alta {
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+  animation: gentle-glow 2s infinite alternate;
+}
+
+.afluencia-badge.baixa {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.afluencia-badge.normal {
+  background-color: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+/* ── History Chart ── */
+.history-bar:hover {
+  fill: #2563eb !important;
+}
+
+@keyframes gentle-glow {
+  0% { box-shadow: 0 0 4px rgba(217, 119, 6, 0.1); }
+  100% { box-shadow: 0 0 10px rgba(217, 119, 6, 0.3); }
 }
 

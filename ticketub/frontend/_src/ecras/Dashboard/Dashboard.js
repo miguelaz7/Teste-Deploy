@@ -16,7 +16,7 @@ import GestaoRGPD from "../../funcionalidades/rgpd/GestaoRGPD";
 // Use direct string paths so Webpack doesn't crash if the files aren't in src/assets yet
 
 
-function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogout }) {
+function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, userRoles = [], onLogout }) {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem("activeTab") || "geral";
   });
@@ -31,13 +31,47 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
   // Avatar initial
   const initial = loggedInFirstName ? loggedInFirstName.charAt(0).toUpperCase() : "U";
 
+  // Helper to check if user has required roles
+  const hasRole = (roles) => {
+    if (!roles) return true;
+    const requiredRoles = Array.isArray(roles) ? roles : [roles];
+    return requiredRoles.some(r => userRoles.map(x => x.toUpperCase()).includes(r.toUpperCase()));
+  };
 
+  // Get list of authorized tabs for the current user
+  const getAuthorizedTabs = () => {
+    const tabs = [];
+    if (hasRole(['GESTOR', 'ANALISTA', 'ADMIN'])) tabs.push('geral');
+    tabs.push('bilhetes');
+    tabs.push('mapa');
+    if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('analise');
+    if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('historico');
+    if (hasRole(['GESTOR', 'ADMIN'])) tabs.push('alertas');
+    if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('matriz-od');
+    if (hasRole(['ANALISTA', 'ADMIN'])) tabs.push('exportacao');
+    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('planeamento');
+    if (hasRole(['ANALISTA', 'GESTOR', 'ADMIN'])) tabs.push('erp');
+    if (hasRole(['DPO', 'ADMIN'])) tabs.push('rgpd');
+    return tabs;
+  };
+
+  // Fallback redirection if the saved tab is unauthorized
+  useEffect(() => {
+    const authTabs = getAuthorizedTabs();
+    if (!authTabs.includes(activeTab)) {
+      const fallback = authTabs.includes('geral') ? 'geral' : 'bilhetes';
+      setActiveTab(fallback);
+    }
+  }, [userRoles, activeTab]);
 
   return (
     <div className="dashboard-layout">
       {/* Sidebar Component */}
       <aside className="sidebar">
-        <div className="sidebar-header" onClick={() => setActiveTab('geral')} style={{ cursor: 'pointer' }}>
+        <div className="sidebar-header" onClick={() => {
+          const authTabs = getAuthorizedTabs();
+          if (authTabs.includes('geral')) setActiveTab('geral');
+        }} style={{ cursor: 'pointer' }}>
           <strong className="sidebar-brand">
             Ticke
             <span>TUB</span>
@@ -48,13 +82,16 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
         </div>
 
         <nav className="sidebar-nav">
-          <button
-            className={`nav-link ${activeTab === 'geral' ? 'active' : ''}`}
-            onClick={() => setActiveTab('geral')}
-          >
-            <span className="nav-icon"><HomeIcon /></span>
-            <span className="nav-text">Painel Geral</span>
-          </button>
+          {hasRole(['GESTOR', 'ANALISTA', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'geral' ? 'active' : ''}`}
+              onClick={() => setActiveTab('geral')}
+            >
+              <span className="nav-icon"><HomeIcon /></span>
+              <span className="nav-text">Painel Geral</span>
+            </button>
+          )}
+
           <button
             className={`nav-link ${activeTab === 'bilhetes' ? 'active' : ''}`}
             onClick={() => setActiveTab('bilhetes')}
@@ -70,63 +107,86 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
             <span className="nav-icon"><MapIcon /></span>
             <span className="nav-text">Mapa</span>
           </button>
-          <button
-            className={`nav-link ${activeTab === 'analise' ? 'active' : ''}`}
-            onClick={() => setActiveTab('analise')}
-          >
-            <span className="nav-icon"><ChartIcon /></span>
-            <span className="nav-text">Análise</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'historico' ? 'active' : ''}`}
-            onClick={() => setActiveTab('historico')}
-          >
-            <span className="nav-icon"><ClockIcon /></span>
-            <span className="nav-text">Histórico</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'alertas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('alertas')}
-          >
-            <span className="nav-icon"><BellIcon /></span>
-            <span className="nav-text">Alertas</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'matriz-od' ? 'active' : ''}`}
-            onClick={() => setActiveTab('matriz-od')}
-          >
-            <span className="nav-icon"><NetworkIcon /></span>
-            <span className="nav-text">Matriz O-D</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'exportacao' ? 'active' : ''}`}
-            onClick={() => setActiveTab('exportacao')}
-          >
-            <span className="nav-icon"><DownloadCloudIcon /></span>
-            <span className="nav-text">Exportação</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'planeamento' ? 'active' : ''}`}
-            onClick={() => setActiveTab('planeamento')}
-          >
-            <span className="nav-icon"><TargetIcon /></span>
-            <span className="nav-text">Planeamento</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'erp' ? 'active' : ''}`}
-            onClick={() => setActiveTab('erp')}
-          >
-            <span className="nav-icon"><ServerIcon /></span>
-            <span className="nav-text">ERP</span>
-          </button>
-          <button
-            className={`nav-link ${activeTab === 'rgpd' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rgpd')}
-          >
-            <span className="nav-icon"><ShieldIcon /></span>
-            <span className="nav-text">RGPD</span>
-          </button>
 
+          {hasRole(['ANALISTA', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'analise' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analise')}
+            >
+              <span className="nav-icon"><ChartIcon /></span>
+              <span className="nav-text">Análise</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'historico' ? 'active' : ''}`}
+              onClick={() => setActiveTab('historico')}
+            >
+              <span className="nav-icon"><ClockIcon /></span>
+              <span className="nav-text">Histórico</span>
+            </button>
+          )}
+
+          {hasRole(['GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'alertas' ? 'active' : ''}`}
+              onClick={() => setActiveTab('alertas')}
+            >
+              <span className="nav-icon"><BellIcon /></span>
+              <span className="nav-text">Alertas</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'matriz-od' ? 'active' : ''}`}
+              onClick={() => setActiveTab('matriz-od')}
+            >
+              <span className="nav-icon"><NetworkIcon /></span>
+              <span className="nav-text">Matriz O-D</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'exportacao' ? 'active' : ''}`}
+              onClick={() => setActiveTab('exportacao')}
+            >
+              <span className="nav-icon"><DownloadCloudIcon /></span>
+              <span className="nav-text">Exportação</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'planeamento' ? 'active' : ''}`}
+              onClick={() => setActiveTab('planeamento')}
+            >
+              <span className="nav-icon"><TargetIcon /></span>
+              <span className="nav-text">Planeamento</span>
+            </button>
+          )}
+
+          {hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'erp' ? 'active' : ''}`}
+              onClick={() => setActiveTab('erp')}
+            >
+              <span className="nav-icon"><ServerIcon /></span>
+              <span className="nav-text">ERP</span>
+            </button>
+          )}
+
+          {hasRole(['DPO', 'ADMIN']) && (
+            <button
+              className={`nav-link ${activeTab === 'rgpd' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rgpd')}
+            >
+              <span className="nav-icon"><ShieldIcon /></span>
+              <span className="nav-text">RGPD</span>
+            </button>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -145,10 +205,10 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
 
       {/* Main Content Component */}
       <main className="dashboard-main">
-        {activeTab === 'geral' && (
+        {activeTab === 'geral' && hasRole(['GESTOR', 'ANALISTA', 'ADMIN']) && (
           <div className="dashboard-header">
             <div>
-              <h1>{getGreeting()}, {fullName || "bem-vindo"}.</h1>
+              <h1>{getGreeting()}, {fullName || "bem-vindo"}</h1>
               <p className="welcome-subtitle">Aqui está o resumo da tua ingestão de dados.</p>
             </div>
           </div>
@@ -156,54 +216,50 @@ function Dashboard({ loggedInEmail, loggedInFirstName, loggedInLastName, onLogou
 
         {/* The content area where the tiles or tables will render based on the active tab */}
         <div className="content-area">
-          {activeTab === 'geral' && (
+          {activeTab === 'geral' && hasRole(['GESTOR', 'ANALISTA', 'ADMIN']) && (
             <PainelGeral />
           )}
-
-
 
           {activeTab === 'bilhetes' && (
             <ModuloBilhetes />
           )}
 
-
-
           {activeTab === 'mapa' && (
             <Mapa />
           )}
 
-          {activeTab === 'analise' && (
+          {activeTab === 'analise' && hasRole(['ANALISTA', 'ADMIN']) && (
             <ProcuraTempoReal />
           )}
 
-          {activeTab === 'historico' && (
+          {activeTab === 'historico' && hasRole(['ANALISTA', 'ADMIN']) && (
             <HistoricoConsolidado />
           )}
 
-          {activeTab === 'alertas' && (
+          {activeTab === 'alertas' && hasRole(['GESTOR', 'ADMIN']) && (
             <div className="alertas-wrapper">
               <PainelAlertas />
               <DetalheQuarentena />
             </div>
           )}
 
-          {activeTab === 'matriz-od' && (
+          {activeTab === 'matriz-od' && hasRole(['ANALISTA', 'ADMIN']) && (
             <MatrizOD />
           )}
 
-          {activeTab === 'exportacao' && (
+          {activeTab === 'exportacao' && hasRole(['ANALISTA', 'ADMIN']) && (
             <ExportacaoDados />
           )}
 
-          {activeTab === 'planeamento' && (
+          {activeTab === 'planeamento' && hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
             <SimulacaoCenarios />
           )}
 
-          {activeTab === 'erp' && (
+          {activeTab === 'erp' && hasRole(['ANALISTA', 'GESTOR', 'ADMIN']) && (
             <IntegracaoERP />
           )}
 
-          {activeTab === 'rgpd' && (
+          {activeTab === 'rgpd' && hasRole(['DPO', 'ADMIN']) && (
             <GestaoRGPD />
           )}
         </div>

@@ -4,7 +4,7 @@ import Dashboard from "../ecras/Dashboard/Dashboard";
 import useAuthFlow from "../logica_do_sistema/hooks/useAuthFlow";
 
 function App() {
-  const { authenticated, authLoading, loggedInEmail, loggedInFirstName, loggedInLastName, handleLogout, authFormProps } = useAuthFlow();
+  const { authenticated, authLoading, loggedInEmail, loggedInFirstName, loggedInLastName, userRoles, handleLogout, authFormProps } = useAuthFlow();
 
   if (authLoading) {
     return <div className="app-shell" style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>A carregar autenticacao...</div>;
@@ -16,6 +16,7 @@ function App() {
         loggedInEmail={loggedInEmail}
         loggedInFirstName={loggedInFirstName}
         loggedInLastName={loggedInLastName}
+        userRoles={userRoles}
         onLogout={handleLogout}
       />
     );

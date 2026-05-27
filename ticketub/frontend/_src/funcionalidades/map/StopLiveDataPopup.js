@@ -108,6 +108,7 @@ function StopLiveDataPopup({ stop }) {
   const [ticketTypes, setTicketTypes] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const fetchData = () => {
     if (loading) return;
@@ -145,6 +146,83 @@ function StopLiveDataPopup({ stop }) {
     return `${s} às ${e}`;
   };
 
+  const renderAfluenciaBadge = () => {
+    if (!data || !data.afluenciaStatus) return null;
+    switch (data.afluenciaStatus) {
+      case 'ACIMA_DA_MEDIA':
+        return (
+          <div className="afluencia-badge alta" title="Afluência acima da média histórica">
+            ⭐ Afluência Elevada!
+          </div>
+        );
+      case 'ABAIXO_DA_MEDIA':
+        return (
+          <div className="afluencia-badge baixa" title="Afluência abaixo da média (possível anomalia ou avaria)">
+            ⚠️ Procura Invulgarmente Baixa
+          </div>
+        );
+      default:
+        return (
+          <div className="afluencia-badge normal" title="Afluência alinhada com o histórico">
+            ✅ Procura Normal
+          </div>
+        );
+    }
+  };
+
+  const renderHistoryChart = () => {
+    if (!data || !data.historico24h) return null;
+    const points = Object.entries(data.historico24h);
+    const values = points.map(([_, v]) => v);
+    const maxVal = Math.max(...values, 1);
+
+    const width = 200;
+    const height = 60;
+    const paddingLeft = 5;
+    const paddingRight = 5;
+    const paddingTop = 5;
+    const paddingBottom = 5;
+
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
+    const barWidth = chartWidth / points.length - 1;
+
+    return (
+      <div className="history-chart-container" style={{ marginTop: '12px', borderTop: '1px dashed #e2e8f0', paddingTop: '10px' }}>
+        <h4 className="viz-title" style={{ fontSize: '10px', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>
+          Histórico 24h (Validações)
+        </h4>
+        <svg width={width} height={height} style={{ overflow: 'visible' }}>
+          {points.map(([hour, val], i) => {
+            const x = paddingLeft + i * (chartWidth / points.length);
+            const barHeight = (val / maxVal) * chartHeight;
+            const y = height - paddingBottom - barHeight;
+            return (
+              <rect
+                key={i}
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill="#3b82f6"
+                rx="1"
+                className="history-bar"
+                style={{ transition: 'fill 0.2s', cursor: 'pointer' }}
+              >
+                <title>{`${hour} - ${val} validações`}</title>
+              </rect>
+            );
+          })}
+        </svg>
+        <div className="chart-labels" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#94a3b8', marginTop: '4px' }}>
+          <span>{points[0][0]}</span>
+          <span>{points[Math.floor(points.length / 2)][0]}</span>
+          <span>{points[points.length - 1][0]}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Popup
       eventHandlers={{
@@ -153,12 +231,13 @@ function StopLiveDataPopup({ stop }) {
           setData(null);
           setTicketTypes(null);
           setError(null);
+          setShowHistory(false);
         },
       }}
       autoPan={true}
       autoPanPadding={[10, 10]}
-      minWidth={220}
-      maxWidth={220}
+      minWidth={240}
+      maxWidth={240}
     >
       <div className="popup-premium">
         <header className="popup-brand-header">
@@ -169,49 +248,100 @@ function StopLiveDataPopup({ stop }) {
         {loading && <div className="loader-ring"><div></div><div></div><div></div><div></div></div>}
         {error && <div className="popup-error-msg">⚠️ {error}</div>}
 
-        {data && data.totalValidations > 0 ? (
+        {data && (
           <main className="popup-main-content">
-            <div className="premium-card">
-              <div className="card-header">
-                <IconBus />
-                <span className="card-tag">MAIOR AFLUÊNCIA</span>
-              </div>
-              <div className="card-body">
-                <div className="peak-time-label">HORÁRIO DE PICO</div>
-                <div className="peak-time-val">{formatPeakInterval(data.peakHourWindowStart, data.peakHourWindowEnd)}</div>
-                <div className="afluencia-inline">
-                  <span className="afluencia-inline-label">
-                    <IconChart />
-                    AFLUÊNCIA
-                  </span>
-                  <span className="afluencia-inline-value">{data.peakHourValidationsPercentageOfStopTotal}%</span>
-                </div>
-              </div>
-            </div>
+            {renderAfluenciaBadge()}
 
-            <div className="premium-stats-grid">
-              <div className="premium-card mini">
-                <div className="card-header warn">
-                  <IconAlert />
-                  <span className="card-tag">INVÁLIDAS</span>
+            {data.totalValidations > 0 ? (
+              <>
+                <div className="premium-card" style={{ marginTop: '8px' }}>
+                  <div className="card-header">
+                    <IconBus />
+                    <span className="card-tag">MAIOR AFLUÊNCIA</span>
+                  </div>
+                  <div className="card-body">
+                    <div className="peak-time-label">HORÁRIO DE PICO</div>
+                    <div className="peak-time-val">{formatPeakInterval(data.peakHourWindowStart, data.peakHourWindowEnd)}</div>
+                    <div className="afluencia-inline">
+                      <span className="afluencia-inline-label">
+                        <IconChart />
+                        AFLUÊNCIA
+                      </span>
+                      <span className="afluencia-inline-value">{data.peakHourValidationsPercentageOfStopTotal}%</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="card-body">
-                  <div className="primary-val">{data.invalidValidationsCount}</div>
-                  <div className="secondary-val">{data.invalidValidationsPercentageOfStopTotal}%</div>
-                </div>
-              </div>
-            </div>
 
-            <section className="premium-viz-section">
-              <h4 className="viz-title">VALIDAÇÕES POR TIPO</h4>
-              <DonutChart data={ticketTypes} />
-            </section>
+                <div className="premium-stats-grid">
+                  <div className="premium-card mini">
+                    <div className="card-header warn">
+                      <IconAlert />
+                      <span className="card-tag">INVÁLIDAS</span>
+                    </div>
+                    <div className="card-body">
+                      <div className="primary-val">{data.invalidValidationsCount}</div>
+                      <div className="secondary-val">{data.invalidValidationsPercentageOfStopTotal}%</div>
+                    </div>
+                  </div>
+                </div>
+
+                {data.qualidadeDegradada && (
+                  <div className="qualidade-alerta-banner" style={{
+                    backgroundColor: '#fee2e2',
+                    border: '1px solid #fca5a5',
+                    color: '#b91c1c',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: '600',
+                    marginTop: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    ⚠️ Qualidade Degradada (>2%)
+                  </div>
+                )}
+
+                <section className="premium-viz-section">
+                  <h4 className="viz-title">VALIDAÇÕES POR TIPO</h4>
+                  <DonutChart data={ticketTypes} />
+                </section>
+
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '15px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+                  >
+                    {showHistory ? 'Ocultar Histórico' : 'Ver Histórico 24h'}
+                  </button>
+                </div>
+
+                {showHistory && renderHistoryChart()}
+              </>
+            ) : (
+              <div className="popup-empty-state">
+                <div className="empty-icon">📂</div>
+                <p>Não foram registadas validações nesta paragem nos últimos 5 minutos.</p>
+              </div>
+            )}
           </main>
-        ) : data && (
-          <div className="popup-empty-state">
-            <div className="empty-icon">📂</div>
-            <p>Não foram registadas validações nesta paragem.</p>
-          </div>
         )}
       </div>
     </Popup>
