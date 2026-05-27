@@ -77,12 +77,12 @@ public class DesvioOperacional {
     public long getValidacoesRealizadas()  { return validacoesRealizadas; }
     public double getMediaHistorica()      { return mediaHistorica; }
     public double getDesvioPercentual()    { return desvioPercentual; }
-    public boolean isCritico()             { return critico; }
+    public boolean isCritical()             { return critico; }
     public OffsetDateTime getCalculadoEm() { return calculadoEm; }
 }
 
 @Repository
-interface DesvioOperacionalRepository extends JpaRepository<DesvioOperacional, Long> {
+interface RepositorioDesvioOperacional extends JpaRepository<DesvioOperacional, Long> {
     List<DesvioOperacional> findByDataCalculo(LocalDate dataCalculo);
     List<DesvioOperacional> findByCriticoTrue();
     List<DesvioOperacional> findByRouteIdAndDataCalculoBetween(

@@ -86,12 +86,3 @@ public class AgregadoProcura {
     void setPerfilNormal(long v)    { this.perfilNormal = v; }
     void setActualizadoEm(OffsetDateTime t) { this.actualizadoEm = t; }
 }
-
-@Repository
-interface AgregadoProcuraRepository extends JpaRepository<AgregadoProcura, Long> {
-    List<AgregadoProcura> findByPerspectiva(String perspectiva);
-    Optional<AgregadoProcura> findByPerspectivaAndChave(String perspectiva, String chave);
-
-    @Query("SELECT a FROM AgregadoProcura a WHERE a.perspectiva = :p ORDER BY a.totalValidacoes DESC")
-    List<AgregadoProcura> findByPerspectivaOrderByTotal(@Param("p") String perspectiva);
-}

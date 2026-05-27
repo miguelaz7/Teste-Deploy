@@ -30,37 +30,37 @@ public class InterfaceProcuraTempoReal {
 
     // Perspectiva por horário — afluência por hora do dia
     @GetMapping("/por-horario")
-    public ResponseEntity<List<?>> obterProcuraPorHorario() {
-        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("HORARIO"));
+    public ResponseEntity<List<?>> getDemandBySchedule() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("HORARIO"));
     }
 
     // Perspectiva por linha — afluência por route_id
     @GetMapping("/por-linha")
-    public ResponseEntity<List<?>> obterProcuraPorLinha() {
-        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("LINHA"));
+    public ResponseEntity<List<?>> getDemandByRoute() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("LINHA"));
     }
 
     // Perspectiva por zona/paragem — afluência por stop_id
     @GetMapping("/por-paragem")
-    public ResponseEntity<List<?>> obterProcuraPorParagem() {
-        return ResponseEntity.ok(controladorAgregacaoProcura.obterPorPerspectiva("ZONA_PARAGEM"));
+    public ResponseEntity<List<?>> getDemandByStop() {
+        return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("ZONA_PARAGEM"));
     }
 
     // Insights em tempo real com filtro opcional por paragem
     @GetMapping("/tempo-real")
-    public ResponseEntity<Map<String, Object>> obterProcuraTempoReal(
+    public ResponseEntity<Map<String, Object>> getRealTimeDemand(
         @RequestParam(required = false) String stopId
     ) {
         return ResponseEntity.ok(
-            controladorAgregacaoProcura.obterInsights(Optional.ofNullable(stopId)));
+            controladorAgregacaoProcura.getInsights(Optional.ofNullable(stopId)));
     }
 
     // Distribuição por tipo de título com filtro opcional por paragem
     @GetMapping("/por-tipo")
-    public ResponseEntity<List<Object[]>> obterProcuraPorTipo(
+    public ResponseEntity<List<Object[]>> getDemandByType(
         @RequestParam(required = false) String stopId
     ) {
         return ResponseEntity.ok(
-            controladorAgregacaoProcura.obterContagemPorTipo(Optional.ofNullable(stopId)));
+            controladorAgregacaoProcura.getCountByType(Optional.ofNullable(stopId)));
     }
 }

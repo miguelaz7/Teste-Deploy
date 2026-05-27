@@ -73,7 +73,7 @@ class CorrelacaoGPS {
 }
 
 @Repository
-interface CorrelacaoGPSRepository extends JpaRepository<CorrelacaoGPS, Long> {
+interface RepositorioCorrelacoesGPS extends JpaRepository<CorrelacaoGPS, Long> {
     List<CorrelacaoGPS> findByRouteId(String routeId);
     long countByIndicadorQualidade(String indicadorQualidade);
     boolean existsByIngestionHash(String ingestionHash);

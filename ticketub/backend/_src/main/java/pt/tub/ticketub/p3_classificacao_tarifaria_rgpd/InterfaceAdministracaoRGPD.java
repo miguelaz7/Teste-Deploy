@@ -25,48 +25,48 @@ import java.util.Map;
 @RequestMapping("/api/rgpd")
 public class InterfaceAdministracaoRGPD {
 
-    private final PoliticaAnonimizacaoRepository politicaRepository;
+    private final RepositorioPoliticaAnonimizacao politicaRepository;
 
-    public InterfaceAdministracaoRGPD(PoliticaAnonimizacaoRepository politicaRepository) {
+    public InterfaceAdministracaoRGPD(RepositorioPoliticaAnonimizacao politicaRepository) {
         this.politicaRepository = politicaRepository;
     }
 
     // Lista todas as políticas de anonimização activas
     @GetMapping("/politicas")
-    public ResponseEntity<List<PoliticaAnonimizacao>> listarPoliticas() {
-        return ResponseEntity.ok(politicaRepository.findByEstado("ATIVA"));
+    public ResponseEntity<List<PoliticaAnonimizacao>> listPolicies() {
+        return ResponseEntity.ok(politicaRepository.findByStatus("ATIVA"));
     }
 
     // DPO cria uma nova política de anonimização
     @PostMapping("/politicas")
-    public ResponseEntity<PoliticaAnonimizacao> criarPolitica(@RequestBody PoliticaAnonimizacao politica) {
-        politica.setEstado("ATIVA");
-        politica.setAprovadoEm(OffsetDateTime.now());
+    public ResponseEntity<PoliticaAnonimizacao> createPolicy(@RequestBody PoliticaAnonimizacao politica) {
+        politica.setStatus("ATIVA");
+        politica.setApprovedAt(OffsetDateTime.now());
         return ResponseEntity.ok(politicaRepository.save(politica));
     }
 
     // DPO actualiza uma política existente
     @PutMapping("/politicas/{id}")
-    public ResponseEntity<PoliticaAnonimizacao> actualizarPolitica(
+    public ResponseEntity<PoliticaAnonimizacao> updatePolicy(
         @PathVariable Long id, @RequestBody PoliticaAnonimizacao dados
     ) {
         PoliticaAnonimizacao existente = politicaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Política não encontrada: " + id));
-        existente.setCampo(dados.getCampo());
-        existente.setMetodo(dados.getMetodo());
-        existente.setRetencaoDias(dados.getRetencaoDias());
-        existente.setNotas(dados.getNotas());
-        existente.setAprovadoEm(OffsetDateTime.now());
+        existente.setField(dados.getField());
+        existente.setMethod(dados.getMethod());
+        existente.setRetentionDays(dados.getRetentionDays());
+        existente.setNotes(dados.getNotes());
+        existente.setApprovedAt(OffsetDateTime.now());
         return ResponseEntity.ok(politicaRepository.save(existente));
     }
 
     // DPO revoga uma política (não apaga — fica com estado REVOGADA)
     @DeleteMapping("/politicas/{id}")
-    public ResponseEntity<Map<String, String>> revogarPolitica(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> revokePolicy(@PathVariable Long id) {
         PoliticaAnonimizacao existente = politicaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Política não encontrada: " + id));
-        existente.setEstado("REVOGADA");
+        existente.setStatus("REVOGADA");
         politicaRepository.save(existente);
-        return ResponseEntity.ok(Map.of("status", "REVOGADA", "campo", existente.getCampo()));
+        return ResponseEntity.ok(Map.of("status", "REVOGADA", "campo", existente.getField()));
     }
 }

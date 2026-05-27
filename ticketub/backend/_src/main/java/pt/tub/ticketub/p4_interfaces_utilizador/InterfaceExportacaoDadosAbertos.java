@@ -1,7 +1,7 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecord;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecordRepository;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RegistoDataLakeNgsiLd;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioRegistoDataLakeNgsiLd;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,31 +26,31 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/exportacao")
 public class InterfaceExportacaoDadosAbertos {
 
-    private final NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository;
+    private final RepositorioRegistoDataLakeNgsiLd ngsiLdDataLakeRecordRepository;
 
     public InterfaceExportacaoDadosAbertos(
-        NgsiLdDataLakeRecordRepository ngsiLdDataLakeRecordRepository
+        RepositorioRegistoDataLakeNgsiLd ngsiLdDataLakeRecordRepository
     ) {
         this.ngsiLdDataLakeRecordRepository = ngsiLdDataLakeRecordRepository;
     }
 
-    // Exportação de registos NGSI-LD anonimizados por data de partição
+    // Export anonymised NGSI-LD records by partition date
     @GetMapping("/dados-abertos")
-    public ResponseEntity<Map<String, Object>> exportarDadosAbertos(
+    public ResponseEntity<Map<String, Object>> exportOpenData(
         @RequestParam(required = false) String dataInicio,
         @RequestParam(required = false) String dataFim
     ) {
         LocalDate inicio = dataInicio != null ? LocalDate.parse(dataInicio) : LocalDate.now().minusDays(7);
         LocalDate fim    = dataFim    != null ? LocalDate.parse(dataFim)    : LocalDate.now();
 
-        List<NgsiLdDataLakeRecord> registos = ngsiLdDataLakeRecordRepository.findAll().stream()
+        List<RegistoDataLakeNgsiLd> registos = ngsiLdDataLakeRecordRepository.findAll().stream()
             .filter(r -> r.getPartitionDate() != null
                 && !r.getPartitionDate().isBefore(inicio)
                 && !r.getPartitionDate().isAfter(fim))
             .collect(Collectors.toList());
 
-        // Todos os dados no Data Lake já são anonimizados (UC02.2)
-        // O cardId está pseudonimizado — nunca é exposto o valor original
+        // All data in Data Lake is already anonymised (UC02.2)
+        // cardId is pseudonymised – original value never exposed
         List<Map<String, Object>> exportacao = registos.stream().map(r -> {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("entityId",      r.getEntityId());

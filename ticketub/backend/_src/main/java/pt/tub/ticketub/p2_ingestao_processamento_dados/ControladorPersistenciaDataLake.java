@@ -1,9 +1,9 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecord;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdDataLakeRecordRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.NgsiLdEntityDto;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RegistoDataLakeNgsiLd;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioRegistoDataLakeNgsiLd;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.DtoEntidadeNgsiLd;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -35,16 +35,16 @@ class ControladorPersistenciaDataLake {
     @Value("${app.etl.mapping-version:v1.0.0}")
     private String etlMappingVersion;
 
-    private final NgsiLdDataLakeRecordRepository dataLakeRepository;
-    private final IngestionBatchControlRepository batchControlRepository;
-    private final IngestionRetryQueueRepository retryQueueRepository;
-    private final IngestionAuditLogRepository auditLogRepository;
+    private final RepositorioRegistoDataLakeNgsiLd dataLakeRepository;
+    private final RepositorioControloLoteIngestao batchControlRepository;
+    private final RepositorioFilaRetryIngestao retryQueueRepository;
+    private final RepositorioAuditoriaIngestao auditLogRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    ControladorPersistenciaDataLake(NgsiLdDataLakeRecordRepository dataLakeRepository,
-                                    IngestionBatchControlRepository batchControlRepository,
-                                    IngestionRetryQueueRepository retryQueueRepository,
-                                    IngestionAuditLogRepository auditLogRepository) {
+    ControladorPersistenciaDataLake(RepositorioRegistoDataLakeNgsiLd dataLakeRepository,
+                                    RepositorioControloLoteIngestao batchControlRepository,
+                                    RepositorioFilaRetryIngestao retryQueueRepository,
+                                    RepositorioAuditoriaIngestao auditLogRepository) {
         this.dataLakeRepository = dataLakeRepository;
         this.batchControlRepository = batchControlRepository;
         this.retryQueueRepository = retryQueueRepository;
@@ -53,41 +53,41 @@ class ControladorPersistenciaDataLake {
 
     // Persiste o lote de eventos no Data Lake e regista o controlo de integridade
     @Transactional
-    void persistir(List<ValidationEvent> eventos, String batchId, OffsetDateTime inicioCiclo) {
+    void persist(List<EventoValidacao> eventos, String batchId, OffsetDateTime inicioCiclo) {
         if (eventos == null || eventos.isEmpty()) return;
 
         LocalDate particao = LocalDate.now();
         OffsetDateTime agora = OffsetDateTime.now();
         long tempoMs = Duration.between(inicioCiclo, agora).toMillis();
 
-        List<NgsiLdDataLakeRecord> records = construirRegistosNgsiLd(eventos, batchId, particao, agora);
+        List<RegistoDataLakeNgsiLd> records = buildNgsiLdRecords(eventos, batchId, particao, agora);
 
         try {
             dataLakeRepository.saveAll(records);
 
             // Calcular hash do lote após escrita confirmada (integridade)
-            String hashLote = calcularHashLote(eventos);
+            String hashLote = calculateBatchHash(eventos);
 
-            batchControlRepository.save(new IngestionBatchControl(
+            batchControlRepository.save(new ControloLoteIngestao(
                 batchId, agora, eventos.size(), records.size(),
                 etlMappingVersion, particao, "SUCCESS", tempoMs));
 
-            auditar("BATCH_PERSISTENCE_SUCCESS", "batchId", batchId,
+            audit("BATCH_PERSISTENCE_SUCCESS", "batchId", batchId,
                 "Lote persistido. Hash=" + hashLote + " Registos=" + records.size());
 
         } catch (Exception e) {
             // Falha → adicionar à fila de retry com backoff exponencial
-            retryQueueRepository.save(new IngestionRetryQueue(
+            retryQueueRepository.save(new FilaRetryIngestao(
                 batchId, e.getMessage(), "PENDING",
                 0, MAX_RETRIES,
                 agora.plusSeconds(BASE_BACKOFF_SEGUNDOS),
                 null, toJson(eventos), agora));
 
-            batchControlRepository.save(new IngestionBatchControl(
+            batchControlRepository.save(new ControloLoteIngestao(
                 batchId, agora, eventos.size(), 0,
                 etlMappingVersion, particao, "PENDING", tempoMs));
 
-            auditar("BATCH_PERSISTENCE_FAILED", "batchId", batchId,
+            audit("BATCH_PERSISTENCE_FAILED", "batchId", batchId,
                 "Falha na persistencia. Adicionado a fila de retry. Erro: " + e.getMessage());
         }
     }
@@ -95,13 +95,13 @@ class ControladorPersistenciaDataLake {
     // Agendador que processa a fila de retry a cada 30 segundos
     @Scheduled(fixedDelay = 30000)
     @Transactional
-    void processarFilaRetry() {
+    void processRetryQueue() {
         OffsetDateTime agora = OffsetDateTime.now();
-        List<IngestionRetryQueue> pendentes = retryQueueRepository
+        List<FilaRetryIngestao> pendentes = retryQueueRepository
             .findTop50ByStatusAndNextRetryAtLessThanEqualOrderByNextRetryAtAsc("PENDING", agora);
 
-        for (IngestionRetryQueue entrada : pendentes) {
-            tentarReprocessar(entrada, agora);
+        for (FilaRetryIngestao entrada : pendentes) {
+            tryReprocess(entrada, agora);
         }
     }
 
@@ -109,7 +109,7 @@ class ControladorPersistenciaDataLake {
     // Auxiliares privados
     // -------------------------------------------------------------------------
 
-    private void tentarReprocessar(IngestionRetryQueue entrada, OffsetDateTime agora) {
+    private void tryReprocess(FilaRetryIngestao entrada, OffsetDateTime agora) {
         entrada.setLastAttemptAt(agora);
         entrada.setRetryCount(entrada.getRetryCount() + 1);
 
@@ -117,7 +117,7 @@ class ControladorPersistenciaDataLake {
             // Ponto de extensão: reprocessamento do payload em fila
             // A persistência efetiva é delegada ao dataLakeRepository
             entrada.setStatus("SUCCESS");
-            auditar("RETRY_SUCCESS", entrada.getBatchId(),
+            audit("RETRY_SUCCESS", entrada.getBatchId(),
                 "Tentativa " + entrada.getRetryCount(), "Reprocessamento bem-sucedido");
 
         } catch (Exception e) {
@@ -125,7 +125,7 @@ class ControladorPersistenciaDataLake {
             if (tentativas >= MAX_RETRIES) {
                 // UC02.3: incidente crítico após 10 tentativas falhadas
                 entrada.setStatus("FAILED");
-                auditar("RETRY_CRITICAL_FAILURE", entrada.getBatchId(),
+                audit("RETRY_CRITICAL_FAILURE", entrada.getBatchId(),
                     "Tentativas=" + tentativas,
                     "INCIDENTE CRITICO: Data Lake inacessivel apos " + MAX_RETRIES +
                     " tentativas. Intervencao necessaria.");
@@ -135,7 +135,7 @@ class ControladorPersistenciaDataLake {
                 entrada.setStatus("PENDING");
                 entrada.setNextRetryAt(agora.plusSeconds(backoff));
                 entrada.setReason(e.getMessage());
-                auditar("RETRY_ATTEMPT_FAILED", entrada.getBatchId(),
+                audit("RETRY_ATTEMPT_FAILED", entrada.getBatchId(),
                     "Tentativa " + tentativas,
                     "Proxima em " + backoff + "s. Erro: " + e.getMessage());
             }
@@ -143,29 +143,29 @@ class ControladorPersistenciaDataLake {
         retryQueueRepository.save(entrada);
     }
 
-    private List<NgsiLdDataLakeRecord> construirRegistosNgsiLd(
-        List<ValidationEvent> eventos, String batchId,
+    private List<RegistoDataLakeNgsiLd> buildNgsiLdRecords(
+        List<EventoValidacao> eventos, String batchId,
         LocalDate particao, OffsetDateTime agora
     ) {
-        List<NgsiLdDataLakeRecord> records = new ArrayList<>();
-        for (ValidationEvent evento : eventos) {
+        List<RegistoDataLakeNgsiLd> records = new ArrayList<>();
+        for (EventoValidacao evento : eventos) {
             try {
-                NgsiLdEntityDto entidade = toNgsiLdEntity(evento);
-                records.add(new NgsiLdDataLakeRecord(
+                DtoEntidadeNgsiLd entidade = toNgsiLdEntity(evento);
+                records.add(new RegistoDataLakeNgsiLd(
                     batchId, entidade.getId(), entidade.getType(),
                     toJson(entidade), particao, evento.getTransactionDateTime(),
                     evento.getOriginStop() != null ? evento.getOriginStop().getStopLat() : null,
                     evento.getOriginStop() != null ? evento.getOriginStop().getStopLon() : null,
                     agora));
             } catch (Exception e) {
-                auditar("NGSI_LD_CONVERSION_ERROR", evento.getIngestionHash(),
+                audit("NGSI_LD_CONVERSION_ERROR", evento.getIngestionHash(),
                     e.getMessage(), "Falha na conversao NGSI-LD");
             }
         }
         return records;
     }
 
-    private NgsiLdEntityDto toNgsiLdEntity(ValidationEvent evento) {
+    private DtoEntidadeNgsiLd toNgsiLdEntity(EventoValidacao evento) {
         Map<String, Object> props = new HashMap<>();
         props.put("transactionDateTime", prop(evento.getTransactionDateTime().toString()));
         props.put("transactionType",     prop(evento.getTransactionType()));
@@ -194,7 +194,7 @@ class ControladorPersistenciaDataLake {
             props.put("location", geo(evento.getOriginStop().getStopLat(),
                                       evento.getOriginStop().getStopLon()));
 
-        return new NgsiLdEntityDto(
+        return new DtoEntidadeNgsiLd(
             "urn:ngsi-ld:FareTransaction:" + evento.getIngestionHash(),
             "FareTransaction", etlMappingVersion, props);
     }
@@ -212,9 +212,9 @@ class ControladorPersistenciaDataLake {
             Map.of("type", "Point", "coordinates", List.of(lon, lat)));
     }
 
-    private String calcularHashLote(List<ValidationEvent> eventos) {
+    private String calculateBatchHash(List<EventoValidacao> eventos) {
         String payload = eventos.stream()
-            .map(ValidationEvent::getIngestionHash)
+            .map(EventoValidacao::getIngestionHash)
             .collect(Collectors.joining("|"));
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -232,8 +232,8 @@ class ControladorPersistenciaDataLake {
         catch (Exception e) { return "{}"; }
     }
 
-    private void auditar(String tipo, String campo, String valor, String detalhe) {
+    private void audit(String tipo, String campo, String valor, String detalhe) {
         auditLogRepository.save(
-            new IngestionAuditLog(tipo, campo, valor, detalhe, OffsetDateTime.now()));
+            new RegistoAuditoriaIngestao(tipo, campo, valor, detalhe, OffsetDateTime.now()));
     }
 }

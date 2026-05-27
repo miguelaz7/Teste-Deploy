@@ -1,7 +1,7 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantine;
-import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.QuarentenaValidacao;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.RepositorioQuarentenaValidacao;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,19 +25,19 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/alertas")
 public class InterfaceGestaoAlertas {
 
-    private final ValidationQuarantineRepository validationQuarantineRepository;
+    private final RepositorioQuarentenaValidacao validationQuarantineRepository;
 
-    public InterfaceGestaoAlertas(ValidationQuarantineRepository validationQuarantineRepository) {
+    public InterfaceGestaoAlertas(RepositorioQuarentenaValidacao validationQuarantineRepository) {
         this.validationQuarantineRepository = validationQuarantineRepository;
     }
 
     // Resumo de alertas ativos agrupados por motivo e severidade
     @GetMapping("/ativos")
-    public ResponseEntity<Map<String, Object>> obterAlertasAtivos(
+    public ResponseEntity<Map<String, Object>> getActiveAlerts(
         @RequestParam(defaultValue = "24") int horas
     ) {
         OffsetDateTime desde = OffsetDateTime.now().minusHours(horas);
-        List<ValidationQuarantine> quarentena = validationQuarantineRepository.findAll().stream()
+        List<QuarentenaValidacao> quarentena = validationQuarantineRepository.findAll().stream()
             .filter(q -> q.getCreatedAt().isAfter(desde))
             .collect(Collectors.toList());
 
@@ -70,7 +70,7 @@ public class InterfaceGestaoAlertas {
 
     // Lista detalhada de registos em quarentena para revisão
     @GetMapping("/quarentena")
-    public ResponseEntity<List<Map<String, Object>>> obterQuarentena(
+    public ResponseEntity<List<Map<String, Object>>> getQuarantine(
         @RequestParam(defaultValue = "24") int horas
     ) {
         OffsetDateTime desde = OffsetDateTime.now().minusHours(horas);

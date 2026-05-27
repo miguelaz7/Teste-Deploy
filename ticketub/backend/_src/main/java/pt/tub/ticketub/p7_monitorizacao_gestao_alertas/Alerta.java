@@ -12,11 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "alertas_anomalias")
@@ -27,56 +24,56 @@ public class Alerta {
     private Long id;
 
     @Column(name = "tipo", nullable = false)
-    private String tipo;
+    private String type;
 
     @Column(name = "severidade", nullable = false)
-    private String severidade;
+    private String severity;
 
     @Column(name = "ingestion_hash")
     private String ingestionHash;
 
     @Column(name = "dados_evento", length = 2000)
-    private String dadosEvento;
+    private String eventData;
 
     @Column(name = "estado", nullable = false)
-    private String estado;
+    private String status;
 
     @Column(name = "atribuido_a")
-    private String atribuidoA;
+    private String assignedTo;
 
     @Column(name = "accao_resolucao", length = 1000)
-    private String accaoResolucao;
+    private String resolutionAction;
 
     @Column(name = "criado_em", nullable = false)
-    private OffsetDateTime criadoEm;
+    private OffsetDateTime createdAt;
 
     @Column(name = "resolvido_em")
-    private OffsetDateTime resolvidoEm;
+    private OffsetDateTime resolvedAt;
 
     public Alerta() {}
 
-    public Alerta(String tipo, String severidade, String ingestionHash,
-                  String dadosEvento, OffsetDateTime criadoEm) {
-        this.tipo          = tipo;
-        this.severidade    = severidade;
+    public Alerta(String type, String severity, String ingestionHash,
+                  String eventData, OffsetDateTime createdAt) {
+        this.type          = type;
+        this.severity      = severity;
         this.ingestionHash = ingestionHash;
-        this.dadosEvento   = dadosEvento;
-        this.estado        = "PENDENTE";
-        this.criadoEm      = criadoEm;
+        this.eventData     = eventData;
+        this.status        = "PENDENTE";
+        this.createdAt     = createdAt;
     }
 
     public Long getId()                          { return id; }
-    public String getTipo()                      { return tipo; }
-    public String getSeveridade()                { return severidade; }
+    public String getType()                      { return type; }
+    public String getSeverity()                  { return severity; }
     public String getIngestionHash()             { return ingestionHash; }
-    public String getDadosEvento()               { return dadosEvento; }
-    public String getEstado()                    { return estado; }
-    public void setEstado(String estado)         { this.estado = estado; }
-    public String getAtribuidoA()                { return atribuidoA; }
-    public void setAtribuidoA(String a)          { this.atribuidoA = a; }
-    public String getAccaoResolucao()            { return accaoResolucao; }
-    public void setAccaoResolucao(String a)      { this.accaoResolucao = a; }
-    public OffsetDateTime getCriadoEm()          { return criadoEm; }
-    public OffsetDateTime getResolvidoEm()       { return resolvidoEm; }
-    public void setResolvidoEm(OffsetDateTime t) { this.resolvidoEm = t; }
+    public String getEventData()                 { return eventData; }
+    public String getStatus()                    { return status; }
+    public void setStatus(String status)         { this.status = status; }
+    public String getAssignedTo()                { return assignedTo; }
+    public void setAssignedTo(String a)          { this.assignedTo = a; }
+    public String getResolutionAction()          { return resolutionAction; }
+    public void setResolutionAction(String a)    { this.resolutionAction = a; }
+    public OffsetDateTime getCreatedAt()          { return createdAt; }
+    public OffsetDateTime getResolvedAt()       { return resolvedAt; }
+    public void setResolvedAt(OffsetDateTime t)  { this.resolvedAt = t; }
 }

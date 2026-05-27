@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUncategorizedEvents, reprocessEvents, deleteUncategorizedEvents } from '../../logica_do_sistema/services/categorizationService';
+import CustomDatePicker from '../analise/CustomDatePicker';
+import '../analise/Analise.css';
 import './EcraRevisaoEventos.css';
 
 const EcraRevisaoEventos = ({ onMappingChange }) => {
@@ -66,10 +68,8 @@ const EcraRevisaoEventos = ({ onMappingChange }) => {
         <h2>Revisão de Eventos Não Categorizados</h2>
         <div className="header-actions">
           <div className="date-filter-group">
-            <label>De:</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <label>Até:</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <CustomDatePicker label="De:" value={startDate} onChange={setStartDate} />
+            <CustomDatePicker label="Até:" value={endDate} onChange={setEndDate} />
           </div>
           <button className="btn-secondary danger" onClick={handleApagarTudo}>
             Apagar Tudo

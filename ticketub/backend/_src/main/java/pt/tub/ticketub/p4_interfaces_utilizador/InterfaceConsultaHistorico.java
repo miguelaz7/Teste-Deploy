@@ -1,6 +1,6 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +22,9 @@ import java.util.Map;
 @RequestMapping("/api/historico")
 public class InterfaceConsultaHistorico {
 
-    private final ValidationEventRepository validationEventRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
 
-    public InterfaceConsultaHistorico(ValidationEventRepository validationEventRepository) {
+    public InterfaceConsultaHistorico(RepositorioEventoValidacao validationEventRepository) {
         this.validationEventRepository = validationEventRepository;
     }
 

@@ -1,9 +1,9 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
 import pt.tub.ticketub.p5_analise_operacional_tempo_real.ControladorAgregacaoProcura;
-import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ValidationQuarantineRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.RepositorioQuarentenaValidacao;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Paragem;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioParagem;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/mapa")
 public class InterfaceMapaRede {
 
-    private final StopRepository stopRepository;
+    private final RepositorioParagem stopRepository;
     private final ControladorAgregacaoProcura controladorAgregacaoProcura;
-    private final ValidationQuarantineRepository validationQuarantineRepository;
+    private final RepositorioQuarentenaValidacao validationQuarantineRepository;
 
-    public InterfaceMapaRede(StopRepository stopRepository,
+    public InterfaceMapaRede(RepositorioParagem stopRepository,
                              ControladorAgregacaoProcura controladorAgregacaoProcura,
-                             ValidationQuarantineRepository validationQuarantineRepository) {
+                             RepositorioQuarentenaValidacao validationQuarantineRepository) {
         this.stopRepository                 = stopRepository;
         this.controladorAgregacaoProcura    = controladorAgregacaoProcura;
         this.validationQuarantineRepository = validationQuarantineRepository;
@@ -41,24 +41,24 @@ public class InterfaceMapaRede {
 
     // Lista todas as paragens com coordenadas para marcadores no mapa
     @GetMapping("/paragens")
-    public ResponseEntity<List<Map<String, Object>>> obterParagens() {
+    public ResponseEntity<List<Map<String, Object>>> getStops() {
         List<Map<String, Object>> paragens = stopRepository.findAll().stream()
-            .map(this::toMarcador)
+            .map(this::toMarker)
             .collect(Collectors.toList());
         return ResponseEntity.ok(paragens);
     }
 
     // UC06.1, UC06.2, UC06.3 — Popup LIVE DATA completo
     @GetMapping("/paragens/{stopId}/live-data")
-    public ResponseEntity<Map<String, Object>> obterLiveData(@PathVariable String stopId) {
-        Optional<Stop> stopOpt = stopRepository.findById(stopId);
+    public ResponseEntity<Map<String, Object>> getLiveData(@PathVariable String stopId) {
+        Optional<Paragem> stopOpt = stopRepository.findById(stopId);
         if (stopOpt.isEmpty()) return ResponseEntity.notFound().build();
 
         // UC06.1 — afluência e distribuição por tipo (O0.5.1.c)
         Map<String, Object> insights = controladorAgregacaoProcura
-            .obterInsights(Optional.of(stopId));
+            .getInsights(Optional.of(stopId));
         List<Object[]> porTipo = controladorAgregacaoProcura
-            .obterContagemPorTipo(Optional.of(stopId));
+            .getCountByType(Optional.of(stopId));
 
         Map<String, Long> ticketTypeDistribution = new LinkedHashMap<>();
         for (Object[] row : porTipo) {
@@ -78,7 +78,7 @@ public class InterfaceMapaRede {
 
         // UC06.3 — top 3 motivos de rejeição
         List<Object[]> topMotivos = validationQuarantineRepository
-            .findTopMotivosByOriginStopId(stopId);
+            .findTopReasonsByOriginStopId(stopId);
         List<Map<String, Object>> top3 = topMotivos.stream().limit(3).map(row -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("motivo", row[0].toString());
@@ -125,7 +125,7 @@ public class InterfaceMapaRede {
         return ResponseEntity.ok(resposta);
     }
 
-    private Map<String, Object> toMarcador(Stop stop) {
+    private Map<String, Object> toMarker(Paragem stop) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("stopId",   stop.getStopId());
         m.put("stopName", stop.getStopName());

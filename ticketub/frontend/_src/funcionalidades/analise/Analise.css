@@ -172,27 +172,34 @@
 }
 
 .historico-metric-box {
-  background-color: var(--bg-muted, #f9fafb);
-  padding: 1rem 1.2rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color, #e5e7eb);
+  background-color: #f8fafc;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #edf1f5;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.historico-metric-box:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .historico-metric-label {
   font-size: 0.85rem;
-  color: var(--text-muted, #6b7280);
-  font-weight: 500;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .historico-metric-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-main, #111827);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.5rem;
 }
 

@@ -7,8 +7,8 @@ package pt.tub.ticketub.p3_classificacao_tarifaria_rgpd;
 // Repositório de Eventos Não Categorizados (O0.3.3.d).
 // =============================================================================
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEvent;
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.EventoValidacao;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,16 +24,16 @@ public class ControladorClassificacaoTarifaria {
 
     private static final String NAO_CATEGORIZADO = "nao_categorizado";
 
-    private final TipologiaPerfilMappingRepository mappingRepository;
-    private final CategorizationAuditRepository auditRepository;
-    private final ValidationEventRepository validationEventRepository;
-    private final EventoNaoCategorizadoRepository eventoNaoCategorizadoRepository;
+    private final RepositorioMapeamentoTipologiaPerfil mappingRepository;
+    private final RepositorioAuditoriaCategorizacao auditRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
+    private final RepositorioEventoNaoCategorizado eventoNaoCategorizadoRepository;
 
     public ControladorClassificacaoTarifaria(
-        TipologiaPerfilMappingRepository mappingRepository,
-        CategorizationAuditRepository auditRepository,
-        ValidationEventRepository validationEventRepository,
-        EventoNaoCategorizadoRepository eventoNaoCategorizadoRepository
+        RepositorioMapeamentoTipologiaPerfil mappingRepository,
+        RepositorioAuditoriaCategorizacao auditRepository,
+        RepositorioEventoValidacao validationEventRepository,
+        RepositorioEventoNaoCategorizado eventoNaoCategorizadoRepository
     ) {
         this.mappingRepository              = mappingRepository;
         this.auditRepository                = auditRepository;
@@ -44,20 +44,20 @@ public class ControladorClassificacaoTarifaria {
     // Classifica todos os eventos pendentes consultando O0.3.1.d
     @Transactional
     public void classify() {
-        List<ValidationEvent> pendentes = validationEventRepository
+        List<EventoValidacao> pendentes = validationEventRepository
             .findByPerfilClassificadoIsNullOrPerfilClassificado(NAO_CATEGORIZADO);
 
         if (pendentes.isEmpty()) return;
 
         Map<String, String> cache = buildMappingCache();
 
-        for (ValidationEvent event : pendentes) {
+        for (EventoValidacao event : pendentes) {
             String ticketCode = event.getTicketType() != null
                 ? event.getTicketType().getCode() : null;
 
             if (ticketCode == null) {
                 event.setPerfilClassificado(NAO_CATEGORIZADO);
-                registarEventoNaoCategorizado(event, "Tipo de título nulo");
+                registerUncategorizedEvent(event, "Tipo de título nulo");
                 continue;
             }
 
@@ -65,7 +65,7 @@ public class ControladorClassificacaoTarifaria {
             if (perfil == null) {
                 // Sem correspondência → vai para O0.3.3.d
                 event.setPerfilClassificado(NAO_CATEGORIZADO);
-                registarEventoNaoCategorizado(event, "Sem mapeamento para: " + ticketCode);
+                registerUncategorizedEvent(event, "Sem mapeamento para: " + ticketCode);
             } else {
                 event.setPerfilClassificado(perfil);
             }
@@ -74,65 +74,65 @@ public class ControladorClassificacaoTarifaria {
         validationEventRepository.saveAll(pendentes);
     }
 
-    public CategorizationStatsDto getStats() {
+    public DtoEstatisticasCategorizacao getStats() {
         long estudante = validationEventRepository.countByPerfilClassificado("estudante");
         long senior    = validationEventRepository.countByPerfilClassificado("senior");
         long normal    = validationEventRepository.countByPerfilClassificado("normal");
         long totalClassificados   = estudante + senior + normal;
         long totalNaoCategorizado = validationEventRepository.countByPerfilClassificado(NAO_CATEGORIZADO);
-        return new CategorizationStatsDto(totalClassificados, totalNaoCategorizado,
+        return new DtoEstatisticasCategorizacao(totalClassificados, totalNaoCategorizado,
             estudante, senior, normal);
     }
 
-    public List<TipologiaPerfilMapping> getMappings() {
+    public List<MapeamentoTipologiaPerfil> getMappings() {
         return mappingRepository.findAll();
     }
 
     @Transactional
-    public TipologiaPerfilMapping createMapping(TipologiaPerfilMapping mapping) {
+    public MapeamentoTipologiaPerfil createMapping(MapeamentoTipologiaPerfil mapping) {
         if (mappingRepository.existsByTipoTitulo(mapping.getTipoTitulo())) {
             throw new RuntimeException("Já existe um mapeamento para: " + mapping.getTipoTitulo());
         }
         mapping.setCreatedAt(OffsetDateTime.now());
         mapping.setUpdatedAt(OffsetDateTime.now());
         if (mapping.getUpdatedBy() == null) mapping.setUpdatedBy("api-rest");
-        TipologiaPerfilMapping saved = mappingRepository.saveAndFlush(mapping);
-        registarAuditoria("CREATE", saved.getTipoTitulo(), null, saved.getPerfil(), saved.getUpdatedBy());
+        MapeamentoTipologiaPerfil saved = mappingRepository.saveAndFlush(mapping);
+        registerAudit("CREATE", saved.getTipoTitulo(), null, saved.getPerfil(), saved.getUpdatedBy());
         validationEventRepository.updateProfileByTicketCode(saved.getTipoTitulo(), saved.getPerfil());
         return saved;
     }
 
     @Transactional
-    public TipologiaPerfilMapping updateMapping(Long id, TipologiaPerfilMapping dados) {
-        TipologiaPerfilMapping existing = mappingRepository.findById(id)
+    public MapeamentoTipologiaPerfil updateMapping(Long id, MapeamentoTipologiaPerfil dados) {
+        MapeamentoTipologiaPerfil existing = mappingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Mapeamento não encontrado: " + id));
         String perfilAnterior = existing.getPerfil();
         existing.setTipoTitulo(dados.getTipoTitulo());
         existing.setPerfil(dados.getPerfil());
         existing.setUpdatedAt(OffsetDateTime.now());
         if (dados.getUpdatedBy() != null) existing.setUpdatedBy(dados.getUpdatedBy());
-        TipologiaPerfilMapping saved = mappingRepository.save(existing);
-        registarAuditoria("UPDATE", saved.getTipoTitulo(), perfilAnterior, saved.getPerfil(), saved.getUpdatedBy());
+        MapeamentoTipologiaPerfil saved = mappingRepository.save(existing);
+        registerAudit("UPDATE", saved.getTipoTitulo(), perfilAnterior, saved.getPerfil(), saved.getUpdatedBy());
         validationEventRepository.updateProfileByTicketCode(saved.getTipoTitulo(), saved.getPerfil());
         return saved;
     }
 
     @Transactional
     public void deleteMapping(Long id) {
-        TipologiaPerfilMapping existing = mappingRepository.findById(id)
+        MapeamentoTipologiaPerfil existing = mappingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Mapeamento não encontrado: " + id));
-        registarAuditoria("DELETE", existing.getTipoTitulo(), existing.getPerfil(), null, "sistema");
+        registerAudit("DELETE", existing.getTipoTitulo(), existing.getPerfil(), null, "sistema");
         validationEventRepository.updateProfileByTicketCode(existing.getTipoTitulo(), NAO_CATEGORIZADO);
         mappingRepository.deleteById(id);
     }
 
     @Transactional
-    public CategorizationAudit logAudit(CategorizationAudit audit) {
+    public AuditoriaCategorizacao logAudit(AuditoriaCategorizacao audit) {
         if (audit.getTimestamp() == null) audit.setTimestamp(OffsetDateTime.now());
         return auditRepository.save(audit);
     }
 
-    public List<ValidationEvent> getUncategorized(LocalDate dataInicio, LocalDate dataFim) {
+    public List<EventoValidacao> getUncategorized(LocalDate dataInicio, LocalDate dataFim) {
         if (dataInicio != null && dataFim != null) {
             OffsetDateTime inicio = dataInicio.atStartOfDay().atOffset(ZoneOffset.UTC);
             OffsetDateTime fim    = dataFim.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
@@ -161,7 +161,7 @@ public class ControladorClassificacaoTarifaria {
     // Auxiliares
     // -------------------------------------------------------------------------
 
-    private void registarEventoNaoCategorizado(ValidationEvent event, String motivo) {
+    private void registerUncategorizedEvent(EventoValidacao event, String motivo) {
         EventoNaoCategorizado enc = new EventoNaoCategorizado(
             event.getIngestionHash(),
             motivo,
@@ -173,16 +173,16 @@ public class ControladorClassificacaoTarifaria {
 
     private Map<String, String> buildMappingCache() {
         Map<String, String> cache = new HashMap<>();
-        for (TipologiaPerfilMapping m : mappingRepository.findAll()) {
+        for (MapeamentoTipologiaPerfil m : mappingRepository.findAll()) {
             cache.put(m.getTipoTitulo(), m.getPerfil());
         }
         return cache;
     }
 
-    private void registarAuditoria(String acao, String tipoTitulo,
-                                    String perfilAnterior, String perfilNovo,
-                                    String utilizador) {
-        CategorizationAudit audit = new CategorizationAudit();
+    private void registerAudit(String acao, String tipoTitulo,
+                               String perfilAnterior, String perfilNovo,
+                               String utilizador) {
+        AuditoriaCategorizacao audit = new AuditoriaCategorizacao();
         audit.setAcao(acao);
         audit.setTipoTitulo(tipoTitulo);
         audit.setPerfilAnterior(perfilAnterior);

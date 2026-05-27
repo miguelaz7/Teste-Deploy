@@ -7,8 +7,8 @@ package pt.tub.ticketub.p5_analise_operacional_tempo_real;
 // Agendado às 23h30 para consolidação diária (UC10).
 // =============================================================================
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEvent;
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.EventoValidacao;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,65 +24,65 @@ import java.util.stream.Collectors;
 @Service
 class ControladorAgregacaoHistorica {
 
-    private final ValidationEventRepository validationEventRepository;
-    private final HistoricoConsolidadoRepository historicoRepository;
-    private final DesvioOperacionalRepository desvioRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
+    private final RepositorioHistoricoConsolidado historicoRepository;
+    private final RepositorioDesvioOperacional desvioRepository;
 
     ControladorAgregacaoHistorica(
-        ValidationEventRepository validationEventRepository,
-        HistoricoConsolidadoRepository historicoRepository,
-        DesvioOperacionalRepository desvioRepository
+        RepositorioEventoValidacao validationEventRepository,
+        RepositorioHistoricoConsolidado historicoRepository,
+        RepositorioDesvioOperacional desvioRepository
     ) {
         this.validationEventRepository = validationEventRepository;
         this.historicoRepository       = historicoRepository;
         this.desvioRepository          = desvioRepository;
     }
 
-    // UC10.1: actualização incremental contínua a cada 5 minutos
+    // UC10.1: update incremental contínuo a cada 5 minutos
     @Scheduled(fixedDelay = 300000)
     @Transactional
-    public void actualizarIncremental() {
+    public void incrementalUpdate() {
         LocalDate hoje = LocalDate.now();
-        List<ValidationEvent> eventos = validationEventRepository.findAll();
+        List<EventoValidacao> eventos = validationEventRepository.findAll();
         if (eventos.isEmpty()) return;
-        consolidarPorLinha(eventos, hoje);
-        consolidarPorPerfil(eventos, hoje);
+        consolidateByRoute(eventos, hoje);
+        consolidateByProfile(eventos, hoje);
     }
 
     // Consolidação diária completa às 23h30 (UC10)
     @Scheduled(cron = "0 30 23 * * *")
     @Transactional
-    public void consolidarDiario() {
+    public void consolidateDaily() {
         LocalDate hoje = LocalDate.now();
-        List<ValidationEvent> eventos = validationEventRepository.findAll();
+        List<EventoValidacao> eventos = validationEventRepository.findAll();
         if (eventos.isEmpty()) return;
 
-        consolidarPorLinha(eventos, hoje);
-        consolidarPorPerfil(eventos, hoje);
-        calcularDesviosOperacionais(eventos, hoje);
+        consolidateByRoute(eventos, hoje);
+        consolidateByProfile(eventos, hoje);
+        calculateOperationalDeviations(eventos, hoje);
     }
 
     // -------------------------------------------------------------------------
     // Consolidação por linha
     // -------------------------------------------------------------------------
 
-    private void consolidarPorLinha(List<ValidationEvent> eventos, LocalDate data) {
-        Map<String, List<ValidationEvent>> porLinha = eventos.stream()
+    private void consolidateByRoute(List<EventoValidacao> eventos, LocalDate data) {
+        Map<String, List<EventoValidacao>> porLinha = eventos.stream()
             .filter(e -> e.getRouteId() != null)
-            .collect(Collectors.groupingBy(ValidationEvent::getRouteId));
+            .collect(Collectors.groupingBy(EventoValidacao::getRouteId));
 
-        for (Map.Entry<String, List<ValidationEvent>> entrada : porLinha.entrySet()) {
+        for (Map.Entry<String, List<EventoValidacao>> entrada : porLinha.entrySet()) {
             String routeId = entrada.getKey();
-            List<ValidationEvent> grupo = entrada.getValue();
+            List<EventoValidacao> grupo = entrada.getValue();
             long total = grupo.size();
 
             // Receita estimada — soma de fareForAdult não nulos
             BigDecimal receita = grupo.stream()
                 .filter(e -> e.getFareForAdult() != null)
-                .map(ValidationEvent::getFareForAdult)
+                .map(EventoValidacao::getFareForAdult)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            guardarHistorico(routeId, null, "DIA", data, data, total, receita, 0.0);
+            saveHistory(routeId, null, "DIA", data, data, total, receita, 0.0);
         }
     }
 
@@ -90,15 +90,15 @@ class ControladorAgregacaoHistorica {
     // Consolidação por perfil tarifário
     // -------------------------------------------------------------------------
 
-    private void consolidarPorPerfil(List<ValidationEvent> eventos, LocalDate data) {
-        Map<String, List<ValidationEvent>> porPerfil = eventos.stream()
+    private void consolidateByProfile(List<EventoValidacao> eventos, LocalDate data) {
+        Map<String, List<EventoValidacao>> porPerfil = eventos.stream()
             .filter(e -> e.getPerfilClassificado() != null)
-            .collect(Collectors.groupingBy(ValidationEvent::getPerfilClassificado));
+            .collect(Collectors.groupingBy(EventoValidacao::getPerfilClassificado));
 
-        for (Map.Entry<String, List<ValidationEvent>> entrada : porPerfil.entrySet()) {
+        for (Map.Entry<String, List<EventoValidacao>> entrada : porPerfil.entrySet()) {
             String perfil = entrada.getKey();
             long total = entrada.getValue().size();
-            guardarHistorico(null, perfil, "DIA", data, data, total, BigDecimal.ZERO, 0.0);
+            saveHistory(null, perfil, "DIA", data, data, total, BigDecimal.ZERO, 0.0);
         }
     }
 
@@ -106,10 +106,10 @@ class ControladorAgregacaoHistorica {
     // Cálculo de desvios operacionais por linha
     // -------------------------------------------------------------------------
 
-    private void calcularDesviosOperacionais(List<ValidationEvent> eventos, LocalDate hoje) {
+    private void calculateOperationalDeviations(List<EventoValidacao> eventos, LocalDate hoje) {
         Map<String, Long> realizadosPorLinha = eventos.stream()
             .filter(e -> e.getRouteId() != null)
-            .collect(Collectors.groupingBy(ValidationEvent::getRouteId, Collectors.counting()));
+            .collect(Collectors.groupingBy(EventoValidacao::getRouteId, Collectors.counting()));
 
         for (Map.Entry<String, Long> entrada : realizadosPorLinha.entrySet()) {
             String routeId = entrada.getKey();
@@ -145,22 +145,22 @@ class ControladorAgregacaoHistorica {
     // Auxiliares
     // -------------------------------------------------------------------------
 
-    private void guardarHistorico(String routeId, String perfil, String granularidade,
-                                   LocalDate inicio, LocalDate fim, long total,
-                                   BigDecimal receita, double taxaAnomalias) {
+    private void saveHistory(String routeId, String perfil, String granularidade,
+                             LocalDate inicio, LocalDate fim, long total,
+                             BigDecimal receita, double taxaAnomalias) {
         Optional<HistoricoConsolidado> existente = historicoRepository
             .findByRouteIdAndPerfilTarifarioAndGranularidadeAndPeriodoInicio(
                 routeId, perfil, granularidade, inicio);
 
-        HistoricoConsolidado hc = existente.orElse(new HistoricoConsolidado(
+        HistoricoConsolidado hcEntity = existente.orElse(new HistoricoConsolidado(
             routeId, perfil, granularidade, inicio, fim,
             0, BigDecimal.ZERO, 0.0, OffsetDateTime.now()
         ));
 
-        hc.setTotalValidacoes(total);
-        hc.setReceitaEstimada(receita);
-        hc.setTaxaAnomalias(taxaAnomalias);
-        hc.setActualizadoEm(OffsetDateTime.now());
-        historicoRepository.save(hc);
+        hcEntity.setTotalValidacoes(total);
+        hcEntity.setReceitaEstimada(receita);
+        hcEntity.setTaxaAnomalias(taxaAnomalias);
+        hcEntity.setActualizadoEm(OffsetDateTime.now());
+        historicoRepository.save(hcEntity);
     }
 }

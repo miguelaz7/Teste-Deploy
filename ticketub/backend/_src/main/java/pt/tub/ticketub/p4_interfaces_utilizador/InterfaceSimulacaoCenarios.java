@@ -1,7 +1,7 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RouteRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioRota;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +26,11 @@ import java.util.Map;
 @RequestMapping("/api/simulacao")
 public class InterfaceSimulacaoCenarios {
 
-    private final ValidationEventRepository validationEventRepository;
-    private final RouteRepository routeRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
+    private final RepositorioRota routeRepository;
 
-    public InterfaceSimulacaoCenarios(ValidationEventRepository validationEventRepository,
-                                      RouteRepository routeRepository) {
+    public InterfaceSimulacaoCenarios(RepositorioEventoValidacao validationEventRepository,
+                                      RepositorioRota routeRepository) {
         this.validationEventRepository = validationEventRepository;
         this.routeRepository = routeRepository;
     }

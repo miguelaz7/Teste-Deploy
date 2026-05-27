@@ -24,7 +24,7 @@ import java.util.List;
 // --- Controlo de lote: metadados e estado de integridade por lote ---
 @Entity
 @Table(name = "ingestion_batch_control")
-class IngestionBatchControl {
+class ControloLoteIngestao {
 
     @Id
     @Column(name = "batch_id", nullable = false)
@@ -51,9 +51,9 @@ class IngestionBatchControl {
     @Column(name = "persistence_time_ms", nullable = false)
     private Long persistenceTimeMs;
 
-    IngestionBatchControl() {}
+    ControloLoteIngestao() {}
 
-    IngestionBatchControl(String batchId, OffsetDateTime createdAt,
+    ControloLoteIngestao(String batchId, OffsetDateTime createdAt,
                           Integer entityCountExpected, Integer entityCountPersisted,
                           String pipelineVersion, LocalDate partitionDate,
                           String status, Long persistenceTimeMs) {
@@ -66,16 +66,25 @@ class IngestionBatchControl {
         this.status                = status;
         this.persistenceTimeMs     = persistenceTimeMs;
     }
+
+    public String getBatchId() { return batchId; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public Integer getEntityCountExpected() { return entityCountExpected; }
+    public Integer getEntityCountPersisted() { return entityCountPersisted; }
+    public String getPipelineVersion() { return pipelineVersion; }
+    public LocalDate getPartitionDate() { return partitionDate; }
+    public String getStatus() { return status; }
+    public Long getPersistenceTimeMs() { return persistenceTimeMs; }
 }
 
 @Repository
-interface IngestionBatchControlRepository extends JpaRepository<IngestionBatchControl, String> {
+interface RepositorioControloLoteIngestao extends JpaRepository<ControloLoteIngestao, String> {
 }
 
 // --- Fila de retry: lotes que falharam a persistência no Data Lake ---
 @Entity
 @Table(name = "ingestion_retry_queue")
-class IngestionRetryQueue {
+class FilaRetryIngestao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -109,9 +118,9 @@ class IngestionRetryQueue {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    IngestionRetryQueue() {}
+    FilaRetryIngestao() {}
 
-    IngestionRetryQueue(String batchId, String reason, String status,
+    FilaRetryIngestao(String batchId, String reason, String status,
                         Integer retryCount, Integer maxRetries,
                         OffsetDateTime nextRetryAt, OffsetDateTime lastAttemptAt,
                         String payloadJson, OffsetDateTime createdAt) {
@@ -144,7 +153,7 @@ class IngestionRetryQueue {
 }
 
 @Repository
-interface IngestionRetryQueueRepository extends JpaRepository<IngestionRetryQueue, Long> {
-    List<IngestionRetryQueue> findTop50ByStatusAndNextRetryAtLessThanEqualOrderByNextRetryAtAsc(
+interface RepositorioFilaRetryIngestao extends JpaRepository<FilaRetryIngestao, Long> {
+    List<FilaRetryIngestao> findTop50ByStatusAndNextRetryAtLessThanEqualOrderByNextRetryAtAsc(
         String status, OffsetDateTime reference);
 }

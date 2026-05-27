@@ -7,5 +7,5 @@ package pt.tub.ticketub.p7_monitorizacao_gestao_alertas;
 //
 // Implementado em:
 //   - Alerta.java           (entidade JPA)
-//   - AlertaRepository.java (repositório JPA)
+//   - RepositorioAlerta.java (repositório JPA)
 // =============================================================================

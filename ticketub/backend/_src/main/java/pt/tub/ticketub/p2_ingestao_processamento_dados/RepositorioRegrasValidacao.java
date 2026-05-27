@@ -21,7 +21,7 @@ import java.util.Optional;
 
 @Entity
 @Table(name = "validation_rules")
-class ValidationRule {
+class RegraValidacao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,9 +45,9 @@ class ValidationRule {
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
-    ValidationRule() {}
+    RegraValidacao() {}
 
-    ValidationRule(String ruleCode, String campo, String tipoRegra,
+    RegraValidacao(String ruleCode, String campo, String tipoRegra,
                    String valorLimite, String motivoRejeicao) {
         this.ruleCode = ruleCode;
         this.campo = campo;
@@ -67,84 +67,84 @@ class ValidationRule {
 }
 
 @Repository
-interface ValidationRuleRepository extends JpaRepository<ValidationRule, Long> {
-    List<ValidationRule> findByAtivoTrue();
-    Optional<ValidationRule> findByRuleCode(String ruleCode);
+public interface RepositorioRegrasValidacao extends JpaRepository<RegraValidacao, Long> {
+    List<RegraValidacao> findByAtivoTrue();
+    Optional<RegraValidacao> findByRuleCode(String ruleCode);
 }
 
 // Povoa a tabela ao arrancar, se ainda estiver vazia
 @Component
-class ValidationRuleSeeder {
+class SemeadorRegrasValidacao {
 
-    private final ValidationRuleRepository repository;
+    private final RepositorioRegrasValidacao repository;
 
-    ValidationRuleSeeder(ValidationRuleRepository repository) {
+    SemeadorRegrasValidacao(RepositorioRegrasValidacao repository) {
         this.repository = repository;
     }
 
     @PostConstruct
-    void popular() {
+    void populate() {
         if (repository.count() > 0) return;
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "OBRIGATORIO_transactionDateTime", "transactionDateTime",
             "OBRIGATORIO", null, "transactionDateTime em falta"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "FORMATO_ISO8601_transactionDateTime", "transactionDateTime",
             "FORMATO_ISO8601", null, "transactionDateTime invalido - formato ISO-8601 esperado"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "LIMITE_FUTURO_transactionDateTime", "transactionDateTime",
             "LIMITE_FUTURO", "5", "timestamp no futuro - tolerancia maxima de 5 minutos"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "LIMITE_PASSADO_transactionDateTime", "transactionDateTime",
             "LIMITE_PASSADO", "90", "timestamp demasiado antigo - limite maximo de 90 dias"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "OBRIGATORIO_route_id", "route_id",
             "OBRIGATORIO", null, "route_id em falta"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "CATALOGO_route_id", "route_id",
             "CATALOGO", null, "route_id nao encontrado no catalogo de linhas"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "OBRIGATORIO_ticketTypeCode", "ticketTypeCode",
             "OBRIGATORIO", null, "ticketTypeCode em falta"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "LISTA_APROVADA_ticketTypeCode", "ticketTypeCode",
             "LISTA_APROVADA",
             "PASSE_ESTUDANTE,ESTUDANTE,AVULSO,SINGLE_TICKET,MENSAL,MONTHLY_PASS,PASSE_SENIOR,SENIOR_PASS",
             "ticketTypeCode fora das categorias validas"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "OBRIGATORIO_trip_id", "trip_id",
             "OBRIGATORIO", null, "trip_id em falta"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "CATALOGO_trip_id", "trip_id",
             "CATALOGO", null, "trip_id nao encontrado no catalogo"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "COERENCIA_route_trip", "trip_id",
             "COERENCIA", null, "trip_id nao pertence ao route_id indicado"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "OBRIGATORIO_result", "result",
             "OBRIGATORIO", null, "result em falta"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "CATALOGO_originStopId", "originStopId",
             "CATALOGO", null, "originStopId nao encontrado no catalogo de paragens"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "COERENCIA_trip_stop", "originStopId",
             "COERENCIA", null, "originStopId nao pertence ao trip_id indicado"));
 
-        repository.save(new ValidationRule(
+        repository.save(new RegraValidacao(
             "FORMATO_DECIMAL_fareForAdult", "fareForAdult",
             "FORMATO_DECIMAL", null, "fareForAdult invalido - tipo decimal esperado"));
     }

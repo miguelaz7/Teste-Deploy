@@ -20,72 +20,72 @@ public class ControladorResolucaoAlertas {
     // Limiar de falsos positivos que gera pedido de revisão de regras
     private static final long LIMIAR_FALSOS_POSITIVOS = 5;
 
-    private final AlertaRepository alertaRepository;
+    private final RepositorioAlerta alertaRepository;
 
-    public ControladorResolucaoAlertas(AlertaRepository alertaRepository) {
+    public ControladorResolucaoAlertas(RepositorioAlerta alertaRepository) {
         this.alertaRepository = alertaRepository;
     }
 
     // Lista alertas por estado
-    public List<Alerta> listarPorEstado(String estado) {
-        return alertaRepository.findByEstado(estado);
+    public List<Alerta> listByStatus(String status) {
+        return alertaRepository.findByStatus(status);
     }
 
     // Atribui um alerta a um técnico ou equipa
     @Transactional
-    public Alerta atribuir(Long id, String atribuidoA) {
+    public Alerta assign(Long id, String assignedTo) {
         Alerta alerta = alertaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Alerta nao encontrado: " + id));
-        alerta.setEstado("EM_ANALISE");
-        alerta.setAtribuidoA(atribuidoA);
+        alerta.setStatus("EM_ANALISE");
+        alerta.setAssignedTo(assignedTo);
         return alertaRepository.save(alerta);
     }
 
     // Resolve um alerta com acção registada
     @Transactional
-    public Alerta resolver(Long id, String accaoResolucao) {
+    public Alerta resolve(Long id, String resolutionAction) {
         Alerta alerta = alertaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Alerta nao encontrado: " + id));
-        alerta.setEstado("RESOLVIDO");
-        alerta.setAccaoResolucao(accaoResolucao);
-        alerta.setResolvidoEm(OffsetDateTime.now());
+        alerta.setStatus("RESOLVIDO");
+        alerta.setResolutionAction(resolutionAction);
+        alerta.setResolvedAt(OffsetDateTime.now());
         return alertaRepository.save(alerta);
     }
 
     // Marca como falso positivo e verifica se deve escalar revisão de regras
     @Transactional
-    public Map<String, Object> marcarFalsoPositivo(Long id, String accaoResolucao) {
+    public Map<String, Object> markFalsePositive(Long id, String resolutionAction) {
         Alerta alerta = alertaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Alerta nao encontrado: " + id));
-        alerta.setEstado("FALSO_POSITIVO");
-        alerta.setAccaoResolucao(accaoResolucao);
-        alerta.setResolvidoEm(OffsetDateTime.now());
+        alerta.setStatus("FALSO_POSITIVO");
+        alerta.setResolutionAction(resolutionAction);
+        alerta.setResolvedAt(OffsetDateTime.now());
         alertaRepository.save(alerta);
 
         // Verificar se falsos positivos recorrentes do mesmo tipo exigem revisão
         long totalFalsos = alertaRepository
-            .findByTipoAndEstado(alerta.getTipo(), "FALSO_POSITIVO").size();
+            .findByTypeAndStatus(alerta.getType(), "FALSO_POSITIVO").size();
 
         boolean revisaoNecessaria = totalFalsos >= LIMIAR_FALSOS_POSITIVOS;
 
         return Map.of(
             "estado", "FALSO_POSITIVO",
-            "tipo", alerta.getTipo(),
+            "tipo", alerta.getType(),
             "totalFalsosPositivos", totalFalsos,
             "revisaoRegrasNecessaria", revisaoNecessaria,
             "mensagem", revisaoNecessaria
                 ? "ATENCAO: " + totalFalsos + " falsos positivos do tipo "
-                    + alerta.getTipo() + ". Revisao de regras recomendada."
+                    + alerta.getType() + ". Revisao de regras recomendada."
                 : "Falso positivo registado."
         );
     }
 
     // Resumo de alertas activos por severidade
-    public Map<String, Object> obterResumo() {
-        long criticos  = alertaRepository.countByEstadoAndCriadoEmAfter(
+    public Map<String, Object> getSummary() {
+        long criticos  = alertaRepository.countByStatusAndCreatedAtAfter(
             "PENDENTE", OffsetDateTime.now().minusHours(24));
-        long pendentes = alertaRepository.findByEstado("PENDENTE").size();
-        long emAnalise = alertaRepository.findByEstado("EM_ANALISE").size();
+        long pendentes = alertaRepository.findByStatus("PENDENTE").size();
+        long emAnalise = alertaRepository.findByStatus("EM_ANALISE").size();
 
         return Map.of(
             "pendentes",   pendentes,

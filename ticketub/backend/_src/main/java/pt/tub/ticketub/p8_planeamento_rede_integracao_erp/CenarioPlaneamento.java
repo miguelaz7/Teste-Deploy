@@ -29,7 +29,7 @@ public class CenarioPlaneamento {
 
     // Identificador único: ex. "SC_20250418_Linha50_FreqReducao"
     @Column(name = "codigo_cenario", nullable = false, unique = true)
-    private String codigoCenario;
+    private String scenarioCode;
 
     // Linha afectada pela simulação
     @Column(name = "route_id", nullable = false)
@@ -37,96 +37,96 @@ public class CenarioPlaneamento {
 
     // Descrição do ajuste simulado
     @Column(name = "descricao", nullable = false, length = 1000)
-    private String descricao;
+    private String description;
 
     // Período aplicável: PONTA, FORA_PONTA, DIA_COMPLETO
     @Column(name = "periodo_aplicavel", nullable = false)
-    private String periodoAplicavel;
+    private String applicablePeriod;
 
     // Parâmetro de ajuste: ex. redução de 10 para 8 circulações/hora
     @Column(name = "valor_antes", precision = 10, scale = 2)
-    private BigDecimal valorAntes;
+    private BigDecimal valueBefore;
 
     @Column(name = "valor_depois", precision = 10, scale = 2)
-    private BigDecimal valorDepois;
+    private BigDecimal valueAfter;
 
     // Projecção de impacto calculada
     @Column(name = "ocupacao_esperada", precision = 5, scale = 2)
-    private BigDecimal ocupacaoEsperada;
+    private BigDecimal expectedOccupation;
 
     @Column(name = "receita_estimada_impacto", precision = 12, scale = 2)
-    private BigDecimal receitaEstimadaImpacto;
+    private BigDecimal estimatedImpactRevenue;
 
     // Nível de confiança 0-100 — aviso de risco se < 70%
     @Column(name = "nivel_confianca", nullable = false)
-    private double nivelConfianca;
+    private double confidenceLevel;
 
     // Versão dos dados de base usados (snapshot de histórico e O-D)
     @Column(name = "versao_dados_base", nullable = false)
-    private String versaoDadosBase;
+    private String baseDataVersion;
 
     // Hash de integridade dos dados de base
     @Column(name = "hash_dados_base")
-    private String hashDadosBase;
+    private String baseDataHash;
 
     @Column(name = "criado_por", nullable = false)
-    private String criadoPor;
+    private String createdBy;
 
     @Column(name = "criado_em", nullable = false)
-    private OffsetDateTime criadoEm;
+    private OffsetDateTime createdAt;
 
     // Estado: RASCUNHO, PUBLICADO, ARQUIVADO
     @Column(name = "estado", nullable = false)
-    private String estado;
+    private String status;
 
     CenarioPlaneamento() {}
 
-    CenarioPlaneamento(String codigoCenario, String routeId, String descricao,
-                       String periodoAplicavel, BigDecimal valorAntes, BigDecimal valorDepois,
-                       BigDecimal ocupacaoEsperada, BigDecimal receitaEstimadaImpacto,
-                       double nivelConfianca, String versaoDadosBase, String hashDadosBase,
-                       String criadoPor, OffsetDateTime criadoEm) {
-        this.codigoCenario         = codigoCenario;
-        this.routeId               = routeId;
-        this.descricao             = descricao;
-        this.periodoAplicavel      = periodoAplicavel;
-        this.valorAntes            = valorAntes;
-        this.valorDepois           = valorDepois;
-        this.ocupacaoEsperada      = ocupacaoEsperada;
-        this.receitaEstimadaImpacto = receitaEstimadaImpacto;
-        this.nivelConfianca        = nivelConfianca;
-        this.versaoDadosBase       = versaoDadosBase;
-        this.hashDadosBase         = hashDadosBase;
-        this.criadoPor             = criadoPor;
-        this.criadoEm              = criadoEm;
-        this.estado                = "RASCUNHO";
+    CenarioPlaneamento(String scenarioCode, String routeId, String description,
+                       String applicablePeriod, BigDecimal valueBefore, BigDecimal valueAfter,
+                       BigDecimal expectedOccupation, BigDecimal estimatedImpactRevenue,
+                       double confidenceLevel, String baseDataVersion, String baseDataHash,
+                       String createdBy, OffsetDateTime createdAt) {
+        this.scenarioCode           = scenarioCode;
+        this.routeId                = routeId;
+        this.description            = description;
+        this.applicablePeriod       = applicablePeriod;
+        this.valueBefore            = valueBefore;
+        this.valueAfter             = valueAfter;
+        this.expectedOccupation     = expectedOccupation;
+        this.estimatedImpactRevenue = estimatedImpactRevenue;
+        this.confidenceLevel        = confidenceLevel;
+        this.baseDataVersion        = baseDataVersion;
+        this.baseDataHash           = baseDataHash;
+        this.createdBy              = createdBy;
+        this.createdAt              = createdAt;
+        this.status                 = "RASCUNHO";
     }
 
-    public Long getId()                        { return id; }
-    public String getCodigoCenario()           { return codigoCenario; }
-    public String getRouteId()                 { return routeId; }
-    public String getDescricao()               { return descricao; }
-    public String getPeriodoAplicavel()        { return periodoAplicavel; }
-    public BigDecimal getValorAntes()          { return valorAntes; }
-    public BigDecimal getValorDepois()         { return valorDepois; }
-    public BigDecimal getOcupacaoEsperada()    { return ocupacaoEsperada; }
-    public BigDecimal getReceitaEstimadaImpacto() { return receitaEstimadaImpacto; }
-    public double getNivelConfianca()          { return nivelConfianca; }
-    public String getVersaoDadosBase()         { return versaoDadosBase; }
-    public String getHashDadosBase()           { return hashDadosBase; }
-    public String getCriadoPor()               { return criadoPor; }
-    public OffsetDateTime getCriadoEm()        { return criadoEm; }
-    public String getEstado()                  { return estado; }
-    public void setEstado(String estado)       { this.estado = estado; }
-    public void setOcupacaoEsperada(BigDecimal v)       { this.ocupacaoEsperada = v; }
-    public void setReceitaEstimadaImpacto(BigDecimal v) { this.receitaEstimadaImpacto = v; }
-    public void setNivelConfianca(double v)    { this.nivelConfianca = v; }
-    public void setHashDadosBase(String v)     { this.hashDadosBase = v; }
+    public Long getId()                                 { return id; }
+    public String getScenarioCode()                     { return scenarioCode; }
+    public String getRouteId()                          { return routeId; }
+    public String getDescription()                      { return description; }
+    public String getApplicablePeriod()                 { return applicablePeriod; }
+    public BigDecimal getValueBefore()                  { return valueBefore; }
+    public BigDecimal getValueAfter()                   { return valueAfter; }
+    public BigDecimal getExpectedOccupation()           { return expectedOccupation; }
+    public BigDecimal getEstimatedImpactRevenue()       { return estimatedImpactRevenue; }
+    public double getConfidenceLevel()                  { return confidenceLevel; }
+    public String getBaseDataVersion()                  { return baseDataVersion; }
+    public String getBaseDataHash()                    { return baseDataHash; }
+    public String getCreatedBy()                        { return createdBy; }
+    public OffsetDateTime getCreatedAt()                 { return createdAt; }
+    public String getStatus()                           { return status; }
+    public void setStatus(String status)                { this.status = status; }
+    public void setExpectedOccupation(BigDecimal v)     { this.expectedOccupation = v; }
+    public void setEstimatedImpactRevenue(BigDecimal v) { this.estimatedImpactRevenue = v; }
+    public void setConfidenceLevel(double v)            { this.confidenceLevel = v; }
+    public void setBaseDataHash(String v)              { this.baseDataHash = v; }
 }
 
 @Repository
 interface CenarioPlaneamentoRepository extends JpaRepository<CenarioPlaneamento, Long> {
     List<CenarioPlaneamento> findByRouteId(String routeId);
-    List<CenarioPlaneamento> findByEstado(String estado);
-    boolean existsByCodigoCenario(String codigoCenario);
+    List<CenarioPlaneamento> findByStatus(String status);
+    boolean existsByScenarioCode(String scenarioCode);
 }

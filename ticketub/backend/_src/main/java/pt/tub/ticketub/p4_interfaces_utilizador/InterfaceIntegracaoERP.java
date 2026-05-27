@@ -1,6 +1,6 @@
 package pt.tub.ticketub.p4_interfaces_utilizador;
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,26 +26,25 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/erp")
 public class InterfaceIntegracaoERP {
 
-    private final ValidationEventRepository validationEventRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
 
-    public InterfaceIntegracaoERP(ValidationEventRepository validationEventRepository) {
+    public InterfaceIntegracaoERP(RepositorioEventoValidacao validationEventRepository) {
         this.validationEventRepository = validationEventRepository;
     }
 
     // Dados financeiros por linha e título para consumo pelo ERP
     @GetMapping("/dados-financeiros")
-    public ResponseEntity<Map<String, Object>> obterDadosFinanceiros(
-        @RequestParam(defaultValue = "30") int dias
-    ) {
+    public ResponseEntity<Map<String, Object>> getFinancialData(
+            @RequestParam(defaultValue = "30") int dias) {
         OffsetDateTime desde = OffsetDateTime.now().minusDays(dias);
 
         List<Object[]> porLinha = validationEventRepository.countByRouteIdAfter(desde);
-        List<Object[]> porTipo  = validationEventRepository.countByTicketTypeAfter(desde);
+        List<Object[]> porTipo = validationEventRepository.countByTicketTypeAfter(desde);
 
         Map<String, Object> resposta = new LinkedHashMap<>();
-        resposta.put("perioDias",     dias);
-        resposta.put("geradoEm",      OffsetDateTime.now());
-        resposta.put("porLinha",      toListMap(porLinha, "routeId", "total"));
+        resposta.put("perioDias", dias);
+        resposta.put("geradoEm", OffsetDateTime.now());
+        resposta.put("porLinha", toListMap(porLinha, "routeId", "total"));
         resposta.put("porTipoTitulo", toListMap(porTipo, "tipoTitulo", "total"));
 
         return ResponseEntity.ok(resposta);
@@ -62,11 +61,11 @@ public class InterfaceIntegracaoERP {
 
     // UC11.2 — Gerar e registar exportação para ERP
     @PostMapping("/dados-financeiros")
-    public ResponseEntity<Map<String, Object>> gerarParaERP(
-        @RequestBody(required = false) Map<String, Object> params
-    ) {
+    public ResponseEntity<Map<String, Object>> generateERPData(
+            @RequestBody(required = false) Map<String, Object> params) {
         int dias = params != null && params.containsKey("dias")
-            ? Integer.parseInt(params.get("dias").toString()) : 30;
-        return obterDadosFinanceiros(dias);
+                ? Integer.parseInt(params.get("dias").toString())
+                : 30;
+        return getFinancialData(dias);
     }
 }

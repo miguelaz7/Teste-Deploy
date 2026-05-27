@@ -8,8 +8,8 @@ package pt.tub.ticketub.p7_monitorizacao_gestao_alertas;
 // Consome dados de: O0.9.1.d (AlertaRepository).
 // =============================================================================
 
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEvent;
-import pt.tub.ticketub.p2_ingestao_processamento_dados.ValidationEventRepository;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.EventoValidacao;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioEventoValidacao;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,14 +24,14 @@ public class ControladorDetecaoAnomalias {
     private static final long LIMIAR_CRITICO = 50;
     private static final long LIMIAR_AVISO   = 10;
 
-    private final AlertaRepository alertaRepository;
-    private final ValidationQuarantineRepository quarantineRepository;
-    private final ValidationEventRepository validationEventRepository;
+    private final RepositorioAlerta alertaRepository;
+    private final RepositorioQuarentenaValidacao quarantineRepository;
+    private final RepositorioEventoValidacao validationEventRepository;
 
     public ControladorDetecaoAnomalias(
-        AlertaRepository alertaRepository,
-        ValidationQuarantineRepository quarantineRepository,
-        ValidationEventRepository validationEventRepository
+        RepositorioAlerta alertaRepository,
+        RepositorioQuarentenaValidacao quarantineRepository,
+        RepositorioEventoValidacao validationEventRepository
     ) {
         this.alertaRepository         = alertaRepository;
         this.quarantineRepository     = quarantineRepository;
@@ -41,37 +41,37 @@ public class ControladorDetecaoAnomalias {
     // Corre a cada 5 minutos para analisar anomalias recentes
     @Scheduled(fixedDelay = 300000)
     @Transactional
-    public void analisarAnomalias() {
+    public void analyzeAnomalies() {
         OffsetDateTime janela = OffsetDateTime.now().minusMinutes(5);
 
         // Regra 1: volume de registos em quarentena (título inválido, expirado, etc.)
         long totalQuarentena = quarantineRepository.countByCreatedAtAfter(janela);
         if (totalQuarentena >= LIMIAR_CRITICO) {
-            criarAlerta("TITULO_INVALIDO", "CRITICO", null,
+            createAlert("TITULO_INVALIDO", "CRITICO", null,
                 "Volume critico de rejeicoes: " + totalQuarentena + " nos ultimos 5 minutos");
         } else if (totalQuarentena >= LIMIAR_AVISO) {
-            criarAlerta("TITULO_INVALIDO", "AVISO", null,
+            createAlert("TITULO_INVALIDO", "AVISO", null,
                 "Volume elevado de rejeicoes: " + totalQuarentena + " nos ultimos 5 minutos");
         }
 
         // Regra 2: volume de duplicados
-        long duplicados = alertaRepository.countByTipo("DUPLICADO");
+        long duplicados = alertaRepository.countByType("DUPLICADO");
         if (duplicados >= LIMIAR_CRITICO) {
-            criarAlerta("DUPLICADO", "CRITICO", null,
+            createAlert("DUPLICADO", "CRITICO", null,
                 "Volume critico de duplicados detectados: " + duplicados);
         }
     }
 
     // Analisa um evento específico recém-ingerido
     @Transactional
-    public void analisarEvento(ValidationEvent evento) {
+    public void analyzeEvent(EventoValidacao evento) {
         if (evento == null) return;
 
         // Regra: resultado de rejeição
         if ("REJECTED".equalsIgnoreCase(evento.getResult())
                 || "INVALIDO".equalsIgnoreCase(evento.getResult())) {
-            String severidade = classificarSeveridade(evento);
-            criarAlerta("TITULO_INVALIDO", severidade,
+            String severidade = classifySeverity(evento);
+            createAlert("TITULO_INVALIDO", severidade,
                 evento.getIngestionHash(),
                 "Evento rejeitado: " + evento.getRejectReason());
         }
@@ -79,13 +79,13 @@ public class ControladorDetecaoAnomalias {
 
     // Analisa registos de quarentena recém-criados
     @Transactional
-    public void analisarQuarentena(ValidationQuarantine quarentena) {
+    public void analyzeQuarantine(QuarentenaValidacao quarentena) {
         if (quarentena == null) return;
 
-        String tipo = classificarTipoQuarentena(quarentena.getReason());
+        String tipo = classifyQuarantineType(quarentena.getReason());
         String severidade = "AVISO";
 
-        criarAlerta(tipo, severidade, null,
+        createAlert(tipo, severidade, null,
             "Registo em quarentena: " + quarentena.getReason());
     }
 
@@ -93,11 +93,11 @@ public class ControladorDetecaoAnomalias {
     // Auxiliares
     // -------------------------------------------------------------------------
 
-    private void criarAlerta(String tipo, String severidade,
-                              String ingestionHash, String dadosEvento) {
+    private void createAlert(String tipo, String severidade,
+                             String ingestionHash, String dadosEvento) {
         // Evitar duplicar alertas do mesmo tipo nas últimas 24h
         List<Alerta> existentes = alertaRepository
-            .findByTipoAndEstado(tipo, "PENDENTE");
+            .findByTypeAndStatus(tipo, "PENDENTE");
         if (!existentes.isEmpty()) return;
 
         alertaRepository.save(new Alerta(
@@ -105,7 +105,7 @@ public class ControladorDetecaoAnomalias {
         ));
     }
 
-    private String classificarSeveridade(ValidationEvent evento) {
+    private String classifySeverity(EventoValidacao evento) {
         if (evento.getRejectReason() != null
                 && evento.getRejectReason().toLowerCase().contains("expirado")) {
             return "AVISO";
@@ -113,7 +113,7 @@ public class ControladorDetecaoAnomalias {
         return "CRITICO";
     }
 
-    private String classificarTipoQuarentena(String reason) {
+    private String classifyQuarantineType(String reason) {
         if (reason == null) return "TITULO_INVALIDO";
         String r = reason.toLowerCase();
         if (r.contains("duplicado")) return "DUPLICADO";

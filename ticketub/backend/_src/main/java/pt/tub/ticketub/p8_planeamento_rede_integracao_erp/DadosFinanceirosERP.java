@@ -37,118 +37,118 @@ public class DadosFinanceirosERP {
 
     // Tipo de título
     @Column(name = "tipo_titulo", nullable = false)
-    private String tipoTitulo;
+    private String ticketType;
 
     // Período de referência
     @Column(name = "periodo_inicio", nullable = false)
-    private LocalDate periodoInicio;
+    private LocalDate periodStart;
 
     @Column(name = "periodo_fim", nullable = false)
-    private LocalDate periodoFim;
+    private LocalDate periodEnd;
 
     // Métricas financeiras
     @Column(name = "total_validacoes", nullable = false)
-    private long totalValidacoes;
+    private long totalValidations;
 
     @Column(name = "receita_estimada", precision = 12, scale = 2)
-    private BigDecimal receitaEstimada;
+    private BigDecimal estimatedRevenue;
 
     @Column(name = "receita_por_km", precision = 10, scale = 4)
-    private BigDecimal receitaPorKm;
+    private BigDecimal revenuePerKm;
 
     @Column(name = "receita_por_passageiro", precision = 10, scale = 4)
-    private BigDecimal receitaPorPassageiro;
+    private BigDecimal revenuePerPassenger;
 
     @Column(name = "taxa_anomalias", precision = 5, scale = 2)
-    private BigDecimal taxaAnomalias;
+    private BigDecimal anomalyRate;
 
     @Column(name = "impacto_financeiro_anomalias", precision = 10, scale = 2)
-    private BigDecimal impactoFinanceiroAnomalias;
+    private BigDecimal financialImpactAnomalies;
 
     // Versioning da exportação
     @Column(name = "versao_exportacao", nullable = false)
-    private String versaoExportacao;
+    private String exportVersion;
 
     @Column(name = "hash_integridade", nullable = false)
-    private String hashIntegridade;
+    private String integrityHash;
 
     // Estado de envio ao ERP: PENDENTE, ENVIADO, FALHA, VALIDACAO_MANUAL
     @Column(name = "estado_erp", nullable = false)
-    private String estadoERP;
+    private String erpStatus;
 
     // Campo marcado para validação manual (ex: linhas com anomalias)
     @Column(name = "requer_validacao_manual", nullable = false)
-    private boolean requerValidacaoManual;
+    private boolean requiresManualValidation;
 
     @Column(name = "gerado_por", nullable = false)
-    private String geradoPor;
+    private String generatedBy;
 
     @Column(name = "gerado_em", nullable = false)
-    private OffsetDateTime geradoEm;
+    private OffsetDateTime generatedAt;
 
     @Column(name = "enviado_em")
-    private OffsetDateTime enviadoEm;
+    private OffsetDateTime sentAt;
 
     // Payload formatado para o ERP (CSV/XML)
     @Lob
     @Column(name = "payload_erp", columnDefinition = "LONGTEXT")
-    private String payloadERP;
+    private String erpPayload;
 
     DadosFinanceirosERP() {}
 
-    DadosFinanceirosERP(String routeId, String tipoTitulo, LocalDate periodoInicio,
-                        LocalDate periodoFim, long totalValidacoes, BigDecimal receitaEstimada,
-                        BigDecimal receitaPorKm, BigDecimal receitaPorPassageiro,
-                        BigDecimal taxaAnomalias, BigDecimal impactoFinanceiroAnomalias,
-                        String versaoExportacao, String hashIntegridade,
-                        boolean requerValidacaoManual, String geradoPor,
-                        OffsetDateTime geradoEm, String payloadERP) {
+    DadosFinanceirosERP(String routeId, String ticketType, LocalDate periodStart,
+                        LocalDate periodEnd, long totalValidations, BigDecimal estimatedRevenue,
+                        BigDecimal revenuePerKm, BigDecimal revenuePerPassenger,
+                        BigDecimal anomalyRate, BigDecimal financialImpactAnomalies,
+                        String exportVersion, String integrityHash,
+                        boolean requiresManualValidation, String generatedBy,
+                        OffsetDateTime generatedAt, String erpPayload) {
         this.routeId                    = routeId;
-        this.tipoTitulo                 = tipoTitulo;
-        this.periodoInicio              = periodoInicio;
-        this.periodoFim                 = periodoFim;
-        this.totalValidacoes            = totalValidacoes;
-        this.receitaEstimada            = receitaEstimada;
-        this.receitaPorKm               = receitaPorKm;
-        this.receitaPorPassageiro       = receitaPorPassageiro;
-        this.taxaAnomalias              = taxaAnomalias;
-        this.impactoFinanceiroAnomalias = impactoFinanceiroAnomalias;
-        this.versaoExportacao           = versaoExportacao;
-        this.hashIntegridade            = hashIntegridade;
-        this.estadoERP                  = "PENDENTE";
-        this.requerValidacaoManual      = requerValidacaoManual;
-        this.geradoPor                  = geradoPor;
-        this.geradoEm                   = geradoEm;
-        this.payloadERP                 = payloadERP;
+        this.ticketType                 = ticketType;
+        this.periodStart                = periodStart;
+        this.periodEnd                  = periodEnd;
+        this.totalValidations            = totalValidations;
+        this.estimatedRevenue            = estimatedRevenue;
+        this.revenuePerKm               = revenuePerKm;
+        this.revenuePerPassenger       = revenuePerPassenger;
+        this.anomalyRate                = anomalyRate;
+        this.financialImpactAnomalies = financialImpactAnomalies;
+        this.exportVersion              = exportVersion;
+        this.integrityHash              = integrityHash;
+        this.erpStatus                  = "PENDENTE";
+        this.requiresManualValidation  = requiresManualValidation;
+        this.generatedBy                = generatedBy;
+        this.generatedAt                 = generatedAt;
+        this.erpPayload                 = erpPayload;
     }
 
-    public Long getId()                            { return id; }
-    public String getRouteId()                     { return routeId; }
-    public String getTipoTitulo()                  { return tipoTitulo; }
-    public LocalDate getPeriodoInicio()            { return periodoInicio; }
-    public LocalDate getPeriodoFim()               { return periodoFim; }
-    public long getTotalValidacoes()               { return totalValidacoes; }
-    public BigDecimal getReceitaEstimada()         { return receitaEstimada; }
-    public BigDecimal getReceitaPorKm()            { return receitaPorKm; }
-    public BigDecimal getReceitaPorPassageiro()    { return receitaPorPassageiro; }
-    public BigDecimal getTaxaAnomalias()           { return taxaAnomalias; }
-    public BigDecimal getImpactoFinanceiroAnomalias() { return impactoFinanceiroAnomalias; }
-    public String getVersaoExportacao()            { return versaoExportacao; }
-    public String getHashIntegridade()             { return hashIntegridade; }
-    public String getEstadoERP()                   { return estadoERP; }
-    public void setEstadoERP(String estado)        { this.estadoERP = estado; }
-    public boolean isRequerValidacaoManual()       { return requerValidacaoManual; }
-    public String getGeradoPor()                   { return geradoPor; }
-    public OffsetDateTime getGeradoEm()            { return geradoEm; }
-    public OffsetDateTime getEnviadoEm()           { return enviadoEm; }
-    public void setEnviadoEm(OffsetDateTime t)     { this.enviadoEm = t; }
-    public String getPayloadERP()                  { return payloadERP; }
+    public Long getId()                                 { return id; }
+    public String getRouteId()                          { return routeId; }
+    public String getTicketType()                       { return ticketType; }
+    public LocalDate getPeriodStart()                   { return periodStart; }
+    public LocalDate getPeriodEnd()                     { return periodEnd; }
+    public long getTotalValidations()                   { return totalValidations; }
+    public BigDecimal getEstimatedRevenue()             { return estimatedRevenue; }
+    public BigDecimal getRevenuePerKm()                 { return revenuePerKm; }
+    public BigDecimal getRevenuePerPassenger()         { return revenuePerPassenger; }
+    public BigDecimal getAnomalyRate()                  { return anomalyRate; }
+    public BigDecimal getFinancialImpactAnomalies()     { return financialImpactAnomalies; }
+    public String getExportVersion()                    { return exportVersion; }
+    public String getIntegrityHash()                    { return integrityHash; }
+    public String getErpStatus()                        { return erpStatus; }
+    public void setErpStatus(String erpStatus)          { this.erpStatus = erpStatus; }
+    public boolean isRequiresManualValidation()         { return requiresManualValidation; }
+    public String getGeneratedBy()                      { return generatedBy; }
+    public OffsetDateTime getGeneratedAt()              { return generatedAt; }
+    public OffsetDateTime getSentAt()                   { return sentAt; }
+    public void setSentAt(OffsetDateTime sentAt)        { this.sentAt = sentAt; }
+    public String getErpPayload()                       { return erpPayload; }
 }
 
 @Repository
 interface DadosFinanceirosERPRepository extends JpaRepository<DadosFinanceirosERP, Long> {
-    List<DadosFinanceirosERP> findByEstadoERP(String estadoERP);
-    List<DadosFinanceirosERP> findByRouteIdAndPeriodoInicioBetween(
+    List<DadosFinanceirosERP> findByErpStatus(String erpStatus);
+    List<DadosFinanceirosERP> findByRouteIdAndPeriodStartBetween(
         String routeId, LocalDate inicio, LocalDate fim);
-    Optional<DadosFinanceirosERP> findByVersaoExportacao(String versaoExportacao);
+    Optional<DadosFinanceirosERP> findByExportVersion(String exportVersion);
 }

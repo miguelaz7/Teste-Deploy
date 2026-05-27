@@ -4,9 +4,6 @@ package pt.tub.ticketub.p9_exportacao_interoperabilidade_externa;
 // O012.2.i – Interface API NGSI-LD (UC12.2)
 // API RESTful documentada em OpenAPI, conforme NGSI-LD/Smart Data Models.
 // Autenticação forte obrigatória. Suporta publicação e consulta de entidades.
-// Consome dados de: O012.2.c (ControladorIntegracaoNgsiLd)
-//                   O012.2.d (NgsiLdDataLakeRecordRepository)
-//                   O012.1.d (ExportacaoDadosAbertosRepository)
 // =============================================================================
 
 import org.springframework.http.ResponseEntity;
@@ -32,26 +29,26 @@ import java.util.stream.Collectors;
 public class InterfaceApiNgsiLd {
 
     private final ControladorIntegracaoNgsiLd controlador;
-    private final NgsiLdDataLakeRecordRepository ngsiLdRepository;
-    private final ExportacaoDadosAbertosRepository exportacaoRepository;
+    private final RepositorioRegistoDataLakeNgsiLd ngsiLdRepository;
+    private final RepositorioExportacaoDadosAbertos openDataExportRepository;
 
     public InterfaceApiNgsiLd(
         ControladorIntegracaoNgsiLd controlador,
-        NgsiLdDataLakeRecordRepository ngsiLdRepository,
-        ExportacaoDadosAbertosRepository exportacaoRepository
+        RepositorioRegistoDataLakeNgsiLd ngsiLdRepository,
+        RepositorioExportacaoDadosAbertos openDataExportRepository
     ) {
-        this.controlador        = controlador;
-        this.ngsiLdRepository   = ngsiLdRepository;
-        this.exportacaoRepository = exportacaoRepository;
+        this.controlador             = controlador;
+        this.ngsiLdRepository        = ngsiLdRepository;
+        this.openDataExportRepository = openDataExportRepository;
     }
 
     // UC12.2 — Publicar entidade NGSI-LD de sistema externo
     @PostMapping("/entities")
-    public ResponseEntity<Map<String, Object>> publicarEntidade(
+    public ResponseEntity<Map<String, Object>> publishEntity(
         @RequestBody Map<String, Object> payload,
-        @RequestHeader(value = "X-Api-User", defaultValue = "externo") String utilizador
+        @RequestHeader(value = "X-Api-User", defaultValue = "externo") String user
     ) {
-        NgsiLdDataLakeRecord record = controlador.publicarEntidade(payload, utilizador);
+        RegistoDataLakeNgsiLd record = controlador.publishEntity(payload, user);
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("entityId",   record.getEntityId());
@@ -64,7 +61,7 @@ public class InterfaceApiNgsiLd {
 
     // UC12.2 — Consultar entidades NGSI-LD por tipo
     @GetMapping("/entities")
-    public ResponseEntity<List<Map<String, Object>>> consultarEntidades(
+    public ResponseEntity<List<Map<String, Object>>> getEntities(
         @RequestParam(required = false) String type,
         @RequestParam(required = false) String dataInicio,
         @RequestParam(required = false) String dataFim
@@ -72,7 +69,7 @@ public class InterfaceApiNgsiLd {
         LocalDate inicio = dataInicio != null ? LocalDate.parse(dataInicio) : LocalDate.now().minusDays(7);
         LocalDate fim    = dataFim    != null ? LocalDate.parse(dataFim)    : LocalDate.now();
 
-        List<NgsiLdDataLakeRecord> registos = ngsiLdRepository.findAll().stream()
+        List<RegistoDataLakeNgsiLd> registos = ngsiLdRepository.findAll().stream()
             .filter(r -> r.getPartitionDate() != null
                 && !r.getPartitionDate().isBefore(inicio)
                 && !r.getPartitionDate().isAfter(fim))
@@ -93,32 +90,32 @@ public class InterfaceApiNgsiLd {
 
     // UC12.1 — Solicitar exportação de dados abertos (aprovação DPO obrigatória)
     @PostMapping("/exportacoes")
-    public ResponseEntity<Map<String, Object>> solicitarExportacao(
+    public ResponseEntity<Map<String, Object>> requestExport(
         @RequestBody Map<String, Object> params,
-        @RequestHeader(value = "X-Api-User", defaultValue = "analista") String utilizador
+        @RequestHeader(value = "X-Api-User", defaultValue = "analista") String user
     ) {
-        String formato    = (String) params.getOrDefault("formato", "JSON");
-        String filtros    = params.containsKey("filtros") ? params.get("filtros").toString() : null;
+        String format     = (String) params.getOrDefault("formato", "JSON");
+        String filters    = params.containsKey("filtros") ? params.get("filtros").toString() : null;
         LocalDate inicio  = LocalDate.parse(params.getOrDefault("periodoInicio",
             LocalDate.now().minusDays(7).toString()).toString());
         LocalDate fim     = LocalDate.parse(params.getOrDefault("periodoFim",
             LocalDate.now().toString()).toString());
 
-        long totalRegistos = ngsiLdRepository.findAll().stream()
+        long totalRecords = ngsiLdRepository.findAll().stream()
             .filter(r -> r.getPartitionDate() != null
                 && !r.getPartitionDate().isBefore(inicio)
                 && !r.getPartitionDate().isAfter(fim))
             .count();
 
         ExportacaoDadosAbertos exportacao = new ExportacaoDadosAbertos(
-            utilizador, formato, filtros, inicio, fim, totalRegistos, OffsetDateTime.now()
+            user, format, filters, inicio, fim, totalRecords, OffsetDateTime.now()
         );
-        exportacaoRepository.save(exportacao);
+        openDataExportRepository.save(exportacao);
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("id",             exportacao.getId());
         resposta.put("estado",         "PENDENTE_DPO");
-        resposta.put("totalRegistos",  totalRegistos);
+        resposta.put("totalRegistos",  totalRecords);
         resposta.put("mensagem",       "Exportacao submetida para aprovacao DPO.");
 
         return ResponseEntity.ok(resposta);
@@ -126,43 +123,43 @@ public class InterfaceApiNgsiLd {
 
     // UC12.1 — DPO aprova ou rejeita exportação
     @PutMapping("/exportacoes/{id}/aprovar")
-    public ResponseEntity<Map<String, Object>> aprovarExportacao(
+    public ResponseEntity<Map<String, Object>> approveExport(
         @PathVariable Long id,
         @RequestBody Map<String, Object> body,
         @RequestHeader(value = "X-Api-User", defaultValue = "dpo") String dpo
     ) {
-        ExportacaoDadosAbertos exportacao = exportacaoRepository.findById(id)
+        ExportacaoDadosAbertos exportacao = openDataExportRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Exportacao nao encontrada: " + id));
 
         String decisao = (String) body.getOrDefault("decisao", "APROVADA");
-        exportacao.setEstado(decisao);
-        exportacao.setAprovadoPor(dpo);
-        exportacao.setAprovadoEm(OffsetDateTime.now());
+        exportacao.setStatus(decisao);
+        exportacao.setApprovedBy(dpo);
+        exportacao.setApprovedAt(OffsetDateTime.now());
 
         if ("APROVADA".equals(decisao)) {
-            String hash = controlador.calcularHash(exportacao.getId() + exportacao.getCriadoEm().toString());
-            exportacao.setHashFicheiro(hash);
-            exportacao.setEstado("EXPORTADA");
+            String hash = controlador.calculateHash(exportacao.getId() + exportacao.getCreatedAt().toString());
+            exportacao.setFileHash(hash);
+            exportacao.setStatus("EXPORTADA");
         }
 
-        exportacaoRepository.save(exportacao);
+        openDataExportRepository.save(exportacao);
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("id",     exportacao.getId());
-        resposta.put("estado", exportacao.getEstado());
-        resposta.put("hash",   exportacao.getHashFicheiro());
+        resposta.put("estado", exportacao.getStatus());
+        resposta.put("hash",   exportacao.getFileHash());
 
         return ResponseEntity.ok(resposta);
     }
 
     // Lista todas as exportações
     @GetMapping("/exportacoes")
-    public ResponseEntity<List<ExportacaoDadosAbertos>> listarExportacoes(
-        @RequestParam(required = false) String estado
+    public ResponseEntity<List<ExportacaoDadosAbertos>> listExports(
+        @RequestParam(required = false) String status
     ) {
-        List<ExportacaoDadosAbertos> lista = estado != null
-            ? exportacaoRepository.findByEstado(estado)
-            : exportacaoRepository.findAll();
+        List<ExportacaoDadosAbertos> lista = status != null
+            ? openDataExportRepository.findByStatus(status)
+            : openDataExportRepository.findAll();
         return ResponseEntity.ok(lista);
     }
 }

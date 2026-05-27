@@ -1,11 +1,11 @@
 package pt.tub.ticketub.p2_ingestao_processamento_dados;
 
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.FareCollectionSystem;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.FareCollectionSystemRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Stop;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.StopRepository;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TicketType;
-import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TicketTypeRepository;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.SistemaBilhetica;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioSistemaBilhetica;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Paragem;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioParagem;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TipoBilhete;
+import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioTipoBilhete;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ import java.util.Map;
 
 // =============================================================================
 // O0.2.2.c – Controlador de Normalização e Anonimização
-// Aplica mapeamento para formato alvo (ValidationEvent) e pseudonimização
+// Aplica mapeamento para formato alvo (EventoValidacao) e pseudonimização
 // irreversível do identificador do cartão antes do armazenamento final (O0.2.2.d).
 // =============================================================================
 
@@ -40,45 +40,45 @@ class ControladorNormalizacaoAnonimizacao {
     @Value("${app.ingestion.pseudonym.secret:dev-secret-change-me}")
     private String pseudonymSecret;
 
-    private final TicketTypeRepository ticketTypeRepository;
-    private final StopRepository stopRepository;
-    private final FareCollectionSystemRepository fareCollectionSystemRepository;
+    private final RepositorioTipoBilhete repositorioTipoBilhete;
+    private final RepositorioParagem repositorioParagem;
+    private final RepositorioSistemaBilhetica repositorioSistemaBilhetica;
 
-    ControladorNormalizacaoAnonimizacao(TicketTypeRepository ticketTypeRepository,
-                                        StopRepository stopRepository,
-                                        FareCollectionSystemRepository fareCollectionSystemRepository) {
-        this.ticketTypeRepository = ticketTypeRepository;
-        this.stopRepository = stopRepository;
-        this.fareCollectionSystemRepository = fareCollectionSystemRepository;
+    ControladorNormalizacaoAnonimizacao(RepositorioTipoBilhete repositorioTipoBilhete,
+                                        RepositorioParagem repositorioParagem,
+                                        RepositorioSistemaBilhetica repositorioSistemaBilhetica) {
+        this.repositorioTipoBilhete = repositorioTipoBilhete;
+        this.repositorioParagem = repositorioParagem;
+        this.repositorioSistemaBilhetica = repositorioSistemaBilhetica;
     }
 
-    // Normaliza o DTO para ValidationEvent e pseudonimiza o cardId
-    ValidationEvent normalizar(ValidationIngestionRequestDto dto, String ingestionHash) {
-        String mediaType           = valorOuNull(dto.getMediaType());
-        String ticketTypeCode      = canonicalTicketType(valorOuNull(dto.getTicketTypeCode()));
-        String transactionType     = valorOuNull(dto.getTransactionType());
-        String transactionDateTime = valorOuNull(dto.getTransactionDateTime());
-        String originStopId        = valorOuNull(dto.getOriginStopId());
-        String routeId             = valorOuNull(dto.getRouteId());
-        String tripId              = valorOuNull(dto.getTripId());
-        String fareForAdult        = valorOuNull(dto.getFareForAdult());
-        String equipmentId         = valorOuNull(dto.getEquipmentId());
-        String vehicleNum          = valorOuNull(dto.getTransactionVehicleNum());
-        String result              = valorOuNull(dto.getResult());
-        String rejectReason        = valorOuNull(dto.getRejectReason());
+    // Normaliza o DTO para EventoValidacao e pseudonimiza o cardId
+    EventoValidacao normalize(DtoPedidoIngestaoValidacao dto, String ingestionHash) {
+        String mediaType           = valueOrNull(dto.getMediaType());
+        String ticketTypeCode      = canonicalTicketType(valueOrNull(dto.getTicketTypeCode()));
+        String transactionType     = valueOrNull(dto.getTransactionType());
+        String transactionDateTime = valueOrNull(dto.getTransactionDateTime());
+        String originStopId        = valueOrNull(dto.getOriginStopId());
+        String routeId             = valueOrNull(dto.getRouteId());
+        String tripId              = valueOrNull(dto.getTripId());
+        String fareForAdult        = valueOrNull(dto.getFareForAdult());
+        String equipmentId         = valueOrNull(dto.getEquipmentId());
+        String vehicleNum          = valueOrNull(dto.getTransactionVehicleNum());
+        String result              = valueOrNull(dto.getResult());
+        String rejectReason        = valueOrNull(dto.getRejectReason());
 
-        TicketType ticketType = ticketTypeRepository.findByCode(ticketTypeCode)
-            .orElseGet(() -> ticketTypeRepository.save(new TicketType(ticketTypeCode, ticketTypeCode)));
+        TipoBilhete ticketType = repositorioTipoBilhete.findByCode(ticketTypeCode)
+            .orElseGet(() -> repositorioTipoBilhete.save(new TipoBilhete(ticketTypeCode, ticketTypeCode)));
 
-        Stop stop = (originStopId != null)
-            ? stopRepository.findById(originStopId).orElse(null)
+        Paragem stop = (originStopId != null)
+            ? repositorioParagem.findById(originStopId).orElse(null)
             : null;
 
-        FareCollectionSystem fcs = resolveFareCollectionSystem(equipmentId, vehicleNum);
+        SistemaBilhetica fcs = resolveFareCollectionSystem(equipmentId, vehicleNum);
 
-        ValidationEvent evento = new ValidationEvent();
-        evento.setCardId(pseudonimizar(valorOuNull(dto.getCardId())));
-        evento.setTicketId(valorOuNull(dto.getTicketId()));
+        EventoValidacao evento = new EventoValidacao();
+        evento.setCardId(pseudonymize(valueOrNull(dto.getCardId())));
+        evento.setTicketId(valueOrNull(dto.getTicketId()));
         evento.setIngestionHash(ingestionHash);
         evento.setIngestedAt(OffsetDateTime.now());
         evento.setMediaType(mediaType == null ? "NFC_SMARTCARD" : mediaType);
@@ -98,16 +98,16 @@ class ControladorNormalizacaoAnonimizacao {
         return evento;
     }
 
-    // Calcula o hash de identificação única da picagem (deduplicação)
-    String calcularIngestionHash(ValidationIngestionRequestDto dto) {
+    // Calculates the unique hash of a validation (deduplication)
+    String calculateIngestionHash(DtoPedidoIngestaoValidacao dto) {
         String payload = String.join("|",
-            valorOuVazio(dto.getCardId()), valorOuVazio(dto.getTicketId()),
-            valorOuVazio(dto.getMediaType()), valorOuVazio(dto.getTicketTypeCode()),
-            valorOuVazio(dto.getTransactionType()), valorOuVazio(dto.getTransactionDateTime()),
-            valorOuVazio(dto.getOriginStopId()), valorOuVazio(dto.getRouteId()),
-            valorOuVazio(dto.getTripId()), valorOuVazio(dto.getFareForAdult()),
-            valorOuVazio(dto.getEquipmentId()), valorOuVazio(dto.getTransactionVehicleNum()),
-            valorOuVazio(dto.getResult()), valorOuVazio(dto.getRejectReason())
+            valueOrEmpty(dto.getCardId()), valueOrEmpty(dto.getTicketId()),
+            valueOrEmpty(dto.getMediaType()), valueOrEmpty(dto.getTicketTypeCode()),
+            valueOrEmpty(dto.getTransactionType()), valueOrEmpty(dto.getTransactionDateTime()),
+            valueOrEmpty(dto.getOriginStopId()), valueOrEmpty(dto.getRouteId()),
+            valueOrEmpty(dto.getTripId()), valueOrEmpty(dto.getFareForAdult()),
+            valueOrEmpty(dto.getEquipmentId()), valueOrEmpty(dto.getTransactionVehicleNum()),
+            valueOrEmpty(dto.getResult()), valueOrEmpty(dto.getRejectReason())
         );
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -124,7 +124,7 @@ class ControladorNormalizacaoAnonimizacao {
     // Auxiliares privados
     // -------------------------------------------------------------------------
 
-    private String pseudonimizar(String valor) {
+    private String pseudonymize(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
             Mac hmac = Mac.getInstance("HmacSHA256");
@@ -138,12 +138,12 @@ class ControladorNormalizacaoAnonimizacao {
         }
     }
 
-    private FareCollectionSystem resolveFareCollectionSystem(String equipmentId, String vehicleNum) {
+    private SistemaBilhetica resolveFareCollectionSystem(String equipmentId, String vehicleNum) {
         String code = (equipmentId == null ? "SEM_EQUIPAMENTO" : equipmentId)
                     + "@" + (vehicleNum == null ? "SEM_VEICULO" : vehicleNum);
-        return fareCollectionSystemRepository.findBySystemCode(code)
-            .orElseGet(() -> fareCollectionSystemRepository.save(
-                new FareCollectionSystem(code, equipmentId, vehicleNum)));
+        return repositorioSistemaBilhetica.findBySystemCode(code)
+            .orElseGet(() -> repositorioSistemaBilhetica.save(
+                new SistemaBilhetica(code, equipmentId, vehicleNum)));
     }
 
     private String canonicalTicketType(String raw) {
@@ -151,14 +151,14 @@ class ControladorNormalizacaoAnonimizacao {
         return TICKET_TYPES_CANONICOS.get(raw.trim().toUpperCase());
     }
 
-    private String valorOuNull(String v) {
+    private String valueOrNull(String v) {
         if (v == null) return null;
         String t = v.trim();
         return t.isEmpty() ? null : t;
     }
 
-    private String valorOuVazio(String v) {
-        String t = valorOuNull(v);
+    private String valueOrEmpty(String v) {
+        String t = valueOrNull(v);
         return t == null ? "" : t;
     }
 }

@@ -28,63 +28,63 @@ public class PoliticaAnonimizacao {
 
     // Campo a pseudonimizar (ex: "cardId", "ticketId")
     @Column(name = "campo", nullable = false)
-    private String campo;
+    private String field;
 
     // Método de anonimização (ex: "HMAC_SHA256", "SUPRESSAO")
     @Column(name = "metodo", nullable = false)
-    private String metodo;
+    private String method;
 
     // Período de retenção em dias (-1 = indefinido)
     @Column(name = "retencao_dias", nullable = false)
-    private int retencaoDias;
+    private int retentionDays;
 
     // Estado da política: ATIVA, REVOGADA
     @Column(name = "estado", nullable = false)
-    private String estado;
+    private String status;
 
     // DPO que aprovou
     @Column(name = "aprovado_por", nullable = false)
-    private String aprovadoPor;
+    private String approvedBy;
 
     @Column(name = "aprovado_em", nullable = false)
-    private OffsetDateTime aprovadoEm;
+    private OffsetDateTime approvedAt;
 
     @Column(name = "notas", length = 1000)
-    private String notas;
+    private String notes;
 
     PoliticaAnonimizacao() {}
 
-    PoliticaAnonimizacao(String campo, String metodo, int retencaoDias,
-                         String estado, String aprovadoPor,
-                         OffsetDateTime aprovadoEm, String notas) {
-        this.campo       = campo;
-        this.metodo      = metodo;
-        this.retencaoDias = retencaoDias;
-        this.estado      = estado;
-        this.aprovadoPor = aprovadoPor;
-        this.aprovadoEm  = aprovadoEm;
-        this.notas       = notas;
+    PoliticaAnonimizacao(String field, String method, int retentionDays,
+                         String status, String approvedBy,
+                         OffsetDateTime approvedAt, String notes) {
+        this.field         = field;
+        this.method        = method;
+        this.retentionDays = retentionDays;
+        this.status        = status;
+        this.approvedBy    = approvedBy;
+        this.approvedAt    = approvedAt;
+        this.notes         = notes;
     }
 
-    public Long getId()                    { return id; }
-    public String getCampo()               { return campo; }
-    public void setCampo(String campo)     { this.campo = campo; }
-    public String getMetodo()              { return metodo; }
-    public void setMetodo(String metodo)   { this.metodo = metodo; }
-    public int getRetencaoDias()           { return retencaoDias; }
-    public void setRetencaoDias(int d)     { this.retencaoDias = d; }
-    public String getEstado()              { return estado; }
-    public void setEstado(String estado)   { this.estado = estado; }
-    public String getAprovadoPor()         { return aprovadoPor; }
-    public void setAprovadoPor(String a)   { this.aprovadoPor = a; }
-    public OffsetDateTime getAprovadoEm()  { return aprovadoEm; }
-    public void setAprovadoEm(OffsetDateTime a) { this.aprovadoEm = a; }
-    public String getNotas()               { return notas; }
-    public void setNotas(String notas)     { this.notas = notas; }
+    public Long getId()                         { return id; }
+    public String getField()                    { return field; }
+    public void setField(String field)          { this.field = field; }
+    public String getMethod()                   { return method; }
+    public void setMethod(String method)        { this.method = method; }
+    public int getRetentionDays()               { return retentionDays; }
+    public void setRetentionDays(int d)         { this.retentionDays = d; }
+    public String getStatus()                   { return status; }
+    public void setStatus(String status)        { this.status = status; }
+    public String getApprovedBy()               { return approvedBy; }
+    public void setApprovedBy(String a)         { this.approvedBy = a; }
+    public OffsetDateTime getApprovedAt()       { return approvedAt; }
+    public void setApprovedAt(OffsetDateTime a) { this.approvedAt = a; }
+    public String getNotes()                    { return notes; }
+    public void setNotes(String notes)          { this.notes = notes; }
 }
 
 @Repository
-interface PoliticaAnonimizacaoRepository extends JpaRepository<PoliticaAnonimizacao, Long> {
-    List<PoliticaAnonimizacao> findByEstado(String estado);
-    List<PoliticaAnonimizacao> findByCampo(String campo);
+interface RepositorioPoliticaAnonimizacao extends JpaRepository<PoliticaAnonimizacao, Long> {
+    List<PoliticaAnonimizacao> findByStatus(String status);
+    List<PoliticaAnonimizacao> findByField(String field);
 }

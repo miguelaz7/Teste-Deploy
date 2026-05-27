@@ -36,41 +36,41 @@ public class EventoNaoCategorizado {
 
     // Estado: PENDENTE, RECLASSIFICADO, REJEITADO
     @Column(name = "estado", nullable = false)
-    private String estado;
+    private String status;
 
     @Column(name = "criado_em", nullable = false)
-    private OffsetDateTime criadoEm;
+    private OffsetDateTime createdAt;
 
     @Column(name = "resolvido_em")
-    private OffsetDateTime resolvidoEm;
+    private OffsetDateTime resolvedAt;
 
     @Column(name = "resolvido_por")
-    private String resolvidoPor;
+    private String resolvedBy;
 
     EventoNaoCategorizado() {}
 
     EventoNaoCategorizado(String ingestionHash, String motivoRejeicao,
-                          String estado, OffsetDateTime criadoEm) {
+                          String status, OffsetDateTime createdAt) {
         this.ingestionHash  = ingestionHash;
         this.motivoRejeicao = motivoRejeicao;
-        this.estado         = estado;
-        this.criadoEm       = criadoEm;
+        this.status         = status;
+        this.createdAt       = createdAt;
     }
 
     public Long getId()                           { return id; }
     public String getIngestionHash()              { return ingestionHash; }
     public String getMotivoRejeicao()             { return motivoRejeicao; }
-    public String getEstado()                     { return estado; }
-    public void setEstado(String estado)          { this.estado = estado; }
-    public OffsetDateTime getCriadoEm()           { return criadoEm; }
-    public OffsetDateTime getResolvidoEm()        { return resolvidoEm; }
-    public void setResolvidoEm(OffsetDateTime t)  { this.resolvidoEm = t; }
-    public String getResolvidoPor()               { return resolvidoPor; }
-    public void setResolvidoPor(String r)         { this.resolvidoPor = r; }
+    public String getStatus()                     { return status; }
+    public void setStatus(String status)          { this.status = status; }
+    public OffsetDateTime getCreatedAt()          { return createdAt; }
+    public OffsetDateTime getResolvedAt()        { return resolvedAt; }
+    public void setResolvedAt(OffsetDateTime t)  { this.resolvedAt = t; }
+    public String getResolvedBy()               { return resolvedBy; }
+    public void setResolvedBy(String r)         { this.resolvedBy = r; }
 }
 
 @Repository
-interface EventoNaoCategorizadoRepository extends JpaRepository<EventoNaoCategorizado, Long> {
-    List<EventoNaoCategorizado> findByEstado(String estado);
-    long countByEstado(String estado);
+interface RepositorioEventoNaoCategorizado extends JpaRepository<EventoNaoCategorizado, Long> {
+    List<EventoNaoCategorizado> findByStatus(String status);
+    long countByStatus(String status);
 }

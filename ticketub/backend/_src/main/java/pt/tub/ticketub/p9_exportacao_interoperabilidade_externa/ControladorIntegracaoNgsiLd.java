@@ -23,34 +23,33 @@ import java.util.Set;
 public class ControladorIntegracaoNgsiLd {
 
     // Tipos de entidade conformes com Smart Data Models / NGSI-LD
-    private static final Set<String> TIPOS_VALIDOS = Set.of(
+    private static final Set<String> VALID_TYPES = Set.of(
         "FareTransaction",
         "PublicTransportRoute",
         "PublicTransportStop",
         "TransportValidationEvent"
     );
 
-    private final NgsiLdDataLakeRecordRepository ngsiLdRepository;
+    private final RepositorioRegistoDataLakeNgsiLd ngsiLdRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ControladorIntegracaoNgsiLd(NgsiLdDataLakeRecordRepository ngsiLdRepository) {
+    public ControladorIntegracaoNgsiLd(RepositorioRegistoDataLakeNgsiLd ngsiLdRepository) {
         this.ngsiLdRepository = ngsiLdRepository;
     }
 
     // Publica uma entidade NGSI-LD (recebida de sistema externo)
     @Transactional
-    public NgsiLdDataLakeRecord publicarEntidade(Map<String, Object> payload,
-                                                  String utilizador) {
+    public RegistoDataLakeNgsiLd publishEntity(Map<String, Object> payload, String user) {
         // Valida conformidade com esquema NGSI-LD
-        validarEsquema(payload);
+        validateSchema(payload);
 
-        String entityId   = extrairCampo(payload, "id");
-        String entityType = extrairCampo(payload, "type");
+        String entityId   = extractField(payload, "id");
+        String entityType = extractField(payload, "type");
         String batchId    = "EXT_" + OffsetDateTime.now().toInstant().toEpochMilli();
 
         String payloadJson = toJson(payload);
 
-        NgsiLdDataLakeRecord record = new NgsiLdDataLakeRecord(
+        RegistoDataLakeNgsiLd record = new RegistoDataLakeNgsiLd(
             batchId, entityId, entityType,
             payloadJson, LocalDate.now(),
             OffsetDateTime.now(),
@@ -62,22 +61,22 @@ public class ControladorIntegracaoNgsiLd {
     }
 
     // Consulta entidades NGSI-LD por tipo
-    public List<NgsiLdDataLakeRecord> consultarPorTipo(String entityType) {
+    public List<RegistoDataLakeNgsiLd> getByType(String entityType) {
         return ngsiLdRepository.findAll().stream()
             .filter(r -> entityType.equals(r.getEntityType()))
             .toList();
     }
 
-    // Calcula hash de integridade de um payload
-    public String calcularHash(String conteudo) {
+    // Calculates integrity hash of a payload
+    public String calculateHash(String content) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(conteudo.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             for (byte b : hash) sb.append(String.format("%02x", b));
             return sb.toString();
         } catch (Exception e) {
-            return Integer.toHexString(conteudo.hashCode());
+            return Integer.toHexString(content.hashCode());
         }
     }
 
@@ -85,7 +84,7 @@ public class ControladorIntegracaoNgsiLd {
     // Auxiliares
     // -------------------------------------------------------------------------
 
-    private void validarEsquema(Map<String, Object> payload) {
+    private void validateSchema(Map<String, Object> payload) {
         if (payload == null) {
             throw new IllegalArgumentException("Payload NGSI-LD nulo");
         }
@@ -95,20 +94,20 @@ public class ControladorIntegracaoNgsiLd {
         if (!payload.containsKey("type")) {
             throw new IllegalArgumentException("Campo obrigatorio em falta: type");
         }
-        String tipo = payload.get("type").toString();
-        if (!TIPOS_VALIDOS.contains(tipo)) {
+        String type = payload.get("type").toString();
+        if (!VALID_TYPES.contains(type)) {
             throw new IllegalArgumentException(
-                "Tipo de entidade nao conforme com Smart Data Models: " + tipo);
+                "Tipo de entidade nao conforme com Smart Data Models: " + type);
         }
         if (!payload.containsKey("@context")) {
             throw new IllegalArgumentException("Campo obrigatorio em falta: @context");
         }
     }
 
-    private String extrairCampo(Map<String, Object> payload, String campo) {
-        Object valor = payload.get(campo);
-        if (valor == null) throw new IllegalArgumentException("Campo em falta: " + campo);
-        return valor.toString();
+    private String extractField(Map<String, Object> payload, String field) {
+        Object value = payload.get(field);
+        if (value == null) throw new IllegalArgumentException("Campo em falta: " + field);
+        return value.toString();
     }
 
     private String toJson(Object obj) {
