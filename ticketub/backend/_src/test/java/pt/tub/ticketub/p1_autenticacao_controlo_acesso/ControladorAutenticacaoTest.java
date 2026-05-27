@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioAuditoriaIngestao;
 import pt.tub.ticketub.p2_ingestao_processamento_dados.RegistoAuditoriaIngestao;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,27 +34,84 @@ public class ControladorAutenticacaoTest {
         assertTrue(res.contains("público"));
     }
 
+    /**
+     * UC01.2 + UC01.3 – Token válido com perfil mapeado: deve retornar dados do utilizador
+     * com o perfil interno correto (tub-gestor → GESTOR).
+     */
     @Test
-    public void testProfileEndpointDirect() {
-        // Setup mock JWT
+    public void testProfileEndpointComPerfilMapeado() {
+        // Setup mock JWT (UC01.2 – simula atributos extraídos do token Auth0)
         Jwt jwt = Mockito.mock(Jwt.class);
-        Mockito.when(jwt.getClaimAsString("email")).thenReturn("admin@ticketub.pt");
-        Mockito.when(jwt.getClaimAsString("name")).thenReturn("Admin User");
-        Mockito.when(jwt.getSubject()).thenReturn("admin-sub-123");
+        Mockito.when(jwt.getClaimAsString("email")).thenReturn("gestor@ticketub.pt");
+        Mockito.when(jwt.getClaimAsString("name")).thenReturn("Gestor TUB");
+        Mockito.when(jwt.getSubject()).thenReturn("auth0|gestor-sub-123");
+        // UC01.2 – grupo/papel no claim customizado
+        Mockito.when(jwt.getClaimAsStringList("https://ticketub.pt/roles")).thenReturn(List.of("tub-gestor"));
+        Mockito.when(jwt.getClaimAsStringList("roles")).thenReturn(null);
+        Mockito.when(jwt.getClaimAsStringList("permissions")).thenReturn(null);
+        Mockito.when(jwt.getExpiresAt()).thenReturn(null);
 
-        // Mock audit repository save behavior
+        // Mock audit repository
         Mockito.when(auditRepository.save(any(RegistoAuditoriaIngestao.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Map<String, Object> profile = controlador.profile(jwt, null);
+        Map<String, Object> profile = controlador.profile(jwt);
 
         assertNotNull(profile);
-        assertEquals("Admin User", profile.get("name"));
-        assertEquals("admin@ticketub.pt", profile.get("email"));
-        assertEquals("admin-sub-123", profile.get("sub"));
+        assertEquals("Gestor TUB", profile.get("name"));
+        assertEquals("gestor@ticketub.pt", profile.get("email"));
+        assertEquals("auth0|gestor-sub-123", profile.get("sub"));
+        // UC01.3 – papel mapeado corretamente
+        @SuppressWarnings("unchecked")
+        List<String> roles = (List<String>) profile.get("roles");
+        assertNotNull(roles);
+        assertTrue(roles.contains("GESTOR"));
 
-        // Verify audit log registry was triggered
+        // UC01.4 – evento de auditoria registado
         Mockito.verify(auditRepository, Mockito.atLeastOnce()).save(any(RegistoAuditoriaIngestao.class));
+    }
+
+    /**
+     * UC01 / FA4 – Utilizador autenticado mas sem perfil associado: deve retornar erro
+     * e registar evento de auditoria LOGIN_FAILED_SEM_PERFIL.
+     */
+    @Test
+    public void testProfileEndpointSemPerfil() {
+        Jwt jwt = Mockito.mock(Jwt.class);
+        Mockito.when(jwt.getClaimAsString("email")).thenReturn("semrole@ticketub.pt");
+        Mockito.when(jwt.getClaimAsString("name")).thenReturn("Sem Perfil");
+        Mockito.when(jwt.getSubject()).thenReturn("auth0|semrole-sub");
+        // Sem roles definidos
+        Mockito.when(jwt.getClaimAsStringList("https://ticketub.pt/roles")).thenReturn(List.of());
+        Mockito.when(jwt.getClaimAsStringList("roles")).thenReturn(null);
+        Mockito.when(jwt.getClaimAsStringList("permissions")).thenReturn(null);
+        Mockito.when(jwt.getExpiresAt()).thenReturn(null);
+
+        Mockito.when(auditRepository.save(any(RegistoAuditoriaIngestao.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Map<String, Object> profile = controlador.profile(jwt);
+
+        // FA4 – deve devolver mensagem de erro, não dados do utilizador
+        assertNotNull(profile);
+        assertTrue(profile.containsKey("erro"));
+
+        // UC01.4 – evento de falha deve ter sido registado
+        Mockito.verify(auditRepository, Mockito.atLeastOnce()).save(any(RegistoAuditoriaIngestao.class));
+    }
+
+    /**
+     * UC01 / FA3 – JWT nulo (token inválido ou expirado): deve retornar erro.
+     */
+    @Test
+    public void testProfileEndpointTokenNulo() {
+        Mockito.when(auditRepository.save(any(RegistoAuditoriaIngestao.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Map<String, Object> profile = controlador.profile(null);
+
+        assertNotNull(profile);
+        assertTrue(profile.containsKey("erro"));
     }
 
     @TestConfiguration

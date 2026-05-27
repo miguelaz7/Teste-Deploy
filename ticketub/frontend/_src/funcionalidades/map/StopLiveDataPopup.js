@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Popup } from 'react-leaflet';
 import './StopLiveDataPopup.css';
+import { apiGet } from '../../logica_do_sistema/services/apiClient';
 
 // ── SVG Icons ───────────────────────────────────────────────────────────────
 const IconBus = () => (
@@ -136,11 +137,7 @@ function StopLiveDataPopup({ stop }) {
     setError(null);
 
     const cacheBuster = Date.now();
-    fetch(`http://localhost:8080/api/mapa/paragens/${stop.stopId}/live-data?t=${cacheBuster}`, { cache: 'no-store' })
-      .then(res => {
-        if (!res.ok) throw new Error(`Status HTTP: ${res.status}`);
-        return res.json();
-      })
+    apiGet(`/api/mapa/paragens/${stop.stopId}/live-data?t=${cacheBuster}`)
       .then(json => {
         setData(json);
         if (json.ticketTypeDistribution) {

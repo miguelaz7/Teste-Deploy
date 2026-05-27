@@ -1,106 +1,24 @@
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8080') + '/categorization';
+import { apiGet, apiPost, apiPut, apiDelete } from './apiClient';
 
-export const getCategorizationStats = async () => {
-    const response = await fetch(`${API_BASE_URL}/stats`);
-    if (!response.ok) throw new Error('Failed to fetch categorization stats');
-    return response.json();
+const BASE = '/categorization';
+
+export const getCategorizationStats      = () => apiGet(`${BASE}/stats`);
+export const getMappings                 = () => apiGet(`${BASE}/mappings`);
+export const createMapping               = (data) => apiPost(`${BASE}/mappings`, { tipoTitulo: data.tipo_titulo, perfil: data.perfil });
+export const updateMapping               = (id, data) => apiPut(`${BASE}/mappings/${id}`, { tipoTitulo: data.tipo_titulo, perfil: data.perfil });
+export const deleteMapping               = (id) => apiDelete(`${BASE}/mappings/${id}`);
+export const getUncategorizedEvents      = (dataInicio, dataFim) => {
+  const params = new URLSearchParams();
+  if (dataInicio) params.append('dataInicio', dataInicio);
+  if (dataFim)    params.append('dataFim', dataFim);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return apiGet(`${BASE}/uncategorized${qs}`);
 };
-
-export const getMappings = async () => {
-    const response = await fetch(`${API_BASE_URL}/mappings`);
-    if (!response.ok) throw new Error('Failed to fetch mappings');
-    return response.json();
-};
-
-export const createMapping = async (data) => {
-    const response = await fetch(`${API_BASE_URL}/mappings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipoTitulo: data.tipo_titulo, perfil: data.perfil })
-    });
-    if (!response.ok) throw new Error('Failed to create mapping');
-    return response.json();
-};
-
-export const updateMapping = async (id, data) => {
-    const response = await fetch(`${API_BASE_URL}/mappings/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipoTitulo: data.tipo_titulo, perfil: data.perfil })
-    });
-    if (!response.ok) throw new Error('Failed to update mapping');
-    return response.json();
-};
-
-export const deleteMapping = async (id) => {
-    const response = await fetch(`${API_BASE_URL}/mappings/${id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Failed to delete mapping');
-    return true;
-};
-
-export const getUncategorizedEvents = async (dataInicio, dataFim) => {
-    let url = `${API_BASE_URL}/uncategorized`;
-    const params = new URLSearchParams();
-    if (dataInicio) params.append('dataInicio', dataInicio);
-    if (dataFim)    params.append('dataFim', dataFim);
-    if (params.toString()) url += `?${params.toString()}`;
-
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch uncategorized events');
-    return response.json();
-};
-
-export const deleteUncategorizedEvents = async () => {
-    const response = await fetch(`${API_BASE_URL}/uncategorized`, {
-        method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Failed to delete uncategorized events');
-    return true;
-};
-
-export const reprocessEvents = async () => {
-    const response = await fetch(`${API_BASE_URL}/reprocess`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    });
-    if (!response.ok) throw new Error('Failed to reprocess events');
-    return response.json();
-};
-
-export const resetEvents = async () => {
-    const response = await fetch(`${API_BASE_URL}/reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    });
-    if (!response.ok) throw new Error('Failed to reset system');
-    return response.json();
-};
-
-export const logAuditAction = async (acao, tipoTitulo, perfilAnterior, perfilNovo, utilizador) => {
-    const response = await fetch(`${API_BASE_URL}/audit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao, tipoTitulo, perfilAnterior, perfilNovo, utilizador: utilizador || 'sistema' })
-    });
-    if (!response.ok) throw new Error('Failed to log audit action');
-    return response.json();
-};
-
-export const getPendingNaoCategorizados = async () => {
-    const response = await fetch(`${API_BASE_URL}/nao-categorizados`);
-    if (!response.ok) throw new Error('Failed to fetch pending uncategorized events');
-    return response.json();
-};
-
-export const resolverNaoCategorizado = async (id, estado, resolvidoPor = 'admin') => {
-    const response = await fetch(`${API_BASE_URL}/nao-categorizados/${id}/resolver`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado, resolvidoPor })
-    });
-    if (!response.ok) throw new Error('Failed to resolve uncategorized event');
-    return response.json();
-};
-
-
-
+export const deleteUncategorizedEvents   = () => apiDelete(`${BASE}/uncategorized`);
+export const reprocessEvents             = () => apiPost(`${BASE}/reprocess`, {});
+export const resetEvents                 = () => apiPost(`${BASE}/reset`, {});
+export const logAuditAction              = (acao, tipoTitulo, perfilAnterior, perfilNovo, utilizador) =>
+  apiPost(`${BASE}/audit`, { acao, tipoTitulo, perfilAnterior, perfilNovo, utilizador: utilizador || 'sistema' });
+export const getPendingNaoCategorizados  = () => apiGet(`${BASE}/nao-categorizados`);
+export const resolverNaoCategorizado     = (id, estado, resolvidoPor = 'admin') =>
+  apiPut(`${BASE}/nao-categorizados/${id}/resolver`, { estado, resolvidoPor });

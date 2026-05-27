@@ -7,6 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import L from 'leaflet';
 import './Mapa.css';
 import StopLiveDataPopup from './StopLiveDataPopup';
+import { apiGet } from '../../logica_do_sistema/services/apiClient';
 
 // Fix for default marker icon in Leaflet + React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,8 +18,6 @@ L.Icon.Default.mergeOptions({
 });
 
 const ParagemUniversidade = [41.557583779603355, -8.397569317003903];
-
-
 
 // ── Custom Premium Cluster Icons ────────────────────────────────────────────
 const createCustomClusterIcon = (cluster) => {
@@ -73,8 +72,7 @@ function Mapa() {
   const markerRefs = useRef({});
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/mapa/paragens')
-      .then(res => res.json())
+    apiGet('/api/mapa/paragens')
       .then(data => {
         const grouped = {};
         data.forEach(s => {
@@ -115,19 +113,16 @@ function Mapa() {
       click: async (e) => {
         const { lat, lng } = e.latlng;
         try {
-          const res = await fetch(`http://localhost:8080/api/mapa/paragens/procura-por-coordenadas?lat=${lat}&lon=${lng}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.stopId) {
-              const matchedStop = stops.find(s => s.stopId === data.stopId);
-              if (matchedStop) {
-                if (mapRef.current) {
-                  mapRef.current.flyTo([matchedStop.lat, matchedStop.lon], 18, { animate: true });
-                  setTimeout(() => {
-                    const m = markerRefs.current[matchedStop.stopId];
-                    if (m) m.openPopup();
-                  }, 400);
-                }
+          const data = await apiGet(`/api/mapa/paragens/procura-por-coordenadas?lat=${lat}&lon=${lng}`);
+          if (data && data.stopId) {
+            const matchedStop = stops.find(s => s.stopId === data.stopId);
+            if (matchedStop) {
+              if (mapRef.current) {
+                mapRef.current.flyTo([matchedStop.lat, matchedStop.lon], 18, { animate: true });
+                setTimeout(() => {
+                  const m = markerRefs.current[matchedStop.stopId];
+                  if (m) m.openPopup();
+                }, 400);
               }
             }
           }
@@ -289,7 +284,6 @@ function Mapa() {
           />
           <MapEvents />
 
-
           <MarkerClusterGroup 
             disableClusteringAtZoom={17} 
             showCoverageOnHover={false}
@@ -312,5 +306,3 @@ function Mapa() {
 }
 
 export default Mapa;
-
-
