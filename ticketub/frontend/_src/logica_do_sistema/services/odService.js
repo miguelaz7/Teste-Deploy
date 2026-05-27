@@ -4,6 +4,7 @@ import { apiGet, apiPost } from './apiClient';
 
 export const getFluxos       = () => apiGet('/api/od/fluxos');
 export const getDadosAbertos = () => apiGet('/api/exportacao/dados-abertos');
+export const exportarMatrizOD = (dataInicio, dataFim, formato) => apiGet(`/api/od/exportar?dataInicio=${dataInicio || ''}&dataFim=${dataFim || ''}&formato=${formato || 'CSV'}`);
 
 export const getExportacoes = () => apiGet('/api/ngsi-ld/exportacoes');
 

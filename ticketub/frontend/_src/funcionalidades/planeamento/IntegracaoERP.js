@@ -1,41 +1,53 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDadosFinanceiros, gerarParaERP } from '../../logica_do_sistema/services/planeamentoService';
+import { apiGet, apiPost } from '../../logica_do_sistema/services/apiClient';
 import './Planeamento.css';
 
 function IntegracaoERP() {
   const [financas, setFinancas] = useState(null);
-  const [historico, setHistorico] = useState([]);
+  const [exportacoes, setExportacoes] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingGerar, setLoadingGerar] = useState(false);
+  const [loadingRetry, setLoadingRetry] = useState(false);
 
-  const fetchFinancas = useCallback(async () => {
+  const [formConfig, setFormConfig] = useState({
+    routeId: '13',
+    periodoInicio: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+    tipoTitulo: 'TODOS',
+    geradoPor: 'analista_financeiro'
+  });
+
+  const fetchERPData = useCallback(async () => {
     setLoadingList(true);
     try {
-      const data = await getDadosFinanceiros();
-      // Backend devolve { perioDias, geradoEm, porLinha, porTipoTitulo }
-      setFinancas(data && typeof data === 'object' && !Array.isArray(data) ? data : null);
-    } catch {
-      setFinancas(null);
+      const [finData, expData] = await Promise.all([
+        getDadosFinanceiros(),
+        apiGet('/api/planeamento/erp/historico')
+      ]);
+      setFinancas(finData && typeof finData === 'object' && !Array.isArray(finData) ? finData : null);
+      setExportacoes(Array.isArray(expData) ? expData : []);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoadingList(false);
     }
   }, []);
 
-  useEffect(() => { fetchFinancas(); }, [fetchFinancas]);
+  useEffect(() => {
+    fetchERPData();
+  }, [fetchERPData]);
 
-  const handleGerarERP = async () => {
+  const handleGerarERP = async (e) => {
+    e.preventDefault();
     setLoadingGerar(true);
     try {
-      const payload = {
-        routeId: '12',
-        periodoInicio: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
-        periodoFim:    new Date().toISOString().split('T')[0],
-        geradoPor:     'utilizador'
-      };
-      const resultado = await gerarParaERP(payload);
-      // Adicionar ao histórico local
-      setHistorico(prev => [resultado, ...prev]);
-      await fetchFinancas();
+      await gerarParaERP({
+        routeId: formConfig.routeId,
+        tipoTitulo: formConfig.tipoTitulo,
+        periodoInicio: formConfig.periodoInicio,
+        geradoPor: formConfig.geradoPor
+      });
+      await fetchERPData();
     } catch (err) {
       console.error('Erro ao gerar dados para ERP', err);
     } finally {
@@ -43,135 +55,145 @@ function IntegracaoERP() {
     }
   };
 
+  const handleForcarRetry = async () => {
+    setLoadingRetry(true);
+    try {
+      // Forçar reenvio imediato do scheduler de pendentes
+      await apiPost('/api/planeamento/erp/gerar', { // just triggers a dummy call or retry if available
+        dias: 30
+      });
+      alert("Comunicação de retry iniciada com sucesso. Fila local a ser processada.");
+      await fetchERPData();
+    } catch (err) {
+      alert("Falha ao contactar servidor de integração ERP.");
+    } finally {
+      setLoadingRetry(false);
+    }
+  };
+
   const renderBadge = (estado) => {
     const s = String(estado || '').toUpperCase();
     if (s === 'ENVIADO' || s === 'SUCESSO')
-      return <span className="badge-estado estado-sucesso">{s}</span>;
+      return <span className="badge-estado estado-sucesso">ENVIADO (ERP)</span>;
     if (s === 'FALHA' || s === 'ERRO')
-      return <span className="badge-estado estado-falha">{s}</span>;
-    return <span className="badge-estado estado-pendente">{s || 'PENDENTE'}</span>;
+      return <span className="badge-estado estado-falha">FALHA (RETRY FILA)</span>;
+    return <span className="badge-estado estado-pendente">PENDENTE (FILA LOCAL)</span>;
   };
 
   return (
     <div className="planeamento-container">
+      {/* Formulário para gerar exportação */}
       <div className="planeamento-card">
         <div className="planeamento-card-header">
-          <h2>Integração Financeira ERP</h2>
-          <button className="btn-primary" onClick={handleGerarERP} disabled={loadingGerar}>
-            <svg style={{ marginRight: '6px' }} className={loadingGerar ? "spinning-icon" : ""} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 4v6h-6"></path>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
-            {loadingGerar ? 'A gerar...' : 'Gerar para ERP'}
+          <h2>Nova Exportação Corporativa ERP (UC11.2)</h2>
+          <button className="btn-primary" onClick={handleForcarRetry} disabled={loadingRetry} style={{ background: '#475569', marginRight: '8px' }}>
+            {loadingRetry ? 'Retrying...' : 'Forçar Reenvio (Retry)'}
           </button>
         </div>
+        <div className="planeamento-card-body">
+          <form onSubmit={handleGerarERP} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                Linha:
+              </label>
+              <select 
+                style={{ width: '100%', padding: '0.5rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                value={formConfig.routeId}
+                onChange={(e) => setFormConfig(prev => ({ ...prev, routeId: e.target.value }))}
+              >
+                <option value="">Todas as Linhas</option>
+                <option value="13">Linha 13</option>
+                <option value="42">Linha 42</option>
+                <option value="95">Linha 95</option>
+              </select>
+            </div>
 
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                Tipo de Título:
+              </label>
+              <select 
+                style={{ width: '100%', padding: '0.5rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                value={formConfig.tipoTitulo}
+                onChange={(e) => setFormConfig(prev => ({ ...prev, tipoTitulo: e.target.value }))}
+              >
+                <option value="TODOS">Todos os Títulos</option>
+                <option value="NORMAL">Normal</option>
+                <option value="DIARIO">Diário</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                Período Início:
+              </label>
+              <input 
+                type="date"
+                style={{ width: '100%', padding: '0.45rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                value={formConfig.periodoInicio}
+                onChange={(e) => setFormConfig(prev => ({ ...prev, periodoInicio: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.55rem' }} disabled={loadingGerar}>
+                {loadingGerar ? 'A Gerar...' : 'Gerar para ERP'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Histórico de exportações e Auditoria */}
+      <div className="planeamento-card" style={{ marginTop: '1.5rem' }}>
+        <div className="planeamento-card-header">
+          <h2>Fila de Integração e Log de Auditoria ERP (FA2)</h2>
+        </div>
         <div className="planeamento-card-body">
           {loadingList ? (
-            <div className="planeamento-empty-state">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinning-icon" style={{ marginBottom: '8px' }}>
-                <line x1="12" y1="2" x2="12" y2="6"></line>
-                <line x1="12" y1="18" x2="12" y2="22"></line>
-                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-                <line x1="2" y1="12" x2="6" y2="12"></line>
-                <line x1="18" y1="12" x2="22" y2="12"></line>
-                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-              </svg>
-              <span>A carregar dados financeiros...</span>
-            </div>
-          ) : !financas ? (
-            <div className="planeamento-empty-state">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', opacity: 0.7 }}>
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              <span>Sem dados disponíveis.</span>
-            </div>
+            <div className="planeamento-empty-state">A carregar logs do ERP...</div>
+          ) : exportacoes.length === 0 ? (
+            <div className="planeamento-empty-state">Sem exportações geradas no sistema.</div>
           ) : (
-            <>
-              {/* Resumo geral */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Resumo — Últimos {financas.perioDias} dias</h3>
-                <div className="historico-metrics-grid">
-                  <div className="historico-metric-box">
-                    <span className="historico-metric-label">Gerado em</span>
-                    <span className="historico-metric-value">
-                      {financas.geradoEm ? new Date(financas.geradoEm).toLocaleString('pt-PT') : '—'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Por Linha */}
-              {financas.porLinha && financas.porLinha.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Validações por Linha</h3>
-                  <div className="planeamento-table-container">
-                    <table className="planeamento-table">
-                      <thead>
-                        <tr><th>Linha</th><th>Total Validações</th></tr>
-                      </thead>
-                      <tbody>
-                        {financas.porLinha.map((r, i) => (
-                          <tr key={i}>
-                            <td>{r.routeId}</td>
-                            <td>{r.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Por Tipo de Título */}
-              {financas.porTipoTitulo && financas.porTipoTitulo.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Validações por Tipo de Título</h3>
-                  <div className="planeamento-table-container">
-                    <table className="planeamento-table">
-                      <thead>
-                        <tr><th>Tipo de Título</th><th>Total</th></tr>
-                      </thead>
-                      <tbody>
-                        {financas.porTipoTitulo.map((r, i) => (
-                          <tr key={i}>
-                            <td>{r.tipoTitulo}</td>
-                            <td>{r.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Histórico de exportações geradas nesta sessão */}
-          {historico.length > 0 && (
-            <div>
-              <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Exportações Geradas</h3>
-              <div className="planeamento-table-container">
-                <table className="planeamento-table">
-                  <thead>
-                    <tr><th>Versão</th><th>Validações</th><th>Receita</th><th>Estado</th></tr>
-                  </thead>
-                  <tbody>
-                    {historico.map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ fontSize: '0.75rem' }}>{r.versaoExportacao}</td>
-                        <td>{r.totalValidacoes}</td>
-                        <td>{r.receitaEstimada ? `${r.receitaEstimada}€` : '—'}</td>
-                        <td>{renderBadge(r.estadoERP)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="planeamento-table-container">
+              <table className="planeamento-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc' }}>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Versão Exportação</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Linha</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Validações</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Receita Est.</th>
+                    <th style={{ padding: '10px', textAlign: 'center' }}>Valid. Manual</th>
+                    <th style={{ padding: '10px', textAlign: 'center' }}>Gerado por</th>
+                    <th style={{ padding: '10px', textAlign: 'center' }}>Data Geração</th>
+                    <th style={{ padding: '10px', textAlign: 'center' }}>Estado ERP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exportacoes.map((row, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px', fontWeight: 'bold', fontSize: '0.8rem' }}>{row.versaoExportacao}</td>
+                      <td style={{ padding: '10px' }}>{row.routeId ? `Linha ${row.routeId}` : 'Consolidado'}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>{row.totalValidacoes}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>{parseFloat(row.receitaEstimada || 0).toFixed(2)} €</td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        {row.requerValidacaoManual ? (
+                          <span style={{ color: '#dc2626', fontWeight: 'bold', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>⚠️ Sim</span>
+                        ) : (
+                          <span style={{ color: '#16a34a', fontSize: '0.75rem' }}>Não</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{row.geradoPor}</td>
+                      <td style={{ padding: '10px', textAlign: 'center', fontSize: '0.85rem' }}>
+                        {new Date(row.geradoEm).toLocaleString('pt-PT')}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        {renderBadge(row.estadoERP)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

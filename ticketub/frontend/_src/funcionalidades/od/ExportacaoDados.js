@@ -1,173 +1,432 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getDadosAbertos } from '../../logica_do_sistema/services/odService';
+import { getDadosAbertos, getExportacoes } from '../../logica_do_sistema/services/odService';
+import { apiGet, apiPost } from '../../logica_do_sistema/services/apiClient';
 import './Od.css';
 
-const API = 'http://localhost:8080';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 function ExportacaoDados() {
-  const [dados, setDados] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('export'); // 'export' | 'dpo' | 'api'
+  const [dadosExportados, setDadosExportados] = useState(null);
+  const [pedidosExport, setPedidosExport] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [solicitando, setSolicitando] = useState(false);
-  const [mensagem, setMensagem] = useState('');
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  const fetchDados = useCallback(async () => {
-    setLoading(true);
+  // Form Fields
+  const [dataInicio, setDataInicio] = useState(new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]);
+  const [dataFim, setDataFim] = useState(new Date().toISOString().split('T')[0]);
+  const [formato, setFormato] = useState('CSV');
+  const [routeId, setRouteId] = useState('');
+  const [utilizador, setUtilizador] = useState('analista_dados');
+
+  // API Call Simulator Fields
+  const [apiToken, setApiToken] = useState('token_valido_ngsi_ld');
+  const [apiType, setApiType] = useState('FareTransaction');
+  const [apiResponse, setApiResponse] = useState(null);
+  const [apiError, setApiError] = useState(null);
+
+  const fetchPedidos = useCallback(async () => {
     try {
-      const data = await getDadosAbertos();
-      setDados(data && typeof data === 'object' ? data : null);
-    } catch {
-      setDados(null);
-    } finally {
-      setLoading(false);
+      const p = await getExportacoes();
+      setPedidosExport(Array.isArray(p) ? p : []);
+    } catch (err) {
+      console.error("Erro a carregar pedidos", err);
     }
   }, []);
 
-  useEffect(() => { fetchDados(); }, [fetchDados]);
+  useEffect(() => {
+    fetchPedidos();
+  }, [fetchPedidos]);
 
-  const handleSolicitarExportacao = async () => {
-    setSolicitando(true);
-    setMensagem('');
+  const handleExportar = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setDadosExportados(null);
+
     try {
-      const hoje = new Date().toISOString().split('T')[0];
-      const h7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
-      const res = await fetch(`${API}/api/ngsi-ld/exportacoes`, {
+      // UC12.1 Call
+      const res = await apiGet(
+        `/api/exportacao/dados-abertos?dataInicio=${dataInicio}&dataFim=${dataFim}&formato=${formato}&routeId=${routeId}&utilizador=${utilizador}`
+      );
+      
+      if (res && res.status === 'BLOCKED') {
+        setErrorMessage(res.mensagem);
+      } else {
+        setDadosExportados(res);
+        setStatusMessage("Dados processados com sucesso. Download disponível.");
+      }
+    } catch (err) {
+      setErrorMessage("Exportação bloqueada pelo sistema. Detetados dados potencialmente identificáveis (FA1). O DPO foi notificado.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmeterAprovacaoDPO = async () => {
+    setSolicitando(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/ngsi-ld/exportacoes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formato: 'JSON', periodoInicio: h7, periodoFim: hoje })
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Api-User': utilizador 
+        },
+        body: JSON.stringify({
+          formato,
+          periodoInicio: dataInicio,
+          periodoFim: dataFim,
+          filtros: routeId ? `routeId=${routeId}` : 'sem_filtros'
+        })
       });
-      const result = await res.json();
-      setMensagem(result.mensagem || `Exportação submetida (estado: ${result.estado || 'PENDENTE_DPO'})`);
-      await fetchDados();
-    } catch {
-      setMensagem('Erro ao solicitar exportação.');
+      const data = await res.json();
+      setStatusMessage(`Pedido submetido com sucesso! ID: ${data.id}. Estado: ${data.estado}`);
+      await fetchPedidos();
+    } catch (err) {
+      setErrorMessage("Erro ao submeter pedido ao DPO.");
     } finally {
       setSolicitando(false);
     }
   };
 
-  const handleDownload = () => {
-    if (!dados) return;
-    const rows = dados.registos && dados.registos.length > 0
-      ? dados.registos
-      : [{ dataInicio: dados.dataInicio, dataFim: dados.dataFim, totalRegistos: dados.totalRegistos, anonimizado: dados.anonimizado }];
-    const headers = Object.keys(rows[0]);
-    const csv = [
-      headers.join(','),
-      ...rows.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const handleDecidirDPO = async (id, decisao) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/ngsi-ld/exportacoes/${id}/aprovar`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Api-User': 'dpo_oficial' 
+        },
+        body: JSON.stringify({ decisao })
+      });
+      if (!res.ok) throw new Error();
+      alert(`Exportação ${decisao.toLowerCase()} com sucesso!`);
+      await fetchPedidos();
+    } catch (err) {
+      alert("Falha ao registar decisão do DPO.");
+    }
+  };
+
+  // Simular chamada de API externa via cliente NGSI-LD (UC12.2)
+  const handleSimularApiCall = async () => {
+    setApiResponse(null);
+    setApiError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/ngsi-ld/entities?type=${apiType}`, {
+        headers: { 'Authorization': `Bearer ${apiToken}` }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setApiResponse(data);
+    } catch (err) {
+      setApiError("Erro: Credenciais inválidas (FA2) ou Erro de validação de esquema (FA3).");
+    }
+  };
+
+  const handleDownloadFile = () => {
+    if (!dadosExportados) return;
+    let content = '';
+    let fileName = `export_${dataInicio}_to_${dataFim}.${formato.toLowerCase()}`;
+
+    if (formato === 'CSV') {
+      const regs = dadosExportados.registos || [];
+      if (regs.length > 0) {
+        const headers = Object.keys(regs[0]);
+        content = [
+          headers.join(','),
+          ...regs.map(r => headers.map(h => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+      } else {
+        content = "sem_registos";
+      }
+    } else {
+      content = JSON.stringify(dadosExportados, null, 2);
+    }
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dados_abertos_${dados.dataInicio || 'export'}.csv`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
   return (
-    <div className="od-card">
-      <div className="od-card-header">
-        <h2>Exportação de Dados Abertos</h2>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn-resolver" onClick={handleSolicitarExportacao} disabled={solicitando}>
-            <svg style={{ marginRight: '6px' }} className={solicitando ? "spinning-icon" : ""} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.2 15a8.85 8.85 0 0 0-1.2-4.5 9 9 0 1 0-3.8 6.8m-1.7-1.3L12 12m0 0l-2.5 2.5M12 12v9"/>
-            </svg>
-            {solicitando ? 'A solicitar...' : 'Nova Exportação'}
-          </button>
-          <button className="btn-download" onClick={handleDownload} disabled={!dados}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download CSV
-          </button>
-        </div>
+    <div className="planeamento-container">
+      {/* Menu Superior de Interoperabilidade */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+        <button 
+          onClick={() => setActiveTab('export')}
+          className={`btn-primary ${activeTab === 'export' ? '' : 'inactive-tab-btn'}`}
+          style={{ background: activeTab === 'export' ? '#2563eb' : '#94a3b8', border: 'none' }}
+        >
+          Exportar Dados Abertos (UC12.1)
+        </button>
+        <button 
+          onClick={() => setActiveTab('dpo')}
+          className={`btn-primary ${activeTab === 'dpo' ? '' : 'inactive-tab-btn'}`}
+          style={{ background: activeTab === 'dpo' ? '#2563eb' : '#94a3b8', border: 'none' }}
+        >
+          Aprovações DPO (UC12.1 / UC12.3)
+        </button>
+        <button 
+          onClick={() => setActiveTab('api')}
+          className={`btn-primary ${activeTab === 'api' ? '' : 'inactive-tab-btn'}`}
+          style={{ background: activeTab === 'api' ? '#2563eb' : '#94a3b8', border: 'none' }}
+        >
+          API NGSI-LD Integrador (UC12.2)
+        </button>
       </div>
 
-      <div className="od-card-body">
-        {mensagem && (
-          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#eff6ff', borderRadius: 8, color: '#1e40af', fontSize: '0.875rem' }}>
-            {mensagem}
-          </div>
-        )}
-        {loading ? (
-          <div className="od-empty-state-container">
-            <div className="empty-state-icon-wrapper loading">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spinning-icon">
-                <line x1="12" y1="2" x2="12" y2="6"></line>
-                <line x1="12" y1="18" x2="12" y2="22"></line>
-                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-                <line x1="2" y1="12" x2="6" y2="12"></line>
-                <line x1="18" y1="12" x2="22" y2="12"></line>
-                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-              </svg>
+      {activeTab === 'export' && (
+        <>
+          {/* Cartão de exportação */}
+          <div className="planeamento-card">
+            <div className="planeamento-card-header">
+              <h2>Configuração do Dataset Aprovado (UC12.1)</h2>
             </div>
-            <h4 className="empty-state-title">A carregar datasets...</h4>
-            <p className="empty-state-description">Por favor aguarde enquanto sincronizamos os dados de exportação.</p>
-          </div>
-        ) : !dados ? (
-          <div className="od-empty-state-container">
-            <div className="empty-state-icon-wrapper" style={{ backgroundColor: '#eff6ff' }}>
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              </svg>
+            <div className="planeamento-card-body">
+              <form onSubmit={handleExportar} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'flex-end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                    Data Início:
+                  </label>
+                  <input 
+                    type="date"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                    Data Fim:
+                  </label>
+                  <input 
+                    type="date"
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                    Formato:
+                  </label>
+                  <select 
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}
+                    value={formato}
+                    onChange={(e) => setFormato(e.target.value)}
+                  >
+                    <option value="CSV">CSV (Formato Aberto)</option>
+                    <option value="EXCEL">Excel (Múltiplas Sheets)</option>
+                    <option value="JSON">JSON (NGSI-LD)</option>
+                    <option value="GEOJSON">GeoJSON (Descaracterizado)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.55rem' }} disabled={loading}>
+                    {loading ? 'A processar...' : 'Exportar Dataset'}
+                  </button>
+                </div>
+              </form>
+
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '10px' }}>
+                <button className="btn-primary" onClick={handleSubmeterAprovacaoDPO} disabled={solicitando} style={{ background: '#0f766e' }}>
+                  {solicitando ? 'A submeter...' : 'Solicitar Aprovação Oficial ao DPO'}
+                </button>
+              </div>
+
+              {/* Status / Error feedback */}
+              {errorMessage && (
+                <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', marginTop: '1rem' }}>
+                  <strong>🔒 Alerta de Segurança (FA1):</strong> {errorMessage}
+                </div>
+              )}
+
+              {statusMessage && (
+                <div style={{ padding: '1rem', backgroundColor: '#ecfdf5', color: '#065f46', borderRadius: '8px', border: '1px solid #a7f3d0', marginTop: '1rem' }}>
+                  <strong>✓ Sucesso:</strong> {statusMessage}
+                </div>
+              )}
             </div>
-            <h4 className="empty-state-title">Sem dados disponíveis</h4>
-            <p className="empty-state-description">Não foi possível localizar dados de exportação para este período.</p>
           </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              <div className="historico-metric-box">
-                <span className="historico-metric-label">Período</span>
-                <span className="historico-metric-value">{dados.dataInicio} → {dados.dataFim}</span>
+
+          {/* Resultado das Exportações geradas */}
+          {dadosExportados && (
+            <div className="planeamento-card" style={{ marginTop: '1.5rem' }}>
+              <div className="planeamento-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2>Dataset Processado</h2>
+                <button className="btn-primary" onClick={handleDownloadFile} style={{ background: '#16a34a' }}>
+                  Descarregar Ficheiro ({formato})
+                </button>
               </div>
-              <div className="historico-metric-box">
-                <span className="historico-metric-label">Total Registos</span>
-                <span className="historico-metric-value">{dados.totalRegistos ?? 0}</span>
-              </div>
-              <div className="historico-metric-box">
-                <span className="historico-metric-label">Anonimizado</span>
-                <span className="historico-metric-value">{dados.anonimizado ? '✓ Sim' : 'Não'}</span>
+              <div className="planeamento-card-body">
+                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e3a8a' }}>Metadados do Ficheiro</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}><strong>Disclaimer:</strong> {dadosExportados.metadados?.disclaimer}</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem' }}><strong>Checksum (SHA-256):</strong> <code>{dadosExportados.checksum}</code></p>
+                </div>
+
+                <div className="planeamento-table-container">
+                  <table className="planeamento-table">
+                    <thead>
+                      <tr>
+                        <th>ID Entidade</th>
+                        <th>Modelo/Tipo</th>
+                        <th>Partição</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dadosExportados.registos || dadosExportados.sheets?.dados || []).slice(0, 10).map((r, i) => (
+                        <tr key={i}>
+                          <td>{r.entityId}</td>
+                          <td>{r.entityType}</td>
+                          <td>{r.partitionDate}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            {dados.registos && dados.registos.length > 0 ? (
-              <div className="od-table-container">
-                <table className="od-table">
+          )}
+        </>
+      )}
+
+      {activeTab === 'dpo' && (
+        <div className="planeamento-card">
+          <div className="planeamento-card-header">
+            <h2>Pedidos de Exportação pendentes do DPO (UC12.3)</h2>
+          </div>
+          <div className="planeamento-card-body">
+            {pedidosExport.length === 0 ? (
+              <div className="planeamento-empty-state">Sem pedidos registados para o DPO.</div>
+            ) : (
+              <div className="planeamento-table-container">
+                <table className="planeamento-table">
                   <thead>
-                    <tr>{Object.keys(dados.registos[0]).map(h => <th key={h}>{h}</th>)}</tr>
+                    <tr>
+                      <th>ID Pedido</th>
+                      <th>Solicitado por</th>
+                      <th>Período</th>
+                      <th>Formato</th>
+                      <th>Registos</th>
+                      <th>Estado</th>
+                      <th>Decisão</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {dados.registos.slice(0, 50).map((r, i) => (
-                      <tr key={i}>
-                        {Object.keys(dados.registos[0]).map(h => <td key={h}>{String(r[h] ?? '—')}</td>)}
+                    {pedidosExport.map((row, idx) => (
+                      <tr key={idx}>
+                        <td>#{row.id}</td>
+                        <td>{row.requestedBy}</td>
+                        <td>{row.periodStart} → {row.periodEnd}</td>
+                        <td>{row.format}</td>
+                        <td>{row.totalRecords}</td>
+                        <td>
+                          <span className={`badge-estado ${row.status === 'EXPORTADA' ? 'estado-sucesso' : row.status === 'REJEITADA' ? 'estado-falha' : 'estado-pendente'}`}>
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>
+                          {row.status === 'PENDENTE_DPO' && (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button 
+                                onClick={() => handleDecidirDPO(row.id, 'APROVADA')}
+                                style={{ padding: '2px 8px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                              >
+                                Aprovar
+                              </button>
+                              <button 
+                                onClick={() => handleDecidirDPO(row.id, 'REJEITADA')}
+                                style={{ padding: '2px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                              >
+                                Rejeitar
+                              </button>
+                            </div>
+                          )}
+                          {row.status !== 'PENDENTE_DPO' && (
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Revisado por {row.approvedBy || 'DPO'}</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <div className="od-empty-state-container">
-                <div className="empty-state-icon-wrapper" style={{ backgroundColor: '#f0fdf4' }}>
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                </div>
-                <h4 className="empty-state-title">Data Lake Ingerido</h4>
-                <p className="empty-state-description" style={{ maxWidth: '480px' }}>
-                  O Data Lake é populado automaticamente com cada validação ingerida. Usa "Nova Exportação" para solicitar ao DPO uma exportação aprovada. O botão Download CSV exporta os metadados do período actual.
-                </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'api' && (
+        <div className="planeamento-card">
+          <div className="planeamento-card-header">
+            <h2>Simulador de Cliente API NGSI-LD (UC12.2)</h2>
+          </div>
+          <div className="planeamento-card-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  Chave OAuth2/Token (Authorization Bearer):
+                </label>
+                <input 
+                  type="text" 
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                  value={apiToken}
+                  onChange={(e) => setApiToken(e.target.value)}
+                  placeholder="Bearer ..."
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  Smart Data Model / Entity Type:
+                </label>
+                <select 
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '8px', backgroundColor: '#fff' }}
+                  value={apiType}
+                  onChange={(e) => setApiType(e.target.value)}
+                >
+                  <option value="FareTransaction">FareTransaction (Smart Data Models)</option>
+                  <option value="PublicTransportRoute">PublicTransportRoute</option>
+                  <option value="PublicTransportStop">PublicTransportStop</option>
+                  <option value="InvalidType">InvalidType (Gera Erro FA3)</option>
+                </select>
+              </div>
+
+              <div>
+                <button className="btn-primary" onClick={handleSimularApiCall} style={{ width: '100%', padding: '0.55rem' }}>
+                  Fazer Pedido à API
+                </button>
+              </div>
+            </div>
+
+            {apiError && (
+              <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '1rem' }}>
+                {apiError}
               </div>
             )}
-          </>
-        )}
-      </div>
+
+            {apiResponse && (
+              <div style={{ background: '#0f172a', color: '#38bdf8', padding: '1rem', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: '300px', overflowY: 'auto' }}>
+                <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -65,6 +65,7 @@ public class Alerta {
     public Long getId()                          { return id; }
     public String getType()                      { return type; }
     public String getSeverity()                  { return severity; }
+    public void setSeverity(String severity)     { this.severity = severity; }
     public String getIngestionHash()             { return ingestionHash; }
     public String getEventData()                 { return eventData; }
     public String getStatus()                    { return status; }

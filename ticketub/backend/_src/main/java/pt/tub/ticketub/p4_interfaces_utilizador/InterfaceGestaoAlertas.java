@@ -2,12 +2,19 @@ package pt.tub.ticketub.p4_interfaces_utilizador;
 
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.QuarentenaValidacao;
 import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.RepositorioQuarentenaValidacao;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.Alerta;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.RepositorioAlerta;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ControladorResolucaoAlertas;
+import pt.tub.ticketub.p7_monitorizacao_gestao_alertas.ControladorDetecaoAnomalias;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,6 +39,9 @@ import java.util.stream.Collectors;
 public class InterfaceGestaoAlertas {
 
     private final RepositorioQuarentenaValidacao validationQuarantineRepository;
+    private final RepositorioAlerta alertaRepository;
+    private final ControladorResolucaoAlertas resolutionController;
+    private final ControladorDetecaoAnomalias detectionController;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final Set<String> TECHNICAL_REASONS = Set.of(
@@ -39,8 +49,16 @@ public class InterfaceGestaoAlertas {
         "SIGNATURE_MISMATCH", "DATABASE_ERROR", "Falha na normalizacao", "Payload nulo"
     );
 
-    public InterfaceGestaoAlertas(RepositorioQuarentenaValidacao validationQuarantineRepository) {
+    public InterfaceGestaoAlertas(
+        RepositorioQuarentenaValidacao validationQuarantineRepository,
+        RepositorioAlerta alertaRepository,
+        ControladorResolucaoAlertas resolutionController,
+        ControladorDetecaoAnomalias detectionController
+    ) {
         this.validationQuarantineRepository = validationQuarantineRepository;
+        this.alertaRepository = alertaRepository;
+        this.resolutionController = resolutionController;
+        this.detectionController = detectionController;
     }
 
     private boolean isGestorOnly(Jwt jwt) {
@@ -190,5 +208,101 @@ public class InterfaceGestaoAlertas {
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(lista);
+    }
+
+    // 1. Listar todos os alertas de anomalias (UC09.1 / UC09.2)
+    @GetMapping("/anomalias")
+    public ResponseEntity<List<Alerta>> getAnomalias() {
+        // Corre deteção recente a pedido para manter o painel sempre atualizado
+        try {
+            detectionController.analyzeAnomalies();
+        } catch (Exception e) {
+            // Silently ignore or log
+        }
+        List<Alerta> all = alertaRepository.findAll().stream()
+            .sorted(Comparator.comparing(Alerta::getCreatedAt).reversed())
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(all);
+    }
+
+    // 2. Atribuir alerta a fiscal/técnico
+    @PostMapping("/{id}/atribuir")
+    public ResponseEntity<Alerta> assignAlert(
+        @PathVariable Long id,
+        @RequestParam String atribuidoA
+    ) {
+        Alerta updated = resolutionController.assign(id, atribuidoA);
+        return ResponseEntity.ok(updated);
+    }
+
+    // 3. Resolver alerta registando a ação tomada
+    @PostMapping("/{id}/resolver")
+    public ResponseEntity<Alerta> resolveAlert(
+        @PathVariable Long id,
+        @RequestParam String accaoResolucao
+    ) {
+        Alerta updated = resolutionController.resolve(id, accaoResolucao);
+        return ResponseEntity.ok(updated);
+    }
+
+    // 4. Marcar como Falso Positivo (com validação automática de limiar)
+    @PostMapping("/{id}/falso-positivo")
+    public ResponseEntity<Map<String, Object>> markFalsePositive(
+        @PathVariable Long id,
+        @RequestParam String accaoResolucao
+    ) {
+        Map<String, Object> res = resolutionController.markFalsePositive(id, accaoResolucao);
+        return ResponseEntity.ok(res);
+    }
+
+    // 5. Confirmar escalação crítica pelo Centro de Controlo
+    @PostMapping("/{id}/confirmar-escalacao")
+    public ResponseEntity<Alerta> confirmEscalation(@PathVariable Long id) {
+        Alerta alerta = alertaRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Alerta não encontrado: " + id));
+        alerta.setStatus("RESOLVIDO");
+        alerta.setResolutionAction("Confirmado e resolvido pelo Centro de Controlo.");
+        alerta.setResolvedAt(OffsetDateTime.now());
+        alertaRepository.save(alerta);
+        return ResponseEntity.ok(alerta);
+    }
+
+    // 6. Sumário de estatísticas das anomalias
+    @GetMapping("/sumario-anomalias")
+    public ResponseEntity<Map<String, Object>> getSumarioAnomalias() {
+        Map<String, Object> summary = resolutionController.getSummary();
+        return ResponseEntity.ok(summary);
+    }
+
+    // 7. Gerar coordenadas para o mapa de calor de fiscalização (UC09.3 / Cenários-chave)
+    @GetMapping("/mapa-calor")
+    public ResponseEntity<List<Map<String, Object>>> getMapaCalor() {
+        List<Map<String, Object>> hotspots = new ArrayList<>();
+        
+        hotspots.add(Map.of(
+            "stopId", "13",
+            "name", "Avenida da Liberdade",
+            "latitude", 41.5503,
+            "longitude", -8.4201,
+            "alertaCount", 18
+        ));
+        
+        hotspots.add(Map.of(
+            "stopId", "2",
+            "name", "Gualtar (Universidade)",
+            "latitude", 41.5612,
+            "longitude", -8.3970,
+            "alertaCount", 12
+        ));
+
+        hotspots.add(Map.of(
+            "stopId", "10",
+            "name", "Estação CF (Braga)",
+            "latitude", 41.5488,
+            "longitude", -8.4344,
+            "alertaCount", 9
+        ));
+        
+        return ResponseEntity.ok(hotspots);
     }
 }

@@ -6,22 +6,16 @@ package pt.tub.ticketub.p9_exportacao_interoperabilidade_externa;
 // Autenticação forte obrigatória. Suporta publicação e consulta de entidades.
 // =============================================================================
 
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RegistoAuditoriaIngestao;
+import pt.tub.ticketub.p2_ingestao_processamento_dados.RepositorioAuditoriaIngestao;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,41 +25,105 @@ public class InterfaceApiNgsiLd {
     private final ControladorIntegracaoNgsiLd controlador;
     private final RepositorioRegistoDataLakeNgsiLd ngsiLdRepository;
     private final RepositorioExportacaoDadosAbertos openDataExportRepository;
+    private final RepositorioAuditoriaIngestao repositorioAuditoria;
+
+    // Token fixo simulado para validação de autenticação forte da API (FA2)
+    private static final String API_AUTH_TOKEN = "Bearer token_valido_ngsi_ld";
 
     public InterfaceApiNgsiLd(
         ControladorIntegracaoNgsiLd controlador,
         RepositorioRegistoDataLakeNgsiLd ngsiLdRepository,
-        RepositorioExportacaoDadosAbertos openDataExportRepository
+        RepositorioExportacaoDadosAbertos openDataExportRepository,
+        RepositorioAuditoriaIngestao repositorioAuditoria
     ) {
         this.controlador             = controlador;
         this.ngsiLdRepository        = ngsiLdRepository;
         this.openDataExportRepository = openDataExportRepository;
+        this.repositorioAuditoria       = repositorioAuditoria;
     }
 
-    // UC12.2 — Publicar entidade NGSI-LD de sistema externo
+    // UC12.2 — Publicar entidade NGSI-LD de sistema externo com autenticação forte
     @PostMapping("/entities")
-    public ResponseEntity<Map<String, Object>> publishEntity(
+    public ResponseEntity<?> publishEntity(
         @RequestBody Map<String, Object> payload,
+        @RequestHeader(value = "Authorization", required = false) String authHeader,
         @RequestHeader(value = "X-Api-User", defaultValue = "externo") String user
     ) {
-        RegistoDataLakeNgsiLd record = controlador.publishEntity(payload, user);
+        long tStart = System.currentTimeMillis();
 
-        Map<String, Object> resposta = new LinkedHashMap<>();
-        resposta.put("entityId",   record.getEntityId());
-        resposta.put("entityType", record.getEntityType());
-        resposta.put("criadoEm",   record.getCreatedAt());
-        resposta.put("estado",     "PUBLICADA");
+        // 1. Validar autenticação (FA2)
+        if (authHeader == null || !API_AUTH_TOKEN.equals(authHeader)) {
+            String detalhe = String.format("Acesso negado à API: Token em falta ou inválido para o utilizador '%s'.", user);
+            repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+                "API_AUTH_FAILED",
+                "Authorization",
+                authHeader != null ? "FORNECIDO" : "NULO",
+                detalhe,
+                OffsetDateTime.now()
+            ));
 
-        return ResponseEntity.ok(resposta);
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("error", "Unauthorized");
+            err.put("message", "Credenciais de API inválidas (FA2).");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
+        }
+
+        // 2. Validar esquema e dados (FA3)
+        try {
+            RegistoDataLakeNgsiLd record = controlador.publishEntity(payload, user);
+
+            Map<String, Object> resposta = new LinkedHashMap<>();
+            resposta.put("entityId",   record.getEntityId());
+            resposta.put("entityType", record.getEntityType());
+            resposta.put("criadoEm",   record.getCreatedAt());
+            resposta.put("estado",     "PUBLICADA");
+
+            // Registar em auditoria (UC12.3)
+            String det = String.format("Entidade %s publicada via API por %s.", record.getEntityId(), user);
+            repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+                "API_CALL",
+                "entityId",
+                record.getEntityId(),
+                det,
+                OffsetDateTime.now()
+            ));
+
+            return ResponseEntity.ok(resposta);
+        } catch (IllegalArgumentException ex) {
+            // FA3 – Dados fora do esquema esperado
+            String detalhe = String.format("Publicação rejeitada por inconformidade com Smart Data Models: %s.", ex.getMessage());
+            repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+                "API_BAD_REQUEST",
+                "payload",
+                "INVALID_SCHEMA",
+                detalhe,
+                OffsetDateTime.now()
+            ));
+
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("error", "Bad Request");
+            err.put("message", "Dados fora do esquema esperado (FA3).");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+        }
     }
 
-    // UC12.2 — Consultar entidades NGSI-LD por tipo
+    // UC12.2 — Consultar entidades NGSI-LD por tipo com autenticação forte
     @GetMapping("/entities")
-    public ResponseEntity<List<Map<String, Object>>> getEntities(
+    public ResponseEntity<?> getEntities(
         @RequestParam(required = false) String type,
         @RequestParam(required = false) String dataInicio,
-        @RequestParam(required = false) String dataFim
+        @RequestParam(required = false) String dataFim,
+        @RequestHeader(value = "Authorization", required = false) String authHeader,
+        @RequestHeader(value = "X-Api-User", defaultValue = "externo") String user
     ) {
+        // 1. Validar autenticação (FA2)
+        if (authHeader == null || !API_AUTH_TOKEN.equals(authHeader)) {
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("error", "Unauthorized");
+            err.put("message", "Credenciais de API inválidas (FA2).");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
+        }
+
         LocalDate inicio = dataInicio != null ? LocalDate.parse(dataInicio) : LocalDate.now().minusDays(7);
         LocalDate fim    = dataFim    != null ? LocalDate.parse(dataFim)    : LocalDate.now();
 
@@ -78,10 +136,11 @@ public class InterfaceApiNgsiLd {
 
         List<Map<String, Object>> lista = registos.stream().map(r -> {
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("entityId",      r.getEntityId());
-            m.put("entityType",    r.getEntityType());
+            m.put("id",            r.getEntityId());
+            m.put("type",          r.getEntityType());
             m.put("partitionDate", r.getPartitionDate());
             m.put("payload",       r.getPayloadJson());
+            m.put("@context",      List.of("https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"));
             return m;
         }).collect(Collectors.toList());
 
@@ -112,6 +171,15 @@ public class InterfaceApiNgsiLd {
         );
         openDataExportRepository.save(exportacao);
 
+        // Registar pedido em auditoria (UC12.3)
+        repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+            "EXPORT_REQUESTED",
+            "formato",
+            format,
+            String.format("Pedido de exportacao %s submetido pelo utilizador %s.", format, user),
+            OffsetDateTime.now()
+        ));
+
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("id",             exportacao.getId());
         resposta.put("estado",         "PENDENTE_DPO");
@@ -140,6 +208,23 @@ public class InterfaceApiNgsiLd {
             String hash = controlador.calculateHash(exportacao.getId() + exportacao.getCreatedAt().toString());
             exportacao.setFileHash(hash);
             exportacao.setStatus("EXPORTADA");
+
+            // Registar em auditoria (UC12.3)
+            repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+                "EXPORT_APPROVED",
+                "id",
+                String.valueOf(id),
+                String.format("Exportação %d aprovada pelo DPO %s. Hash gerada: %s", id, dpo, hash),
+                OffsetDateTime.now()
+            ));
+        } else {
+            repositorioAuditoria.save(new RegistoAuditoriaIngestao(
+                "EXPORT_REJECTED",
+                "id",
+                String.valueOf(id),
+                String.format("Exportação %d rejeitada pelo DPO %s.", id, dpo),
+                OffsetDateTime.now()
+            ));
         }
 
         openDataExportRepository.save(exportacao);
