@@ -19,4 +19,8 @@ public interface RepositorioQuarentenaValidacao extends JpaRepository<Quarentena
            "WHERE q.originStopId = :stopId " +
            "GROUP BY q.reason ORDER BY COUNT(q) DESC")
     List<Object[]> findTopReasonsByOriginStopId(@Param("stopId") String stopId);
+
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "DELETE FROM validation_quarantine WHERE raw_line LIKE :pattern OR received_value LIKE :pattern", nativeQuery = true)
+    void deleteByCardIdPattern(@Param("pattern") String pattern);
 }

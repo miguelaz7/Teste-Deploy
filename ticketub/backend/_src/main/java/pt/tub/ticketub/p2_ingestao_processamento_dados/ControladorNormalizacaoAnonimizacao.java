@@ -6,6 +6,8 @@ import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.Paragem;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioParagem;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.TipoBilhete;
 import pt.tub.ticketub.p9_exportacao_interoperabilidade_externa.RepositorioTipoBilhete;
+import pt.tub.ticketub.p3_classificacao_tarifaria_rgpd.PoliticaAnonimizacao;
+import pt.tub.ticketub.p3_classificacao_tarifaria_rgpd.RepositorioPoliticaAnonimizacao;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.List;
 
 // =============================================================================
 // O0.2.2.c – Controlador de Normalização e Anonimização
@@ -43,13 +46,16 @@ class ControladorNormalizacaoAnonimizacao {
     private final RepositorioTipoBilhete repositorioTipoBilhete;
     private final RepositorioParagem repositorioParagem;
     private final RepositorioSistemaBilhetica repositorioSistemaBilhetica;
+    private final RepositorioPoliticaAnonimizacao repositorioPoliticaAnonimizacao;
 
     ControladorNormalizacaoAnonimizacao(RepositorioTipoBilhete repositorioTipoBilhete,
                                         RepositorioParagem repositorioParagem,
-                                        RepositorioSistemaBilhetica repositorioSistemaBilhetica) {
+                                        RepositorioSistemaBilhetica repositorioSistemaBilhetica,
+                                        RepositorioPoliticaAnonimizacao repositorioPoliticaAnonimizacao) {
         this.repositorioTipoBilhete = repositorioTipoBilhete;
         this.repositorioParagem = repositorioParagem;
         this.repositorioSistemaBilhetica = repositorioSistemaBilhetica;
+        this.repositorioPoliticaAnonimizacao = repositorioPoliticaAnonimizacao;
     }
 
     // Normaliza o DTO para EventoValidacao e pseudonimiza o cardId
@@ -76,9 +82,44 @@ class ControladorNormalizacaoAnonimizacao {
 
         SistemaBilhetica fcs = resolveFareCollectionSystem(equipmentId, vehicleNum);
 
+        // UC02.2 - Apply DPO Anonymization Policies
+        List<PoliticaAnonimizacao> activePolicies = repositorioPoliticaAnonimizacao.findByStatus("ATIVA");
+
+        String cardId = valueOrNull(dto.getCardId());
+        String ticketId = valueOrNull(dto.getTicketId());
+
+        // Process cardId: default is HMAC-SHA256 pseudonimization unless DPO chose SUPRESSAO
+        boolean cardIdPolicyApplied = false;
+        for (PoliticaAnonimizacao policy : activePolicies) {
+            if ("cardId".equalsIgnoreCase(policy.getField())) {
+                if ("SUPRESSAO".equalsIgnoreCase(policy.getMethod())) {
+                    cardId = null;
+                } else {
+                    cardId = pseudonymize(cardId);
+                }
+                cardIdPolicyApplied = true;
+                break;
+            }
+        }
+        if (!cardIdPolicyApplied) {
+            cardId = pseudonymize(cardId);
+        }
+
+        // Process ticketId: default is original raw value unless DPO configured a policy
+        for (PoliticaAnonimizacao policy : activePolicies) {
+            if ("ticketId".equalsIgnoreCase(policy.getField())) {
+                if ("SUPRESSAO".equalsIgnoreCase(policy.getMethod())) {
+                    ticketId = null;
+                } else if ("HMAC_SHA256".equalsIgnoreCase(policy.getMethod()) || "PSEUDONIMIZACAO".equalsIgnoreCase(policy.getMethod())) {
+                    ticketId = pseudonymize(ticketId);
+                }
+                break;
+            }
+        }
+
         EventoValidacao evento = new EventoValidacao();
-        evento.setCardId(pseudonymize(valueOrNull(dto.getCardId())));
-        evento.setTicketId(valueOrNull(dto.getTicketId()));
+        evento.setCardId(cardId);
+        evento.setTicketId(ticketId);
         evento.setIngestionHash(ingestionHash);
         evento.setIngestedAt(OffsetDateTime.now());
         evento.setMediaType(mediaType == null ? "NFC_SMARTCARD" : mediaType);

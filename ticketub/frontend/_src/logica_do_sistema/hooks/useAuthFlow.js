@@ -6,13 +6,20 @@ const AUTH_ENABLED = process.env.REACT_APP_AUTH_ENABLED !== "false"; // default 
 function useMockAuth() {
   const [authenticated, setAuthenticated] = useState(false);
 
+  // Permite testar diferentes perfis via URL: ex. ?roles=ANALISTA ou ?roles=DPO
+  const urlParams = new URLSearchParams(window.location.search);
+  const rolesParam = urlParams.get("roles");
+  const userRoles = rolesParam 
+    ? rolesParam.split(",").map(r => r.trim().toUpperCase())
+    : ["GESTOR", "ANALISTA", "DPO", "ADMIN"];
+
   return {
     authenticated,
     authLoading: false,
     loggedInEmail: "dev@ticketub.local",
     loggedInFirstName: "Dev",
     loggedInLastName: "User",
-    userRoles: ["GESTOR", "ANALISTA", "DPO", "ADMIN"],
+    userRoles,
     handleLogout: () => setAuthenticated(false),
     authFormProps: { onLogin: () => setAuthenticated(true) },
   };

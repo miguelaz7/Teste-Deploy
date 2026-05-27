@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -27,34 +28,41 @@ public class PoliticaAnonimizacao {
     private Long id;
 
     // Campo a pseudonimizar (ex: "cardId", "ticketId")
+    @JsonProperty("campo")
     @Column(name = "campo", nullable = false)
     private String field;
 
     // Método de anonimização (ex: "HMAC_SHA256", "SUPRESSAO")
+    @JsonProperty("metodo")
     @Column(name = "metodo", nullable = false)
     private String method;
 
     // Período de retenção em dias (-1 = indefinido)
+    @JsonProperty("retencaoDias")
     @Column(name = "retencao_dias", nullable = false)
     private int retentionDays;
 
     // Estado da política: ATIVA, REVOGADA
+    @JsonProperty("estado")
     @Column(name = "estado", nullable = false)
     private String status;
 
     // DPO que aprovou
+    @JsonProperty("aprovadoPor")
     @Column(name = "aprovado_por", nullable = false)
     private String approvedBy;
 
+    @JsonProperty("aprovadoEm")
     @Column(name = "aprovado_em", nullable = false)
     private OffsetDateTime approvedAt;
 
+    @JsonProperty("notas")
     @Column(name = "notas", length = 1000)
     private String notes;
 
-    PoliticaAnonimizacao() {}
+    public PoliticaAnonimizacao() {}
 
-    PoliticaAnonimizacao(String field, String method, int retentionDays,
+    public PoliticaAnonimizacao(String field, String method, int retentionDays,
                          String status, String approvedBy,
                          OffsetDateTime approvedAt, String notes) {
         this.field         = field;
@@ -81,10 +89,4 @@ public class PoliticaAnonimizacao {
     public void setApprovedAt(OffsetDateTime a) { this.approvedAt = a; }
     public String getNotes()                    { return notes; }
     public void setNotes(String notes)          { this.notes = notes; }
-}
-
-@Repository
-interface RepositorioPoliticaAnonimizacao extends JpaRepository<PoliticaAnonimizacao, Long> {
-    List<PoliticaAnonimizacao> findByStatus(String status);
-    List<PoliticaAnonimizacao> findByField(String field);
 }

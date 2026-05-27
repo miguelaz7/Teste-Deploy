@@ -237,3 +237,83 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Tabs configuration */
+.rgpd-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #edf1f5;
+  padding-bottom: 0.5rem;
+}
+
+.rgpd-tab-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.rgpd-tab-btn:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.rgpd-tab-btn.active {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+/* Right to be forgotten form */
+.forgotten-form-card {
+  background: white;
+  border: 1px solid #edf1f5;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 500px;
+}
+
+.forgotten-info-box {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* Badge values */
+.badge-status {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.badge-status.pending {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.badge-status.approved {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.badge-status.rejected {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.badge-status.exported {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+

@@ -48,4 +48,9 @@ public interface RepositorioEventoValidacao extends JpaRepository<EventoValidaca
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "DELETE FROM validation_events WHERE perfil_classificado = :perfil", nativeQuery = true)
     void deleteByPerfilClassificado(@Param("perfil") String perfil);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM EventoValidacao e WHERE e.cardId = :cardId")
+    void deleteByCardId(@Param("cardId") String cardId);
 }
+

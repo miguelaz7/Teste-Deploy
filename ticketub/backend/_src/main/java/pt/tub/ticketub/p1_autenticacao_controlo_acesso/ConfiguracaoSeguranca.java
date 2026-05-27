@@ -11,11 +11,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class ConfiguracaoSeguranca {
 
     @Value("${app.security.auth-enabled:false}")

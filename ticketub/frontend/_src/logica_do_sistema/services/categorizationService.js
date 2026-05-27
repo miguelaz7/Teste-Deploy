@@ -86,4 +86,21 @@ export const logAuditAction = async (acao, tipoTitulo, perfilAnterior, perfilNov
     return response.json();
 };
 
+export const getPendingNaoCategorizados = async () => {
+    const response = await fetch(`${API_BASE_URL}/nao-categorizados`);
+    if (!response.ok) throw new Error('Failed to fetch pending uncategorized events');
+    return response.json();
+};
+
+export const resolverNaoCategorizado = async (id, estado, resolvidoPor = 'admin') => {
+    const response = await fetch(`${API_BASE_URL}/nao-categorizados/${id}/resolver`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado, resolvidoPor })
+    });
+    if (!response.ok) throw new Error('Failed to resolve uncategorized event');
+    return response.json();
+};
+
+
 

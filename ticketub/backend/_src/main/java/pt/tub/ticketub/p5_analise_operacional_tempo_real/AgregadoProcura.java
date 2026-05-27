@@ -52,6 +52,9 @@ public class AgregadoProcura {
     @Column(name = "perfil_normal", nullable = false)
     private long perfilNormal;
 
+    @Column(name = "descricao")
+    private String descricao;
+
     @Column(name = "actualizado_em", nullable = false)
     private OffsetDateTime actualizadoEm;
 
@@ -78,11 +81,13 @@ public class AgregadoProcura {
     public long getPerfilEstudante()     { return perfilEstudante; }
     public long getPerfilSenior()        { return perfilSenior; }
     public long getPerfilNormal()        { return perfilNormal; }
+    public String getDescricao()         { return descricao; }
     public OffsetDateTime getActualizadoEm() { return actualizadoEm; }
     void setTotalValidacoes(long v) { this.totalValidacoes = v; }
     void setTotalInvalidas(long v)  { this.totalInvalidas = v; }
     void setPerfilEstudante(long v) { this.perfilEstudante = v; }
     void setPerfilSenior(long v)    { this.perfilSenior = v; }
     void setPerfilNormal(long v)    { this.perfilNormal = v; }
+    public void setDescricao(String d)     { this.descricao = d; }
     void setActualizadoEm(OffsetDateTime t) { this.actualizadoEm = t; }
 }

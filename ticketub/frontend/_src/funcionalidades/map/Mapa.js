@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -108,6 +108,36 @@ function Mapa() {
     const term = searchTerm.toLowerCase();
     return stops.filter(s => s.stopName && s.stopName.toLowerCase().includes(term));
   }, [stops, searchTerm]);
+
+  // Click handler to search nearest stop within 50m of click
+  const MapEvents = () => {
+    useMapEvents({
+      click: async (e) => {
+        const { lat, lng } = e.latlng;
+        try {
+          const res = await fetch(`http://localhost:8080/api/mapa/paragens/procura-por-coordenadas?lat=${lat}&lon=${lng}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.stopId) {
+              const matchedStop = stops.find(s => s.stopId === data.stopId);
+              if (matchedStop) {
+                if (mapRef.current) {
+                  mapRef.current.flyTo([matchedStop.lat, matchedStop.lon], 18, { animate: true });
+                  setTimeout(() => {
+                    const m = markerRefs.current[matchedStop.stopId];
+                    if (m) m.openPopup();
+                  }, 400);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao buscar paragem por coordenadas:', err);
+        }
+      }
+    });
+    return null;
+  };
 
   return (
     <div className="map-wrapper">
@@ -257,6 +287,7 @@ function Mapa() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <MapEvents />
 
 
           <MarkerClusterGroup 

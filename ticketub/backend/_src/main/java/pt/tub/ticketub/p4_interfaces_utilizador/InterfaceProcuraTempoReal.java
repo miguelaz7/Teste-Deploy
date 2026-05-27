@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.web.bind.annotation.PathVariable;
+import pt.tub.ticketub.p5_analise_operacional_tempo_real.AgregadoProcura;
+import java.util.stream.Collectors;
+
 // =============================================================================
 // O0.5.3.i – Interface de Procura em Tempo Real (UC05.3)
 // Apresenta as perspectivas de análise (por horário, linha e zona/paragem)
@@ -38,6 +42,20 @@ public class InterfaceProcuraTempoReal {
     @GetMapping("/por-linha")
     public ResponseEntity<List<?>> getDemandByRoute() {
         return ResponseEntity.ok(controladorAgregacaoProcura.getByPerspective("LINHA"));
+    }
+
+    // Top 10 linhas com procura mais elevada (UC05.2)
+    @GetMapping("/por-linha/top-10")
+    public ResponseEntity<List<AgregadoProcura>> getTop10Routes() {
+        List<AgregadoProcura> todas = controladorAgregacaoProcura.getByPerspective("LINHA");
+        List<AgregadoProcura> top10 = todas.stream().limit(10).collect(Collectors.toList());
+        return ResponseEntity.ok(top10);
+    }
+
+    // Drill-Down: obter detalhe horário de uma linha específica (UC05.2)
+    @GetMapping("/por-linha/{routeId}/horario")
+    public ResponseEntity<Map<Integer, Long>> getRouteHourlyDetail(@PathVariable String routeId) {
+        return ResponseEntity.ok(controladorAgregacaoProcura.getHourlyDetailForRoute(routeId));
     }
 
     // Perspectiva por zona/paragem — afluência por stop_id

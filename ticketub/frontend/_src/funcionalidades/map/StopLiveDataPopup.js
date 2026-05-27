@@ -51,20 +51,40 @@ function DonutChart({ data: rawData }) {
     <div className="donut-flex-row">
       <div className="donut-wrapper">
         <svg viewBox="-1.2 -1.2 2.4 2.4" className="donut-svg">
-          {slices.map((s, i) => (
-            <path
-              key={i}
-              d={s.path}
-              fill={s.color}
-              style={{
-                transition: 'all 0.3s ease',
-                opacity: hovered && hovered !== s.label ? 0.3 : 1,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={() => setHovered(s.label)}
-              onMouseLeave={() => setHovered(null)}
-            />
-          ))}
+          {slices.map((s, i) => {
+            if (s.fraction >= 0.999) {
+              return (
+                <circle
+                  key={i}
+                  cx="0"
+                  cy="0"
+                  r="1"
+                  fill={s.color}
+                  style={{
+                    transition: 'all 0.3s ease',
+                    opacity: hovered && hovered !== s.label ? 0.3 : 1,
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={() => setHovered(s.label)}
+                  onMouseLeave={() => setHovered(null)}
+                />
+              );
+            }
+            return (
+              <path
+                key={i}
+                d={s.path}
+                fill={s.color}
+                style={{
+                  transition: 'all 0.3s ease',
+                  opacity: hovered && hovered !== s.label ? 0.3 : 1,
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={() => setHovered(s.label)}
+                onMouseLeave={() => setHovered(null)}
+              />
+            );
+          })}
           <circle cx="0" cy="0" r="0.75" fill="white" />
         </svg>
         <div className="donut-center">

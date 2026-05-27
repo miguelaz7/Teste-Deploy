@@ -20,6 +20,8 @@ export const getTempoReal          = () => fetchJSON(`${BASE_PROCURA}/tempo-real
 export const getPorHorario         = () => fetchJSON(`${BASE_PROCURA}/por-horario`);
 export const getPorLinha           = () => fetchJSON(`${BASE_PROCURA}/por-linha`);
 export const getPorParagem         = () => fetchJSON(`${BASE_PROCURA}/por-paragem`);
+export const getTop10Linhas        = () => fetchJSON(`${BASE_PROCURA}/por-linha/top-10`);
+export const getDetalheHorarioLinha = (routeId) => fetchJSON(`${BASE_PROCURA}/por-linha/${routeId}/horario`);
 export const getMetricasIngestao   = () => fetchJSON(`${BASE_DASHBOARD}/metricas-ingestao`);
 export const getComparacaoPeriodos = (inicio, fim) =>
   fetchJSON(`${BASE_HISTORICO}/comparacao-periodos?inicio=${inicio}&fim=${fim}`);

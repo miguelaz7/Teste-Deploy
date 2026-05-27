@@ -195,8 +195,28 @@ public class ControladorAgregacaoProcura {
         agregado.setPerfilEstudante(estudante);
         agregado.setPerfilSenior(senior);
         agregado.setPerfilNormal(normal);
+        agregado.setDescricao(descricao);
         agregado.setActualizadoEm(OffsetDateTime.now());
         agregadoProcuraRepository.save(agregado);
+    }
+
+    // Retorna a distribuição horária de validações para uma linha específica (Drill-Down UC05.2)
+    public Map<Integer, Long> getHourlyDetailForRoute(String routeId) {
+        List<EventoValidacao> eventos = validationEventRepository.findAll().stream()
+            .filter(e -> routeId.equals(e.getRouteId()))
+            .collect(Collectors.toList());
+
+        Map<Integer, Long> porHora = new LinkedHashMap<>();
+        for (int i = 0; i < 24; i++) {
+            porHora.put(i, 0L);
+        }
+        eventos.forEach(e -> {
+            if (e.getTransactionDateTime() != null) {
+                int hour = e.getTransactionDateTime().getHour();
+                porHora.merge(hour, 1L, Long::sum);
+            }
+        });
+        return porHora;
     }
 
     // -------------------------------------------------------------------------
